@@ -1,0 +1,530 @@
+{
+  "_comment": "Source registry. To add a new Tier 2 source, add an entry to tier2_events with a url — no code changes needed.",
+
+  "tier1_events": [
+    {
+      "name": "meetup-nova",
+      "class": "scrapers.tier1.meetup.MeetupScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Meetup.com — NoVa family groups, playgroups, Pokémon TCG meetups (requires MEETUP_CLIENT_ID + MEETUP_CLIENT_SECRET)"
+    },
+    {
+      "name": "fairfax-library",
+      "class": "scrapers.tier1.fairfax_library.FairfaxLibraryScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Fairfax County Public Library events calendar"
+    },
+    {
+      "name": "loudoun-library",
+      "class": "scrapers.tier1.loudoun_library.LoudounLibraryScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Loudoun County Public Library events calendar"
+    },
+    {
+      "name": "arlington-library",
+      "class": "scrapers.tier1.arlington_library.ArlingtonLibraryScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Arlington Public Library events calendar"
+    },
+    {
+      "name": "eventbrite-nova",
+      "class": "scrapers.tier1.eventbrite_nova.EventbriteNovaScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Eventbrite family/kids events in Northern Virginia"
+    }
+  ],
+
+  "tier2_events": [
+    {
+      "name": "dullesmoms",
+      "url": "https://www.dullesmoms.com/events/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Dulles Moms — local NoVa family events blog",
+      "tags": ["local", "community"]
+    },
+    {
+      "name": "nova-moms-blog",
+      "url": "https://novamomsblog.com/events/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "NoVa Moms Blog events listing",
+      "tags": ["local", "community"]
+    },
+    {
+      "name": "patch-fairfax",
+      "url": "https://patch.com/virginia/fairfax/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Fairfax community calendar",
+      "tags": ["community", "fairfax"]
+    },
+    {
+      "name": "patch-reston",
+      "url": "https://patch.com/virginia/reston/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Reston community calendar",
+      "tags": ["community", "reston"]
+    },
+    {
+      "name": "patch-ashburn",
+      "url": "https://patch.com/virginia/ashburn/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Ashburn community calendar",
+      "tags": ["community", "ashburn"]
+    },
+    {
+      "name": "patch-arlington",
+      "url": "https://patch.com/virginia/arlington-va/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Arlington community calendar",
+      "tags": ["community", "arlington"]
+    },
+    {
+      "name": "things-to-do-dc",
+      "url": "https://www.thingstodoindc.com/kids/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Things to Do in DC — kids section (NoVa filter applied by AI)",
+      "tags": ["regional", "kids"]
+    },
+    {
+      "name": "bring-the-kids",
+      "url": "https://www.bringthekids.com/virginia/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "BringTheKids.com Virginia family activities",
+      "tags": ["activities", "family"]
+    },
+    {
+      "name": "reston-association",
+      "url": "https://www.reston.org/programs-events/events/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Reston Association community events",
+      "tags": ["reston", "community"]
+    },
+    {
+      "name": "fairfax-parks",
+      "url": "https://www.fairfaxcounty.gov/parks/events",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Fairfax County Park Authority events",
+      "tags": ["parks", "outdoor", "fairfax"]
+    },
+    {
+      "name": "loudoun-parks",
+      "url": "https://www.loudoun.gov/calendar.aspx",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Loudoun County parks and community events",
+      "tags": ["parks", "loudoun"]
+    },
+    {
+      "name": "nova-kids-activities",
+      "url": "https://kidsactivitiesblog.com/local/virginia/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Kids Activities Blog — Virginia",
+      "tags": ["activities", "kids"]
+    },
+
+    {"_comment": "── Additional Patch cities ──────────────────────────────"},
+    {
+      "name": "patch-vienna",
+      "url": "https://patch.com/virginia/vienna/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Vienna community calendar",
+      "tags": ["community", "vienna"]
+    },
+    {
+      "name": "patch-mclean",
+      "url": "https://patch.com/virginia/mclean/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com McLean community calendar",
+      "tags": ["community", "mclean"]
+    },
+    {
+      "name": "patch-herndon",
+      "url": "https://patch.com/virginia/herndon/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Herndon community calendar",
+      "tags": ["community", "herndon"]
+    },
+    {
+      "name": "patch-springfield",
+      "url": "https://patch.com/virginia/springfield-va/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Springfield community calendar",
+      "tags": ["community", "springfield"]
+    },
+    {
+      "name": "patch-burke",
+      "url": "https://patch.com/virginia/burke/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Burke community calendar",
+      "tags": ["community", "burke"]
+    },
+    {
+      "name": "patch-centreville",
+      "url": "https://patch.com/virginia/centreville/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Centreville community calendar",
+      "tags": ["community", "centreville"]
+    },
+    {
+      "name": "patch-manassas",
+      "url": "https://patch.com/virginia/manassas/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Manassas community calendar",
+      "tags": ["community", "manassas"]
+    },
+    {
+      "name": "patch-falls-church",
+      "url": "https://patch.com/virginia/falls-church/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Falls Church community calendar",
+      "tags": ["community", "falls-church"]
+    },
+    {
+      "name": "patch-alexandria",
+      "url": "https://patch.com/virginia/alexandria/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Alexandria community calendar",
+      "tags": ["community", "alexandria"]
+    },
+    {
+      "name": "patch-woodbridge",
+      "url": "https://patch.com/virginia/woodbridge-va/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Woodbridge community calendar",
+      "tags": ["community", "woodbridge", "prince-william"]
+    },
+    {
+      "name": "patch-sterling",
+      "url": "https://patch.com/virginia/sterling/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Sterling community calendar",
+      "tags": ["community", "sterling", "loudoun"]
+    },
+
+    {"_comment": "── Local NoVa news sites ────────────────────────────────"},
+    {
+      "name": "reston-now",
+      "url": "https://www.restonow.com/category/things-to-do/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Reston Now — local news with events and things to do",
+      "tags": ["reston", "community", "local-news"]
+    },
+    {
+      "name": "arlnow",
+      "url": "https://www.arlnow.com/category/things-to-do/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "ARLnow — Arlington local news with events",
+      "tags": ["arlington", "community", "local-news"]
+    },
+    {
+      "name": "ffxnow",
+      "url": "https://www.ffxnow.com/category/things-to-do/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "FFXnow — Fairfax local news with events",
+      "tags": ["fairfax", "community", "local-news"]
+    },
+    {
+      "name": "loudoun-now",
+      "url": "https://www.loudounnow.com/calendar/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Loudoun Now — Loudoun County local news and events",
+      "tags": ["loudoun", "community", "local-news"]
+    },
+    {
+      "name": "inside-nova",
+      "url": "https://www.insidenova.com/calendar/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "InsideNova — Prince William County and broader NoVa events",
+      "tags": ["prince-william", "community", "local-news"]
+    },
+    {
+      "name": "washingtonian-kids",
+      "url": "https://www.washingtonian.com/things-to-do/kids-and-family/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Washingtonian — DC metro kids and family events (high-quality curation)",
+      "tags": ["regional", "kids", "family", "curated"]
+    },
+    {
+      "name": "dcist-events",
+      "url": "https://dcist.com/events/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "DCist — DC metro events calendar (AI filters NoVa-relevant results)",
+      "tags": ["regional", "community"]
+    },
+
+    {"_comment": "── Government / Parks not yet covered ──────────────────"},
+    {
+      "name": "prince-william-parks",
+      "url": "https://www.pwcgov.org/government/dept/park/Pages/events.aspx",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Prince William County Park Authority events",
+      "tags": ["parks", "prince-william", "outdoor"]
+    },
+    {
+      "name": "alexandria-city-events",
+      "url": "https://www.alexandriava.gov/Calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "City of Alexandria official events calendar",
+      "tags": ["alexandria", "community", "government"]
+    },
+    {
+      "name": "falls-church-events",
+      "url": "https://www.fallschurchva.gov/calendar.aspx",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "City of Falls Church community events",
+      "tags": ["falls-church", "community", "government"]
+    },
+    {
+      "name": "nova-parks",
+      "url": "https://www.novaparks.com/events",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "NOVA Parks (Northern Virginia Regional Park Authority) — 40+ parks, family programming",
+      "tags": ["parks", "outdoor", "nova-parks", "regional"]
+    },
+    {
+      "name": "reston-community-center",
+      "url": "https://www.restoncommunitycenter.com/programs-classes",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Reston Community Center — classes, performances, family programs",
+      "tags": ["reston", "community", "arts", "classes"]
+    },
+    {
+      "name": "ymca-nova",
+      "url": "https://www.ymcadc.org/locations/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "YMCA of Metropolitan Washington — NoVa locations, family programs and events",
+      "tags": ["ymca", "family", "fitness", "kids", "classes"]
+    },
+
+    {"_comment": "── Major venues ─────────────────────────────────────────"},
+    {
+      "name": "wolf-trap",
+      "url": "https://www.wolftrap.org/calendar/children-s-theatre-in-the-woods.aspx",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Wolf Trap — Children's Theatre in the Woods and family performances (Vienna, VA)",
+      "tags": ["music", "theater", "outdoor", "performance", "wolf-trap"]
+    },
+    {
+      "name": "meadowlark-gardens",
+      "url": "https://www.novaparks.com/parks/meadowlark-botanical-gardens/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Meadowlark Botanical Gardens — seasonal family events, nature walks",
+      "tags": ["nature", "outdoor", "gardens", "seasonal", "meadowlark"]
+    },
+    {
+      "name": "frying-pan-farm-park",
+      "url": "https://www.fairfaxcounty.gov/parks/frying-pan-farm-park/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Frying Pan Farm Park — farm events, hayrides, family programming (Herndon, VA)",
+      "tags": ["outdoor", "farm", "animals", "nature", "fairfax"]
+    },
+    {
+      "name": "cox-farms",
+      "url": "https://www.coxfarms.com/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Cox Farms — seasonal fall festival and family events (Centreville, VA)",
+      "tags": ["seasonal", "outdoor", "farm", "fall", "holiday"]
+    },
+    {
+      "name": "burnside-farms",
+      "url": "https://www.burnsidefarms.com/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Burnside Farms — tulip festival, pumpkin patch, seasonal family events (Nokesville, VA)",
+      "tags": ["seasonal", "outdoor", "farm", "flowers", "holiday"]
+    },
+    {
+      "name": "great-country-farms",
+      "url": "https://www.greatcountryfarms.com/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Great Country Farms — pick-your-own and seasonal family events (Bluemont, VA)",
+      "tags": ["seasonal", "outdoor", "farm", "pick-your-own"]
+    },
+    {
+      "name": "wegmeyer-farms",
+      "url": "https://wegmeyerfarms.com/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Wegmeyer Farms — strawberry and pumpkin pick-your-own events (Hamilton, VA)",
+      "tags": ["seasonal", "outdoor", "farm", "pick-your-own", "loudoun"]
+    },
+    {
+      "name": "udvar-hazy",
+      "url": "https://airandspace.si.edu/udvar-hazy-center",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Smithsonian Udvar-Hazy Center — free family events and programming (Chantilly, VA)",
+      "tags": ["educational", "stem", "free", "museum", "aviation"]
+    },
+    {
+      "name": "gmu-center-arts",
+      "url": "https://cfa.gmu.edu/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "George Mason University Center for the Arts — family performances and events",
+      "tags": ["arts", "theater", "music", "performance", "fairfax"]
+    },
+    {
+      "name": "the-arc-va",
+      "url": "https://www.thearcva.org/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "The ARC — Fairfax arts center, family programs and community events",
+      "tags": ["arts", "community", "fairfax", "family"]
+    }
+  ],
+
+  "tier3_deals": [
+    {
+      "name": "krazy-coupon-lady-restaurants",
+      "class": "scrapers.tier3.krazy_coupon_lady.KrazyCouponLadyScraper",
+      "enabled": true,
+      "schedule": "4x_daily",
+      "description": "KrazyCouponLady restaurant + food deals",
+      "deal_category": "restaurant"
+    },
+    {
+      "name": "hip2save-restaurants",
+      "class": "scrapers.tier3.hip2save.Hip2SaveScraper",
+      "enabled": true,
+      "schedule": "4x_daily",
+      "description": "Hip2Save restaurant and family deals",
+      "deal_category": "restaurant"
+    },
+    {
+      "name": "google-news-restaurant-deals",
+      "class": "scrapers.tier3.google_news_rss.GoogleNewsRssScraper",
+      "enabled": true,
+      "schedule": "4x_daily",
+      "description": "Google News RSS — viral restaurant deals",
+      "queries": [
+        "restaurant deal northern virginia",
+        "free kids meal",
+        "chipotle deal",
+        "shake shack promotion",
+        "five guys deal",
+        "chick-fil-a promotion",
+        "bogo restaurant",
+        "free food promotion",
+        "kids eat free"
+      ]
+    },
+    {
+      "name": "birthday-freebies",
+      "class": "scrapers.tier3.birthday_freebies.BirthdayFreebieScraper",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Birthday freebies — restaurants and brands with birthday rewards",
+      "deal_category": "restaurant"
+    },
+    {
+      "name": "amusement-deals",
+      "class": "scrapers.tier3.google_news_rss.GoogleNewsRssScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Amusement park and activity deals in NoVa/DC region",
+      "queries": [
+        "kings dominion discount",
+        "busch gardens deal",
+        "sky zone promotion northern virginia",
+        "trampoline park deal virginia",
+        "water park deal northern virginia",
+        "bounce house deal nova"
+      ]
+    }
+  ],
+
+  "pokemon_events": [
+    {
+      "name": "pokemon-tcg-nova-events",
+      "class": "scrapers.pokemon.events_scraper.PokemonEventsScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Pokémon TCG leagues, prereleases, and tournaments in Northern Virginia",
+      "section": "pokemon"
+    },
+    {
+      "name": "pokemon-tcg-drops",
+      "class": "scrapers.pokemon.drops_scraper.PokemonDropsScraper",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Upcoming Pokémon TCG set releases with NoVa retailer matrix",
+      "section": "pokemon"
+    },
+    {
+      "name": "google-news-pokemon-nova",
+      "class": "scrapers.tier3.google_news_rss.GoogleNewsRssScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Google News — Pokémon TCG viral drops, restocks, and local events",
+      "section": "pokemon",
+      "queries": [
+        "pokemon tcg northern virginia",
+        "pokemon cards restock target walmart",
+        "pokemon prerelease virginia",
+        "pokemon cards gamestop costco",
+        "new pokemon set release date",
+        "pokemon tcg regional tournament virginia"
+      ]
+    }
+  ],
+
+  "restaurant_brands": [
+    "Chipotle", "Shake Shack", "Five Guys", "Chick-fil-A",
+    "McDonald's", "Raising Cane's", "Wingstop", "Panera Bread",
+    "Subway", "Dairy Queen", "Baskin-Robbins", "Cold Stone Creamery",
+    "Krispy Kreme", "Dunkin", "Starbucks", "Jersey Mike's",
+    "Firehouse Subs", "CAVA", "Sweetgreen"
+  ],
+
+  "amusement_venues": [
+    "Kings Dominion", "Busch Gardens", "Water Country USA",
+    "Legoland Discovery Center", "Sky Zone",
+    "Launch Trampoline Park", "Altitude Trampoline Park",
+    "Urban Air", "Defy Gravity", "Round1 Bowling"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@novakidlife/social-poster",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "pytest tests/ -v",
+    "test:watch": "pytest tests/ -v --watch",
+    "lint": "ruff check . && ruff format --check .",
+    "format": "ruff format .",
+    "typecheck": "mypy handler.py",
+    "package": "bash scripts/package.sh",
+    "invoke": "aws lambda invoke --function-name novakidlife-social-poster --payload '{\"event_id\":\"test-123\"}' /tmp/response.json && cat /tmp/response.json",
+    "logs": "aws logs tail /aws/lambda/novakidlife-social-poster --follow",
+    "buffer:queue": "curl \"https://api.bufferapp.com/1/profiles.json?access_token=$BUFFER_ACCESS_TOKEN\" | jq '.[].id'"
+  }
+}

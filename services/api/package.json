@@ -1,0 +1,15 @@
+{
+  "name": "@novakidlife/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "pytest tests/ -v",
+    "test:watch": "pytest tests/ -v --watch",
+    "lint": "ruff check . && ruff format --check .",
+    "format": "ruff format .",
+    "typecheck": "mypy handler.py",
+    "package": "bash scripts/package.sh",
+    "invoke:health": "aws lambda invoke --function-name novakidlife-api --payload '{\"path\":\"/health\",\"httpMethod\":\"GET\"}' /tmp/response.json && cat /tmp/response.json",
+    "logs": "aws logs tail /aws/lambda/novakidlife-api --follow"
+  }
+}

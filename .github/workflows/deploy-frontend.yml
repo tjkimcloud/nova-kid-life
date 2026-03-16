@@ -1,0 +1,75 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  deploy:
+    name: Build & Deploy to S3
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download self-hosted fonts
+        working-directory: apps/web
+        run: node scripts/download-fonts.mjs
+
+      - name: Build static export
+        working-directory: apps/web
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Sync HTML files (no-cache)
+        run: |
+          aws s3 sync apps/web/out/ s3://${{ secrets.WEB_BUCKET_NAME }} \
+            --delete \
+            --exclude "*" \
+            --include "*.html" \
+            --include "*.txt" \
+            --include "*.xml" \
+            --cache-control "public,max-age=0,must-revalidate"
+
+      - name: Sync static assets (1-year cache)
+        run: |
+          aws s3 sync apps/web/out/ s3://${{ secrets.WEB_BUCKET_NAME }} \
+            --exclude "*.html" \
+            --exclude "*.txt" \
+            --exclude "*.xml" \
+            --cache-control "public,max-age=31536000,immutable"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*"
+
+      - name: Deployment summary
+        run: |
+          echo "### Frontend Deployed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bucket:** ${{ secrets.WEB_BUCKET_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL:** ${{ secrets.NEXT_PUBLIC_SITE_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

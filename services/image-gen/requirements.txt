@@ -1,0 +1,7 @@
+boto3>=1.34
+Pillow>=10.3
+httpx>=0.27
+openai>=1.30
+google-cloud-aiplatform>=1.50
+blurhash-python>=1.1
+supabase>=2.0

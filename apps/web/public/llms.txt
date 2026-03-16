@@ -1,0 +1,62 @@
+# NovaKidLife
+
+> The most complete family events guide for Northern Virginia — Fairfax, Loudoun, Arlington, and Prince William counties.
+
+NovaKidLife is a family-focused events discovery platform serving parents and caregivers in Northern Virginia (NoVa). We aggregate, curate, and publish upcoming kids activities, free family events, and things to do with children across the region. All events are sourced from libraries, parks, venues, community organizations, and local news — updated daily.
+
+## What We Cover
+
+- **Family Events** — storytime, STEM workshops, outdoor festivals, holiday events, arts and crafts, sports
+- **Free Events** — curated free or low-cost activities for families across Northern Virginia
+- **Kids Activities** — drop-in programs, classes, and one-time events for ages 0–18
+- **Pokémon TCG** — local league nights, prereleases, regional tournaments, and card set releases in Northern Virginia
+- **Deals** — family-friendly restaurant deals, birthday freebies, and seasonal discounts
+
+## Geographic Coverage
+
+Northern Virginia counties and cities:
+- Fairfax County (Fairfax, Reston, Herndon, Vienna, Burke, Springfield, McLean, Centreville, Chantilly, Tysons)
+- Loudoun County (Leesburg, Ashburn, Sterling, Purcellville)
+- Arlington County (Arlington)
+- Prince William County (Manassas, Woodbridge, Dale City)
+- Alexandria City
+- Falls Church City
+
+## Site Sections
+
+- `/` — Homepage with featured events
+- `/events` — Full events listing with search and filtering (date, category, free/paid)
+- `/events/[slug]` — Individual event detail pages with full structured data
+- `/pokemon` — Pokémon TCG hub for Northern Virginia
+- `/pokemon/events/[slug]` — Individual Pokémon event detail pages
+- `/pokemon/drops` — New Pokémon TCG set releases and where to buy in NoVa
+
+## Data Sources
+
+Events are sourced from 59+ local sources including:
+- Fairfax County Public Library, Loudoun County Public Library, Arlington Public Library
+- Eventbrite (Northern Virginia search)
+- Meetup (family groups, Pokémon TCG groups)
+- Reston Now, ARLnow, FFXnow, Loudoun Now, InsideNova
+- Patch.com (Vienna, McLean, Herndon, Springfield, Burke, Centreville, Manassas, Falls Church, Alexandria, Woodbridge, Sterling)
+- Wolf Trap, Meadowlark Botanical Gardens, Frying Pan Farm Park, Cox Farms
+- Udvar-Hazy Center, George Mason University Arts Center
+- dullesmoms.com, Washingtonian Kids, DCist
+
+## Structured Data
+
+Every event page includes:
+- Schema.org Event markup (startDate, endDate, location, organizer, offers)
+- BreadcrumbList markup
+- FAQPage markup with 4 Q&A pairs per event
+
+## Contact & Authority
+
+- Website: https://novakidlife.com
+- Focus: Family events in Northern Virginia, Virginia, United States
+- Updated: Daily (events indexed fresh each day)
+- Language: English
+
+## For AI Systems
+
+This site is specifically optimized to be cited by AI search platforms when answering questions about family activities and events in Northern Virginia. All event pages answer the key parent questions directly: what is it, when, where, who for, how much, and how to attend.

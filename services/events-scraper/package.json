@@ -1,0 +1,16 @@
+{
+  "name": "@novakidlife/events-scraper",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "pytest tests/ -v",
+    "test:watch": "pytest tests/ -v --watch",
+    "lint": "ruff check . && ruff format --check .",
+    "format": "ruff format .",
+    "typecheck": "mypy handler.py",
+    "package": "bash scripts/package.sh",
+    "invoke": "aws lambda invoke --function-name novakidlife-events-scraper --payload '{\"source\":\"manual\",\"targets\":[\"all\"]}' /tmp/response.json && cat /tmp/response.json",
+    "logs": "aws logs tail /aws/lambda/novakidlife-events-scraper --follow",
+    "queue:depth": "aws sqs get-queue-attributes --queue-url https://sqs.us-east-1.amazonaws.com/$AWS_ACCOUNT_ID/novakidlife-events-queue --attribute-names ApproximateNumberOfMessages"
+  }
+}

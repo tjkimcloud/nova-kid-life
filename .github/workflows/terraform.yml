@@ -1,0 +1,139 @@
+name: Terraform
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform.yml'
+
+env:
+  TF_WORKING_DIR: infra/terraform
+
+jobs:
+  terraform:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # needed to post plan as PR comment
+
+    defaults:
+      run:
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '~1.7'
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive
+        continue-on-error: true
+
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -out=tfplan
+        continue-on-error: true
+        env:
+          # Add all TF_VAR_* secrets here when Session 9 (Terraform) is complete.
+          # Example:
+          # TF_VAR_openai_api_key: ${{ secrets.TF_VAR_OPENAI_API_KEY }}
+          # TF_VAR_supabase_url: ${{ secrets.TF_VAR_SUPABASE_URL }}
+          # TF_VAR_supabase_service_key: ${{ secrets.TF_VAR_SUPABASE_SERVICE_KEY }}
+          # TF_VAR_google_project_id: ${{ secrets.TF_VAR_GOOGLE_PROJECT_ID }}
+          # TF_VAR_buffer_access_token: ${{ secrets.TF_VAR_BUFFER_ACCESS_TOKEN }}
+
+      - name: Post plan as PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          PLAN: ${{ steps.plan.outputs.stdout }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fmt = '${{ steps.fmt.outcome }}' === 'success' ? '✅' : '⚠️';
+            const init = '${{ steps.init.outcome }}' === 'success' ? '✅' : '❌';
+            const validate = '${{ steps.validate.outcome }}' === 'success' ? '✅' : '❌';
+            const plan = '${{ steps.plan.outcome }}' === 'success' ? '✅' : '❌';
+
+            const output = `## Terraform Plan
+            | Step | Status |
+            |------|--------|
+            | Format | ${fmt} |
+            | Init | ${init} |
+            | Validate | ${validate} |
+            | Plan | ${plan} |
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${process.env.PLAN}
+            \`\`\`
+
+            </details>
+
+            > ⚠️ **Auto-apply is disabled.** Run \`terraform apply tfplan\` manually after review.
+
+            *Pushed by @${{ github.actor }}, commit \`${{ github.sha }}\`*`;
+
+            // Find and update existing comment, or create new one
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const botComment = comments.find(c =>
+              c.user.type === 'Bot' && c.body.includes('## Terraform Plan')
+            );
+
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: output,
+              });
+            }
+
+      - name: Fail if plan failed
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Plan summary
+        if: github.event_name == 'push'
+        run: |
+          echo "### Terraform Plan (push to main)" >> $GITHUB_STEP_SUMMARY
+          echo "Run \`terraform apply tfplan\` in \`${{ env.TF_WORKING_DIR }}\` to apply." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "> Auto-apply is disabled. Review the plan in the Actions log before applying." >> $GITHUB_STEP_SUMMARY

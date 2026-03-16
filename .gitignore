@@ -1,0 +1,67 @@
+# ── Node ─────────────────────────────────────────────────────────────────────
+node_modules/
+.npm
+npm-debug.log*
+yarn-error.log*
+.pnp
+.pnp.js
+
+# ── Next.js ───────────────────────────────────────────────────────────────────
+.next/
+out/
+build/
+next-env.d.ts
+*.tsbuildinfo
+
+# ── Environment ───────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+.venv/
+venv/
+env/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Terraform ─────────────────────────────────────────────────────────────────
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+infra/terraform/builds/
+# Note: .terraform.lock.hcl IS committed (like package-lock.json)
+
+# ── AWS / Lambda packaging ────────────────────────────────────────────────────
+.aws-sam/
+*.zip
+/services/*/dist/
+/services/*/.aws-sam/
+
+# ── OS ────────────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/settings.json
+.vscode/launch.json
+.idea/
+*.swp
+*.swo
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+logs/
+*.log
