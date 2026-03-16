@@ -4,7 +4,7 @@ NovaKidLife Social Poster — Lambda handler.
 Triggered by EventBridge on a schedule (9am, 12pm, 5pm ET weekdays;
 10am, 2pm ET weekends). Queries Supabase for published events that
 haven't been posted yet, builds platform-specific copy, and schedules
-posts via the Buffer API.
+posts via the Ayrshare API.
 
 EventBridge schedule (defined in Terraform):
   cron(0 14 ? * MON-FRI *)  → 9am EST  (UTC-5 in winter, UTC-4 in summer)
@@ -23,7 +23,7 @@ from zoneinfo import ZoneInfo
 
 from supabase import create_client
 
-from buffer_client import BufferClient, Platform
+from buffer_client import AyrshareClient, Platform
 from copy_builder  import build_copy, image_url_for_platform
 from scheduler     import next_optimal_slot
 from ssm           import get_ssm_parameter
@@ -37,7 +37,7 @@ PLATFORMS = [Platform.TWITTER, Platform.INSTAGRAM, Platform.FACEBOOK]
 # Post events starting within the next N days (don't post stale past events)
 POST_HORIZON_DAYS = 14
 
-# Max events to post per Lambda invocation (avoid hitting Buffer rate limits)
+# Max events to post per Lambda invocation (avoid API rate limits)
 MAX_EVENTS_PER_RUN = 5
 
 
@@ -55,7 +55,7 @@ def _get_unposted_events(supabase, platform: Platform) -> list[dict]:
     resp = (
         supabase.table("events")
         .select(
-            "id, slug, title, description, short_description, "
+            "id, slug, title, short_description, "
             "start_at, end_at, venue_name, address, "
             "event_type, section, tags, is_free, cost_description, "
             "image_url, og_image_url, social_image_url, "
@@ -64,7 +64,6 @@ def _get_unposted_events(supabase, platform: Platform) -> list[dict]:
         .eq("status", "published")
         .gte("start_at", now.isoformat())
         .lte("start_at", horizon.isoformat())
-        # Filter: platform NOT already in social_posted_platforms
         .not_.contains("social_posted_platforms", [platform.value])
         .order("start_at", desc=False)
         .limit(MAX_EVENTS_PER_RUN)
@@ -74,17 +73,15 @@ def _get_unposted_events(supabase, platform: Platform) -> list[dict]:
 
 
 def _normalize_event(row: dict) -> dict:
-    """Map DB column names to the API response names expected by copy_builder."""
+    """Map DB column names to the field names expected by copy_builder."""
     row["location_name"]    = row.pop("venue_name",        "")
     row["location_address"] = row.pop("address",           None)
-    row["description"]      = row.pop("short_description", "") or row.pop("description", "")
+    row["description"]      = row.pop("short_description", "") or ""
     return row
 
 
 def _mark_posted(supabase, event_id: str, platform: Platform) -> None:
     """Append platform to social_posted_platforms and set social_posted_at."""
-    # Use Supabase RPC or raw SQL to append to array atomically.
-    # Fallback: fetch current value, append, update.
     try:
         current = (
             supabase.table("events")
@@ -93,11 +90,11 @@ def _mark_posted(supabase, event_id: str, platform: Platform) -> None:
             .single()
             .execute()
         )
-        existing_platforms = current.data.get("social_posted_platforms") or []
-        if platform.value not in existing_platforms:
-            existing_platforms.append(platform.value)
+        existing = current.data.get("social_posted_platforms") or []
+        if platform.value not in existing:
+            existing.append(platform.value)
 
-        update_data: dict = {"social_posted_platforms": existing_platforms}
+        update_data: dict = {"social_posted_platforms": existing}
         if not current.data.get("social_posted_at"):
             update_data["social_posted_at"] = datetime.now(tz=EASTERN).isoformat()
 
@@ -108,20 +105,13 @@ def _mark_posted(supabase, event_id: str, platform: Platform) -> None:
 
 def _process_platform(
     supabase,
-    buffer:   BufferClient,
+    client:   AyrshareClient,
     platform: Platform,
-    profile_map: dict[Platform, list[str]],
+    dry_run:  bool,
 ) -> dict:
     """Post all pending events for one platform. Returns stats dict."""
-    profile_ids = profile_map.get(platform, [])
-    if not profile_ids:
-        logger.warning("No Buffer profile IDs for platform %s — skipping", platform.value)
-        return {"platform": platform.value, "posted": 0, "skipped": 0, "errors": 0}
-
-    events  = _get_unposted_events(supabase, platform)
-    posted  = 0
-    skipped = 0
-    errors  = 0
+    events = _get_unposted_events(supabase, platform)
+    posted = skipped = errors = 0
 
     for raw_event in events:
         event = _normalize_event(dict(raw_event))
@@ -130,8 +120,16 @@ def _process_platform(
             image_url = image_url_for_platform(event, platform)
             slot      = next_optimal_slot()
 
-            result = buffer.create_update(
-                profile_ids=profile_ids,
+            if dry_run:
+                logger.info(
+                    "[DRY RUN] Would post to %s at %s: %s",
+                    platform.value, slot.isoformat(), copy[:80],
+                )
+                skipped += 1
+                continue
+
+            result = client.create_post(
+                platform=platform,
                 text=copy,
                 media_url=image_url,
                 scheduled_at=slot.isoformat(),
@@ -139,7 +137,7 @@ def _process_platform(
 
             _mark_posted(supabase, event["id"], platform)
             logger.info(
-                "Scheduled %s post for '%s' at %s (Buffer ID: %s)",
+                "Scheduled %s post for '%s' at %s (ID: %s)",
                 platform.value, event["title"], slot.isoformat(), result.id,
             )
             posted += 1
@@ -151,12 +149,7 @@ def _process_platform(
             )
             errors += 1
 
-    return {
-        "platform": platform.value,
-        "posted":   posted,
-        "skipped":  skipped,
-        "errors":   errors,
-    }
+    return {"platform": platform.value, "posted": posted, "skipped": skipped, "errors": errors}
 
 
 def lambda_handler(event: dict, context) -> dict:
@@ -175,21 +168,14 @@ def lambda_handler(event: dict, context) -> dict:
         [p.value for p in platforms], dry_run,
     )
 
-    if dry_run:
-        logger.info("Dry run mode — no posts will be scheduled")
-
     supabase = _get_supabase()
-    token    = get_ssm_parameter("/novakidlife/buffer/access-token")
+    api_key  = get_ssm_parameter("/novakidlife/ayrshare/api-key")
 
-    with BufferClient(token) as buffer:
-        # Fetch platform → profile ID mapping from Buffer
-        profile_map = buffer.get_profiles_by_platform(platforms)
-        logger.info("Buffer profiles: %s", {k.value: v for k, v in profile_map.items()})
-
-        results = []
-        for platform in platforms:
-            stats = _process_platform(supabase, buffer, platform, profile_map)
-            results.append(stats)
+    with AyrshareClient(api_key) as client:
+        results = [
+            _process_platform(supabase, client, platform, dry_run)
+            for platform in platforms
+        ]
 
     total_posted = sum(r["posted"] for r in results)
     total_errors = sum(r["errors"] for r in results)
@@ -202,8 +188,8 @@ def lambda_handler(event: dict, context) -> dict:
     return {
         "statusCode": 200,
         "body": json.dumps({
-            "posted": total_posted,
-            "errors": total_errors,
+            "posted":  total_posted,
+            "errors":  total_errors,
             "results": results,
         }),
     }

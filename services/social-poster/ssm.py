@@ -20,8 +20,7 @@ def get_ssm_parameter(name: str) -> str:
 
     # Local dev: map SSM paths to env var names
     env_map = {
-        "/novakidlife/buffer/access-token":  "BUFFER_ACCESS_TOKEN",
-        "/novakidlife/buffer/profile-ids":   "BUFFER_PROFILE_IDS",
+        "/novakidlife/ayrshare/api-key":     "AYRSHARE_API_KEY",
         "/novakidlife/supabase/url":         "SUPABASE_URL",
         "/novakidlife/supabase/service-key": "SUPABASE_SERVICE_KEY",
     }

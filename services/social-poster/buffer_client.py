@@ -1,8 +1,8 @@
 """
-Buffer API client for NovaKidLife social posting.
-Wraps the Buffer v1 REST API used to schedule posts across platforms.
+Ayrshare API client for NovaKidLife social posting.
+Wraps the Ayrshare REST API for scheduling posts across platforms.
 
-Buffer API docs: https://buffer.com/developers/api
+Ayrshare API docs: https://docs.ayrshare.com
 """
 import logging
 from dataclasses import dataclass
@@ -12,7 +12,7 @@ import httpx
 
 logger = logging.getLogger(__name__)
 
-BUFFER_API_BASE = "https://api.bufferapp.com/1"
+AYRSHARE_API_BASE = "https://app.ayrshare.com/api"
 
 
 class Platform(str, Enum):
@@ -22,123 +22,63 @@ class Platform(str, Enum):
 
 
 @dataclass
-class BufferProfile:
-    id:       str
-    service:  str   # "twitter" | "instagram" | "facebook"
-    name:     str
-
-
-@dataclass
-class BufferUpdate:
+class SocialPost:
     id:           str
-    status:       str   # "buffer" | "sent" | "error"
+    status:       str
     scheduled_at: str
     text:         str
 
 
-class BufferClient:
-    """Thin wrapper around the Buffer v1 API."""
+class AyrshareClient:
+    """Thin wrapper around the Ayrshare REST API."""
 
-    def __init__(self, access_token: str) -> None:
-        self._token = access_token
+    def __init__(self, api_key: str) -> None:
         self._client = httpx.Client(
-            base_url=BUFFER_API_BASE,
+            base_url=AYRSHARE_API_BASE,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type":  "application/json",
+            },
             timeout=30,
         )
 
-    # ── Profiles ───────────────────────────────────────────────────────────────
-
-    def get_profiles(self) -> list[BufferProfile]:
-        """Return all connected Buffer profiles."""
-        resp = self._client.get(
-            "/profiles.json",
-            params={"access_token": self._token},
-        )
-        resp.raise_for_status()
-        return [
-            BufferProfile(
-                id=p["id"],
-                service=p["service"],
-                name=p.get("formatted_username", p.get("service_username", "")),
-            )
-            for p in resp.json()
-        ]
-
-    def get_profiles_by_platform(
-        self, platforms: list[Platform]
-    ) -> dict[Platform, list[str]]:
-        """Return a mapping of Platform → list of profile IDs for that platform."""
-        all_profiles = self.get_profiles()
-        result: dict[Platform, list[str]] = {p: [] for p in platforms}
-        for profile in all_profiles:
-            for platform in platforms:
-                if profile.service == platform.value:
-                    result[platform].append(profile.id)
-        return result
-
-    # ── Updates ────────────────────────────────────────────────────────────────
-
-    def create_update(
+    def create_post(
         self,
-        profile_ids:  list[str],
+        platform:     Platform,
         text:         str,
         media_url:    str | None = None,
         scheduled_at: str | None = None,
-    ) -> BufferUpdate:
-        """Schedule a post to one or more Buffer profiles.
+    ) -> SocialPost:
+        """Schedule a post to a single platform.
 
         Args:
-            profile_ids:  Buffer profile IDs to post to.
+            platform:     Target platform.
             text:         Post copy (platform-appropriate).
-            media_url:    Public URL to an image (1200×630 for Twitter/Facebook,
-                          1080×1080 for Instagram).
-            scheduled_at: ISO 8601 datetime string. If omitted, Buffer uses
-                          optimal timing if enabled, else posts immediately.
+            media_url:    Public image URL.
+            scheduled_at: ISO 8601 datetime string (UTC). Posts immediately if omitted.
 
         Returns:
-            BufferUpdate with update ID and scheduled time.
+            SocialPost with post ID and status.
         """
         payload: dict = {
-            "access_token":   self._token,
-            "profile_ids[]":  profile_ids,
-            "text":           text,
+            "post":      text,
+            "platforms": [platform.value],
         }
         if media_url:
-            payload["media[photo]"] = media_url
+            payload["mediaUrls"] = [media_url]
         if scheduled_at:
-            payload["scheduled_at"] = scheduled_at
+            payload["scheduleDate"] = scheduled_at
 
-        resp = self._client.post("/updates/create.json", data=payload)
+        resp = self._client.post("/post", json=payload)
         resp.raise_for_status()
         data = resp.json()
 
-        # Buffer returns {success, buffer_count, updates: [...]}
-        updates = data.get("updates", [data])
-        first   = updates[0] if updates else {}
-        return BufferUpdate(
-            id=first.get("id", ""),
-            status=first.get("status", "buffer"),
-            scheduled_at=first.get("scheduled_at", scheduled_at or ""),
+        return SocialPost(
+            id=data.get("id", ""),
+            status=data.get("status", "success"),
+            scheduled_at=scheduled_at or "",
             text=text,
         )
-
-    def get_pending_updates(self, profile_id: str) -> list[BufferUpdate]:
-        """Return pending scheduled updates for a profile (for queue depth checks)."""
-        resp = self._client.get(
-            f"/profiles/{profile_id}/updates/pending.json",
-            params={"access_token": self._token},
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        return [
-            BufferUpdate(
-                id=u["id"],
-                status=u.get("status", "buffer"),
-                scheduled_at=u.get("scheduled_at", ""),
-                text=u.get("text", ""),
-            )
-            for u in data.get("updates", [])
-        ]
 
     def close(self) -> None:
         self._client.close()
