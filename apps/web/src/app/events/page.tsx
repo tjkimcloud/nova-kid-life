@@ -3,6 +3,18 @@ import type { Metadata } from 'next'
 import { EventsClient } from './EventsClient'
 import { EventGridSkeleton } from '@/components/EventCardSkeleton'
 
+const ITEM_LIST_SCHEMA = {
+  '@context':   'https://schema.org',
+  '@type':      'ItemList',
+  name:          'Family Events in Northern Virginia',
+  description:   'Upcoming family events and kids activities in Northern Virginia',
+  url:           'https://novakidlife.com/events',
+  areaServed: {
+    '@type':     'State',
+    name:        'Virginia',
+  },
+}
+
 export const metadata: Metadata = {
   title: 'Family Events in Northern Virginia',
   description:
@@ -19,6 +31,11 @@ export const metadata: Metadata = {
 
 export default function EventsPage() {
   return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(ITEM_LIST_SCHEMA) }}
+      />
     <main className="min-h-screen bg-primary-50/30">
       {/* Page header */}
       <div className="bg-white border-b border-secondary-100">
@@ -41,5 +58,6 @@ export default function EventsPage() {
         </Suspense>
       </div>
     </main>
+    </>
   )
 }
