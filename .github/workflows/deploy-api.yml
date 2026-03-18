@@ -16,15 +16,15 @@ jobs:
       matrix:
         include:
           - service: api
-            function: novakidlife-api
+            function: novakidlife-prod-api
           - service: events-scraper
-            function: novakidlife-events-scraper
+            function: novakidlife-prod-events-scraper
           - service: image-gen
-            function: novakidlife-image-gen
+            function: novakidlife-prod-image-gen
           - service: social-poster
-            function: novakidlife-social-poster
+            function: novakidlife-prod-social-poster
           - service: content-generator
-            function: novakidlife-content-generator
+            function: novakidlife-prod-content-generator
 
     steps:
       - uses: actions/checkout@v4
