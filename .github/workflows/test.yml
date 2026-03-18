@@ -3,6 +3,7 @@ name: Test
 on:
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   test-python:
@@ -11,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [api, events-scraper, image-gen]
+        service: [api, events-scraper, image-gen, social-poster, content-generator]
 
     steps:
       - uses: actions/checkout@v4

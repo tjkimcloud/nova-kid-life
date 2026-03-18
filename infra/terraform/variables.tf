@@ -117,6 +117,18 @@ variable "social_poster_lambda_timeout" {
   default     = 120
 }
 
+variable "content_generator_lambda_memory" {
+  description = "Memory (MB) for content-generator Lambda"
+  type        = number
+  default     = 512
+}
+
+variable "content_generator_lambda_timeout" {
+  description = "Timeout (s) for content-generator Lambda"
+  type        = number
+  default     = 300
+}
+
 # ── SQS ───────────────────────────────────────────────────────────────────────
 
 variable "sqs_message_retention_seconds" {
@@ -163,4 +175,16 @@ variable "scraper_schedule" {
   description = "EventBridge cron for daily scraper (UTC). Default = 11:00 UTC = 6:00 AM EST"
   type        = string
   default     = "cron(0 11 * * ? *)"
+}
+
+variable "content_generator_weekend_schedule" {
+  description = "EventBridge cron for weekend roundup generator (UTC). Default = Fri 01:00 UTC = Thu 8pm EST"
+  type        = string
+  default     = "cron(0 1 ? * FRI *)"
+}
+
+variable "content_generator_week_ahead_schedule" {
+  description = "EventBridge cron for week-ahead guide generator (UTC). Default = Mon 11:00 UTC = Mon 6am EST"
+  type        = string
+  default     = "cron(0 11 ? * MON *)"
 }

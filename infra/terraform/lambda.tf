@@ -53,6 +53,13 @@ data "archive_file" "scheduler" {
   excludes    = ["__pycache__", "*.pyc", ".env", "tests", ".pytest_cache"]
 }
 
+data "archive_file" "content_generator" {
+  type        = "zip"
+  source_dir  = "${local.service_path}/content-generator"
+  output_path = "${local.builds_path}/content-generator.zip"
+  excludes    = ["__pycache__", "*.pyc", ".env", "tests", ".pytest_cache"]
+}
+
 # ── Shared IAM assume-role policy ─────────────────────────────────────────────
 
 data "aws_iam_policy_document" "lambda_assume_role" {
@@ -270,6 +277,8 @@ resource "aws_lambda_function" "image_gen" {
       GOOGLE_LOCATION_PARAM         = "/novakidlife/google/location"
       GOOGLE_SA_JSON_PARAM          = "/novakidlife/google/service-account-json"
       GOOGLE_PLACES_API_KEY_PARAM   = "/novakidlife/google/places-api-key"
+      UNSPLASH_ACCESS_KEY_PARAM     = "/novakidlife/unsplash/access-key"
+      PEXELS_API_KEY_PARAM          = "/novakidlife/pexels/api-key"
       MEDIA_BUCKET_NAME             = aws_s3_bucket.media.id
       MEDIA_CDN_URL                 = "https://${var.media_domain_name}"
     }
@@ -289,64 +298,72 @@ resource "aws_lambda_event_source_mapping" "events_to_image_gen" {
   function_response_types = ["ReportBatchItemFailures"]
 }
 
-# ── Social Poster Lambda ──────────────────────────────────────────────────────
+# ── Content Generator Lambda ──────────────────────────────────────────────────
 
-resource "aws_iam_role" "social_poster" {
-  name               = "${local.name_prefix}-social-poster-role"
+resource "aws_iam_role" "content_generator" {
+  name               = "${local.name_prefix}-content-generator-role"
   assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
 }
 
-resource "aws_iam_role_policy_attachment" "social_poster_basic_execution" {
-  role       = aws_iam_role.social_poster.name
+resource "aws_iam_role_policy_attachment" "content_generator_basic_execution" {
+  role       = aws_iam_role.content_generator.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
-resource "aws_iam_role_policy_attachment" "social_poster_ssm" {
-  role       = aws_iam_role.social_poster.name
+resource "aws_iam_role_policy_attachment" "content_generator_ssm" {
+  role       = aws_iam_role.content_generator.name
   policy_arn = aws_iam_policy.ssm_read.arn
 }
 
-resource "aws_iam_role_policy_attachment" "social_poster_sqs_execution" {
-  role       = aws_iam_role.social_poster.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
-}
-
-resource "aws_lambda_function" "social_poster" {
-  function_name    = "${local.name_prefix}-social-poster"
-  description      = "Buffer API social poster — scheduled posts from SQS"
-  role             = aws_iam_role.social_poster.arn
+resource "aws_lambda_function" "content_generator" {
+  function_name    = "${local.name_prefix}-content-generator"
+  description      = "Blog post generator — GPT-4o-mini weekend/week-ahead roundups"
+  role             = aws_iam_role.content_generator.arn
   runtime          = var.lambda_runtime
   handler          = "handler.handler"
-  filename         = data.archive_file.social_poster.output_path
-  source_code_hash = data.archive_file.social_poster.output_base64sha256
-  memory_size      = var.social_poster_lambda_memory
-  timeout          = var.social_poster_lambda_timeout
+  filename         = data.archive_file.content_generator.output_path
+  source_code_hash = data.archive_file.content_generator.output_base64sha256
+  memory_size      = var.content_generator_lambda_memory
+  timeout          = var.content_generator_lambda_timeout
 
   environment {
     variables = {
-      ENVIRONMENT                = var.environment
-      SSM_PREFIX                 = "/novakidlife"
-      BUFFER_ACCESS_TOKEN_PARAM  = "/novakidlife/buffer/access-token"
-      BUFFER_PROFILE_IDS_PARAM   = "/novakidlife/buffer/profile-ids"
-      SUPABASE_URL_PARAM         = "/novakidlife/supabase/url"
-      SUPABASE_KEY_PARAM         = "/novakidlife/supabase/service-key"
-      MEDIA_CDN_URL              = "https://${var.media_domain_name}"
+      ENVIRONMENT              = var.environment
+      SSM_PREFIX               = "/novakidlife"
+      SUPABASE_URL_PARAM       = "/novakidlife/supabase/url"
+      SUPABASE_KEY_PARAM       = "/novakidlife/supabase/service-key"
+      OPENAI_API_KEY_PARAM     = "/novakidlife/openai/api-key"
+      GITHUB_TOKEN_PARAM       = "/novakidlife/github/token"
+      GITHUB_REPO              = "novakidlife/novakidlife"
+      DEPLOY_WORKFLOW          = "deploy-frontend.yml"
     }
   }
 
-  depends_on = [aws_iam_role_policy_attachment.social_poster_basic_execution]
+  depends_on = [aws_iam_role_policy_attachment.content_generator_basic_execution]
 }
 
-# Event source mapping: social-queue → social-poster
-resource "aws_lambda_event_source_mapping" "social_to_social_poster" {
-  event_source_arn                   = aws_sqs_queue.social.arn
-  function_name                      = aws_lambda_function.social_poster.arn
-  batch_size                         = 1
-  maximum_batching_window_in_seconds = 0
-  enabled                            = true
-
-  function_response_types = ["ReportBatchItemFailures"]
+# Allow EventBridge to invoke content-generator (weekend trigger)
+resource "aws_lambda_permission" "eventbridge_invoke_content_generator_weekend" {
+  statement_id  = "AllowEventBridgeInvokeWeekend"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.content_generator.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.content_generator_weekend.arn
 }
+
+# Allow EventBridge to invoke content-generator (week-ahead trigger)
+resource "aws_lambda_permission" "eventbridge_invoke_content_generator_week_ahead" {
+  statement_id  = "AllowEventBridgeInvokeWeekAhead"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.content_generator.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.content_generator_week_ahead.arn
+}
+
+# ── Social Poster Lambda ──────────────────────────────────────────────────────
+# Deferred — social posting via direct platform APIs when ready (no Ayrshare cost).
+# SQS social queue stays active (scraper writes to it). Lambda re-added in future session.
+# To re-enable: uncomment this block and run terraform apply.
 
 # ── Scheduler Lambda ──────────────────────────────────────────────────────────
 # Stub function — EventBridge targets events-scraper directly.

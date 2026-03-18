@@ -5,6 +5,12 @@ import type {
   Category,
   Location,
 } from '@/types/events'
+import type {
+  BlogPost,
+  BlogPostWithEvents,
+  BlogPostsResponse,
+  BlogPostsParams,
+} from '@/types/blog'
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
 
@@ -12,6 +18,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
   const url = `${API_BASE}${path}`
   const res = await fetch(url, {
     ...options,
+    signal: options?.signal ?? AbortSignal.timeout(8000),
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
@@ -79,4 +86,19 @@ export async function getPokemonEvents(params: EventsParams = {}): Promise<Event
 
 export async function getPokemonDrops(params: EventsParams = {}): Promise<EventsResponse> {
   return apiFetch<EventsResponse>(`/pokemon/drops${buildQuery(params as Record<string, string | number | boolean | undefined>)}`)
+}
+
+// ── Blog ────────────────────────────────────────────────────────────────────────
+
+export async function getBlogPosts(params: BlogPostsParams = {}): Promise<BlogPostsResponse> {
+  return apiFetch<BlogPostsResponse>(`/blog${buildQuery(params as Record<string, string | number | boolean | undefined>)}`)
+}
+
+export async function getBlogPost(slug: string): Promise<BlogPostWithEvents> {
+  return apiFetch<BlogPostWithEvents>(`/blog/${encodeURIComponent(slug)}`)
+}
+
+export async function getLatestWeekendRoundup(): Promise<BlogPost | null> {
+  const data = await getBlogPosts({ post_type: 'weekend_roundup', area: 'nova', limit: 1 })
+  return data.items[0] ?? null
 }

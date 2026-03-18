@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'services/**'
-      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -21,9 +21,10 @@ jobs:
             function: novakidlife-events-scraper
           - service: image-gen
             function: novakidlife-image-gen
-          # Uncomment when Session 8 (social-poster) is complete:
-          # - service: social-poster
-          #   function: novakidlife-social-poster
+          - service: social-poster
+            function: novakidlife-social-poster
+          - service: content-generator
+            function: novakidlife-content-generator
 
     steps:
       - uses: actions/checkout@v4

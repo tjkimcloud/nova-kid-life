@@ -1,0 +1,13 @@
+{
+  "name": "@novakidlife/content-generator",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "pytest tests/ -v",
+    "lint": "ruff check . && ruff format --check .",
+    "format": "ruff format .",
+    "invoke:weekend": "aws lambda invoke --function-name novakidlife-content-generator --payload '{\"trigger\":\"weekend\"}' /tmp/response.json && cat /tmp/response.json",
+    "invoke:week": "aws lambda invoke --function-name novakidlife-content-generator --payload '{\"trigger\":\"week_ahead\"}' /tmp/response.json && cat /tmp/response.json",
+    "logs": "aws logs tail /aws/lambda/novakidlife-content-generator --follow"
+  }
+}

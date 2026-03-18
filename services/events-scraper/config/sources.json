@@ -335,6 +335,336 @@
       "tags": ["ymca", "family", "fitness", "kids", "classes"]
     },
 
+    {"_comment": "── Family event aggregators ─────────────────────────────"},
+    {
+      "name": "macaroni-kid-reston-herndon",
+      "url": "https://macaronikid.com/reston-herndon",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid Reston/Herndon — hyperlocal family events curated by a local parent",
+      "tags": ["reston", "herndon", "community", "family", "hyperlocal"]
+    },
+    {
+      "name": "macaroni-kid-ashburn-leesburg",
+      "url": "https://macaronikid.com/ashburn-leesburg",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid Ashburn/Leesburg — hyperlocal family events for western Loudoun County",
+      "tags": ["ashburn", "leesburg", "loudoun", "community", "family", "hyperlocal"]
+    },
+    {
+      "name": "macaroni-kid-fairfax-burke",
+      "url": "https://macaronikid.com/fairfax-burke-springfield",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid Fairfax/Burke/Springfield — hyperlocal family events for central Fairfax",
+      "tags": ["fairfax", "burke", "springfield", "community", "family", "hyperlocal"]
+    },
+    {
+      "name": "macaroni-kid-alexandria",
+      "url": "https://macaronikid.com/alexandria-va",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid Alexandria — hyperlocal family events for Alexandria and Mount Vernon area",
+      "tags": ["alexandria", "community", "family", "hyperlocal"]
+    },
+    {
+      "name": "macaroni-kid-manassas-pw",
+      "url": "https://macaronikid.com/manassas-prince-william",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid Manassas/Prince William — hyperlocal family events for PWC",
+      "tags": ["manassas", "prince-william", "community", "family", "hyperlocal"]
+    },
+    {
+      "name": "mommy-poppins-nova",
+      "url": "https://mommypoppins.com/washington-dc-kids/things-to-do/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Mommy Poppins DC/NoVa — curated family events, weekend roundups",
+      "tags": ["regional", "kids", "family", "curated"]
+    },
+    {
+      "name": "kids-out-and-about-dc",
+      "url": "https://dc.kidsoutandabout.com/content/family-fun",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Kids Out and About DC — educational programs, workshops, museum events for families",
+      "tags": ["regional", "educational", "kids", "family"]
+    },
+    {
+      "name": "kid-friendly-dc",
+      "url": "https://kidfriendlydc.com/category/events/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Kid Friendly DC — DC/NoVa family events and activities",
+      "tags": ["regional", "kids", "family"]
+    },
+
+    {"_comment": "── Additional Patch towns ───────────────────────────────"},
+    {
+      "name": "patch-chantilly",
+      "url": "https://patch.com/virginia/chantilly/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Chantilly community calendar",
+      "tags": ["community", "chantilly", "fairfax"]
+    },
+    {
+      "name": "patch-leesburg",
+      "url": "https://patch.com/virginia/leesburg/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Leesburg community calendar",
+      "tags": ["community", "leesburg", "loudoun"]
+    },
+    {
+      "name": "patch-great-falls",
+      "url": "https://patch.com/virginia/great-falls/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Great Falls community calendar",
+      "tags": ["community", "great-falls", "fairfax"]
+    },
+    {
+      "name": "patch-oakton",
+      "url": "https://patch.com/virginia/oakton/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Oakton community calendar",
+      "tags": ["community", "oakton", "fairfax"]
+    },
+    {
+      "name": "patch-loudoun",
+      "url": "https://patch.com/virginia/loudoun/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Loudoun County umbrella calendar — catches events not filed under a specific town",
+      "tags": ["community", "loudoun"]
+    },
+
+    {"_comment": "── Local news additions ─────────────────────────────────"},
+    {
+      "name": "alxnow",
+      "url": "https://alxnow.com/category/things-to-do/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "ALXnow — Alexandria local news with active events and things-to-do coverage",
+      "tags": ["alexandria", "community", "local-news"]
+    },
+    {
+      "name": "tysons-reporter",
+      "url": "https://tysonsreporter.com/category/things-to-do/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Tysons Reporter — Tysons/McLean area local news and events",
+      "tags": ["tysons", "mclean", "community", "local-news"]
+    },
+    {
+      "name": "prince-william-times",
+      "url": "https://www.princewilliamtimes.com/calendar/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Prince William Times — Prince William County events calendar",
+      "tags": ["prince-william", "community", "local-news"]
+    },
+    {
+      "name": "potomac-local",
+      "url": "https://potomaclocal.com/calendar/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Potomac Local News — Prince William, Stafford, and southern NoVa events",
+      "tags": ["prince-william", "stafford", "community", "local-news"]
+    },
+
+    {"_comment": "── Arts & culture organizations ─────────────────────────"},
+    {
+      "name": "arts-loudoun",
+      "url": "https://www.artsloudoun.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "ArtsLoudoun — arts and culture events calendar for Loudoun County",
+      "tags": ["arts", "loudoun", "community", "performance"]
+    },
+    {
+      "name": "arts-fairfax",
+      "url": "https://www.artsfairfax.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "ArtsFairfax — arts events and programs across Fairfax County",
+      "tags": ["arts", "fairfax", "community", "performance"]
+    },
+    {
+      "name": "workhouse-arts",
+      "url": "https://www.workhousearts.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Workhouse Arts Center — performances, family programs, arts events (Lorton, VA)",
+      "tags": ["arts", "theater", "performance", "family", "lorton", "fairfax"]
+    },
+    {
+      "name": "torpedo-factory",
+      "url": "https://www.torpedofactory.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Torpedo Factory Art Center — arts events, family workshops, open studios (Alexandria, VA)",
+      "tags": ["arts", "workshops", "family", "alexandria"]
+    },
+    {
+      "name": "hylton-performing-arts",
+      "url": "https://hyltoncenter.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Hylton Performing Arts Center — family performances and cultural events (Manassas, VA)",
+      "tags": ["arts", "theater", "performance", "family", "manassas", "prince-william"]
+    },
+    {
+      "name": "mclean-community-center",
+      "url": "https://www.mcleancommunity.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "McLean Community Center — family programs, classes, and events (McLean, VA)",
+      "tags": ["community", "mclean", "fairfax", "family", "classes"]
+    },
+    {
+      "name": "herndon-community-center",
+      "url": "https://www.herndon-va.gov/parks-recreation/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Town of Herndon Parks & Recreation — community events and family programs",
+      "tags": ["community", "herndon", "fairfax", "parks", "family"]
+    },
+    {
+      "name": "vienna-parks-rec",
+      "url": "https://www.viennava.gov/government/parks-recreation",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Town of Vienna Parks & Recreation — community events and family programs",
+      "tags": ["community", "vienna", "fairfax", "parks", "family"]
+    },
+
+    {"_comment": "── Libraries not yet covered ────────────────────────────"},
+    {
+      "name": "prince-william-library",
+      "url": "https://www.pwcva.gov/library/events",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Prince William County Public Library — storytimes, programs, family events",
+      "tags": ["library", "prince-william", "storytime", "educational", "free"]
+    },
+    {
+      "name": "alexandria-library",
+      "url": "https://alexlibraryva.org/events",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Alexandria Library — storytimes, programs, and family events",
+      "tags": ["library", "alexandria", "storytime", "educational", "free"]
+    },
+
+    {"_comment": "── Parks & nature ───────────────────────────────────────"},
+    {
+      "name": "nps-great-falls",
+      "url": "https://www.nps.gov/grfa/planyourvisit/events.htm",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "National Park Service — Great Falls Park ranger programs and family events",
+      "tags": ["outdoor", "nature", "nps", "great-falls", "fairfax", "free"]
+    },
+    {
+      "name": "nps-manassas",
+      "url": "https://www.nps.gov/mana/planyourvisit/events.htm",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "National Park Service — Manassas National Battlefield ranger programs and family events",
+      "tags": ["outdoor", "nature", "nps", "history", "manassas", "free"]
+    },
+    {
+      "name": "virginia-state-parks-nova",
+      "url": "https://www.dcr.virginia.gov/state-parks/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Virginia State Parks — family programs at Sky Meadows, Occoquan, and NoVa-area parks",
+      "tags": ["outdoor", "nature", "state-parks", "hiking", "family"]
+    },
+    {
+      "name": "huntley-meadows",
+      "url": "https://www.fairfaxcounty.gov/parks/huntley-meadows-park/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Huntley Meadows Park — wetland nature programs and family events (Alexandria/Fairfax, VA)",
+      "tags": ["outdoor", "nature", "wildlife", "free", "fairfax", "educational"]
+    },
+    {
+      "name": "leesburg-animal-park",
+      "url": "https://www.leesburganimalpark.com/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Leesburg Animal Park — family events, seasonal programming, animal encounters (Leesburg, VA)",
+      "tags": ["animals", "outdoor", "family", "leesburg", "loudoun"]
+    },
+
+    {"_comment": "── Town government events not yet covered ───────────────"},
+    {
+      "name": "leesburg-events",
+      "url": "https://www.leesburgva.gov/government/departments/parks-recreation",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Town of Leesburg Parks & Recreation — community events and family programs",
+      "tags": ["community", "leesburg", "loudoun", "parks", "family"]
+    },
+    {
+      "name": "manassas-city-events",
+      "url": "https://www.manassasva.gov/267/Calendar",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "City of Manassas official events calendar — community and family programs",
+      "tags": ["community", "manassas", "prince-william", "government"]
+    },
+
+    {"_comment": "── Shopping & town centers ──────────────────────────────"},
+    {
+      "name": "reston-town-center-events",
+      "url": "https://www.restontowncenter.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Reston Town Center — free outdoor concerts, seasonal events, family programming",
+      "tags": ["reston", "outdoor", "free", "community", "seasonal"]
+    },
+    {
+      "name": "mosaic-district-events",
+      "url": "https://www.mosaicdistrict.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Mosaic District — family events, outdoor programming, seasonal activities (Merrifield, VA)",
+      "tags": ["fairfax", "merrifield", "outdoor", "community", "seasonal", "family"]
+    },
+    {
+      "name": "one-loudoun-events",
+      "url": "https://www.oneloudoun.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "One Loudoun Town Center — family events and community programming (Ashburn, VA)",
+      "tags": ["ashburn", "loudoun", "community", "seasonal", "family"]
+    },
+
+    {"_comment": "── Retail story times & kids events ────────────────────"},
+    {
+      "name": "barnes-noble-nova-events",
+      "url": "https://stores.barnesandnoble.com/events?q=northern+virginia",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Barnes & Noble NoVa locations — weekly story times, author events, kids programming (free, no registration)",
+      "tags": ["storytime", "free", "kids", "reading", "educational"]
+    },
+    {
+      "name": "lego-store-nova-events",
+      "url": "https://www.lego.com/en-us/stores/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "LEGO Store events at Tysons and Reston — build events, mini-figure giveaways, set launches",
+      "tags": ["lego", "kids", "free", "stem", "tysons", "reston"]
+    },
+
     {"_comment": "── Major venues ─────────────────────────────────────────"},
     {
       "name": "wolf-trap",
