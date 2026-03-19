@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 const LOCATIONS = [
@@ -25,9 +25,7 @@ const AGE_OPTIONS = [
   { label: 'Teens (13+)',       value: 'teen',    ageMin: '13', ageMax: '' },
 ]
 
-const DAY_LABELS  = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-// Placeholder counts — replace with API aggregate endpoint in Session 12
-const DAY_COUNTS  = [8, 5, 6, 9, 14, 24, 18]
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 function toISO(d: Date) {
   return d.toISOString().split('T')[0]
@@ -50,9 +48,32 @@ export function HeroSearch() {
   const [loc,    setLoc]    = useState('Northern Virginia')
   const [date,   setDate]   = useState('weekend')
   const [ageVal, setAgeVal] = useState('')
+  const [dayCounts, setDayCounts] = useState<number[]>([0, 0, 0, 0, 0, 0, 0])
 
   const weekDays = getWeekDays()
   const todayStr = toISO(new Date())
+
+  useEffect(() => {
+    const days  = getWeekDays()
+    const start = toISO(days[0])
+    const end   = toISO(days[6])
+    const base  = process.env.NEXT_PUBLIC_API_URL || 'https://api.novakidlife.com'
+    const url   = `${base}/events?start_date=${start}&end_date=${end}T23:59:59&limit=200&section=main`
+    const ctrl  = new AbortController()
+    fetch(url, { signal: ctrl.signal })
+      .then(r => r.json())
+      .then((data: { items?: { start_at: string }[] }) => {
+        const counts = new Array(7).fill(0)
+        for (const item of data.items || []) {
+          const iso   = item.start_at?.slice(0, 10)
+          const dayIdx = days.findIndex(d => toISO(d) === iso)
+          if (dayIdx >= 0) counts[dayIdx]++
+        }
+        setDayCounts(counts)
+      })
+      .catch(() => {})
+    return () => ctrl.abort()
+  }, [])
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -172,7 +193,7 @@ export function HeroSearch() {
               <span className="text-[10px] font-bold uppercase tracking-wide">{DAY_LABELS[i]}</span>
               <span className="text-lg font-extrabold font-heading leading-tight">{day.getDate()}</span>
               <span className={`text-[10px] font-semibold ${isToday ? 'text-white/70' : isPast ? 'opacity-0' : 'text-primary-200'}`}>
-                {DAY_COUNTS[i]}
+                {dayCounts[i] > 0 ? dayCounts[i] : ''}
               </span>
             </button>
           )

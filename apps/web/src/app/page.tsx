@@ -6,6 +6,14 @@ import { WeekendEventsSection } from '@/components/WeekendEventsSection'
 import { FreeEventsSection }   from '@/components/FreeEventsSection'
 import { CityStripsSection }   from '@/components/CityStripsSection'
 
+type BlogPost = {
+  slug:       string
+  title:      string
+  post_type:  string
+  created_at: string
+  excerpt?:   string
+}
+
 export const metadata: Metadata = {
   title: 'NovaKidLife — Family Events in Northern Virginia',
   description:
@@ -102,9 +110,25 @@ const STATS = [
   { value: 'Daily', label: 'Updated'      },
 ]
 
+async function fetchBlogPosts(): Promise<BlogPost[]> {
+  try {
+    const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.novakidlife.com'
+    const res = await fetch(`${base}/blog?limit=3`, {
+      signal: AbortSignal.timeout(8000),
+      next:   { revalidate: 3600 },
+    })
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.items || []
+  } catch {
+    return []
+  }
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-export default function HomePage() {
+export default async function HomePage() {
+  const livePosts = await fetchBlogPosts()
   return (
     <>
       <script
@@ -227,49 +251,92 @@ export default function HomePage() {
                 NoVa Family Activity Guides
               </h2>
               <Link
-                href="/events"
+                href="/blog"
                 className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors whitespace-nowrap"
               >
                 All guides →
               </Link>
             </div>
 
-            <ul className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-              {BLOG_POSTS.map(post => (
-                <li key={post.title}>
-                  <Link
-                    href={post.href}
-                    className={`flex flex-col h-full rounded-2xl border overflow-hidden hover:shadow-md transition-shadow group ${
-                      post.featured
-                        ? 'border-primary-200 bg-primary-50'
-                        : 'border-secondary-100 bg-white'
-                    }`}
-                  >
-                    <div className={`flex items-center justify-center text-5xl py-10 ${
-                      post.featured ? 'bg-primary-100' : 'bg-secondary-50'
-                    }`}>
-                      {post.emoji}
-                    </div>
-                    <div className="p-5 flex flex-col flex-1">
-                      <span className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${
-                        post.featured ? 'text-primary-600' : 'text-secondary-400'
+            {livePosts.length > 0 ? (
+              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                {livePosts.map((post, i) => (
+                  <li key={post.slug}>
+                    <Link
+                      href={`/blog/${post.slug}`}
+                      className={`flex flex-col h-full rounded-2xl border overflow-hidden hover:shadow-md transition-shadow group ${
+                        i === 0 ? 'border-primary-200 bg-primary-50' : 'border-secondary-100 bg-white'
+                      }`}
+                    >
+                      <div className={`flex items-center justify-center text-5xl py-10 ${
+                        i === 0 ? 'bg-primary-100' : 'bg-secondary-50'
                       }`}>
-                        {post.category}
-                      </span>
-                      <h3 className="font-heading font-bold text-sm text-secondary-900 group-hover:text-primary-700 transition-colors leading-snug mb-2">
-                        {post.title}
-                      </h3>
-                      <p className="text-xs text-secondary-500 leading-relaxed flex-1">
-                        {post.desc}
-                      </p>
-                      <span className="mt-4 text-xs font-semibold text-primary-600 group-hover:text-primary-700 transition-colors">
-                        Read guide →
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+                        {post.post_type === 'weekend'     ? '🗓️' :
+                         post.post_type === 'free'        ? '🆓' :
+                         post.post_type === 'location'    ? '📍' :
+                         post.post_type === 'seasonal'    ? '🌸' :
+                         post.post_type === 'week_ahead'  ? '📅' : '📖'}
+                      </div>
+                      <div className="p-5 flex flex-col flex-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${
+                          i === 0 ? 'text-primary-600' : 'text-secondary-400'
+                        }`}>
+                          {post.post_type?.replace('_', ' ')}
+                        </span>
+                        <h3 className="font-heading font-bold text-sm text-secondary-900 group-hover:text-primary-700 transition-colors leading-snug mb-2">
+                          {post.title}
+                        </h3>
+                        {post.excerpt && (
+                          <p className="text-xs text-secondary-500 leading-relaxed flex-1 line-clamp-3">
+                            {post.excerpt}
+                          </p>
+                        )}
+                        <span className="mt-4 text-xs font-semibold text-primary-600 group-hover:text-primary-700 transition-colors">
+                          Read guide →
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                {BLOG_POSTS.map(post => (
+                  <li key={post.title}>
+                    <Link
+                      href={post.href}
+                      className={`flex flex-col h-full rounded-2xl border overflow-hidden hover:shadow-md transition-shadow group ${
+                        post.featured
+                          ? 'border-primary-200 bg-primary-50'
+                          : 'border-secondary-100 bg-white'
+                      }`}
+                    >
+                      <div className={`flex items-center justify-center text-5xl py-10 ${
+                        post.featured ? 'bg-primary-100' : 'bg-secondary-50'
+                      }`}>
+                        {post.emoji}
+                      </div>
+                      <div className="p-5 flex flex-col flex-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${
+                          post.featured ? 'text-primary-600' : 'text-secondary-400'
+                        }`}>
+                          {post.category}
+                        </span>
+                        <h3 className="font-heading font-bold text-sm text-secondary-900 group-hover:text-primary-700 transition-colors leading-snug mb-2">
+                          {post.title}
+                        </h3>
+                        <p className="text-xs text-secondary-500 leading-relaxed flex-1">
+                          {post.desc}
+                        </p>
+                        <span className="mt-4 text-xs font-semibold text-primary-600 group-hover:text-primary-700 transition-colors">
+                          Read guide →
+                        </span>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 
