@@ -215,62 +215,191 @@ Legend: ✅ Complete | 🔄 In Progress | ⬜ Not Started
 
 ---
 
-## Session 9 — Terraform IaC ⬜
-**Planned focus:** Full infrastructure as code
+## Session 9 — Terraform IaC ✅
+**Date:** 2026-03-15 (included in initial commit `728916b`)
 
-- ⬜ `infra/terraform/main.tf` (provider, backend)
-- ⬜ `infra/terraform/s3.tf` (web, media, tfstate buckets)
-- ⬜ `infra/terraform/cloudfront.tf` (2 distributions)
-- ⬜ `infra/terraform/lambda.tf` (5 functions + IAM roles)
-- ⬜ `infra/terraform/api_gateway.tf`
-- ⬜ `infra/terraform/sqs.tf` (queues + DLQs)
-- ⬜ `infra/terraform/eventbridge.tf`
-- ⬜ `infra/terraform/ssm.tf` (parameter placeholders)
-- ⬜ `infra/terraform/cloudwatch.tf` (dashboard + alarms)
-- ⬜ `infra/terraform/variables.tf` + `outputs.tf`
-- ⬜ `terraform init && terraform plan` clean
-
----
-
-## Session 10 — CI/CD ⬜
-**Planned focus:** 5 GitHub Actions workflows
-
-- ⬜ `.github/workflows/test.yml` (pytest + type-check on PR)
-- ⬜ `.github/workflows/deploy-frontend.yml` (build + S3 + CloudFront)
-- ⬜ `.github/workflows/deploy-api.yml` (zip + Lambda update × 5)
-- ⬜ `.github/workflows/lighthouse.yml` (Lighthouse CI on PR)
-- ⬜ `.github/workflows/terraform.yml` (fmt + validate + plan, no auto-apply)
-- ⬜ Secrets configured in GitHub repository settings
-- ⬜ Branch protection rules on `main`
+- ✅ `infra/terraform/main.tf` — AWS provider, S3 backend (`novakidlife-tfstate`), DynamoDB lock (`novakidlife-tflock`)
+- ✅ `infra/terraform/s3.tf` — web, media, tfstate buckets; OAC for CloudFront
+- ✅ `infra/terraform/cloudfront.tf` — 2 distributions (web + media CDN); CloudFront Function for trailing-slash rewrite
+- ✅ `infra/terraform/lambda.tf` — 5 Lambda functions (api, events-scraper, image-gen, social-poster, scheduler) + IAM roles + policies
+- ✅ `infra/terraform/api_gateway.tf` — HTTP API Gateway + Lambda integration + custom domain `api.novakidlife.com`
+- ✅ `infra/terraform/sqs.tf` — events queue + DLQ; Lambda event source mapping
+- ✅ `infra/terraform/eventbridge.tf` — scraper schedule rule (daily 6am EST)
+- ✅ `infra/terraform/ssm.tf` — SSM parameter placeholder registry for all secrets
+- ✅ `infra/terraform/cloudwatch.tf` — CloudWatch dashboard + Lambda error/duration alarms + SQS DLQ alarm
+- ✅ `infra/terraform/variables.tf` + `outputs.tf` — all variables + resource ARN outputs
+- ✅ `terraform init && terraform plan` clean
 
 ---
 
-## Session 11 — SEO + Performance ⬜
-**Planned focus:** Lighthouse 90+, sitemaps, structured data
+## Session 10 — CI/CD ✅
+**Date:** 2026-03-15 (included in initial commit `728916b`)
 
-- ⬜ `sitemap.xml` generation (Next.js metadata API)
-- ⬜ `robots.txt`
-- ⬜ JSON-LD on all event pages
-- ⬜ JSON-LD LocalBusiness on home page
-- ⬜ OG images for all event pages
-- ⬜ Core Web Vitals: LCP <2.5s, CLS <0.1, TBT <300ms
-- ⬜ Image optimization (WebP, explicit width/height)
-- ⬜ Font preloading
-- ⬜ Lighthouse CI passing all thresholds
+- ✅ `.github/workflows/test.yml` — pytest (all services) + Next.js type-check on PR
+- ✅ `.github/workflows/deploy-frontend.yml` — build + S3 sync + CloudFront invalidation on push to main
+- ✅ `.github/workflows/deploy-api.yml` — zip + Lambda update for api, events-scraper, image-gen, content-generator
+- ✅ `.github/workflows/lighthouse.yml` — Lighthouse CI on PR (performance/accessibility/SEO thresholds)
+- ✅ `.github/workflows/terraform.yml` — fmt + validate + plan on PR (no auto-apply)
+- ✅ GitHub Actions secrets configured (AWS credentials, Supabase keys, etc.)
+- ✅ Lambda function names fixed to `novakidlife-prod-*` pattern (commit `3241cb1`)
+
+---
+
+## Session 11 — SEO + Performance ✅
+**Date:** 2026-03-16
+
+### Skills & Infrastructure ✅
+- ✅ `skills/seo-geo.md` massively expanded — Fortune 100 level (13 sections: tech SEO, JSON-LD, keyword strategy, E-E-A-T, content architecture, GEO, Core Web Vitals, sitemap, robots, analytics, competitive positioning, pre-ship checklist)
+- ✅ `skills/local-seo.md` created — bulletproof local SEO playbook (GBP setup, 4-tier citations, local link building with outreach templates, hyperlocal targeting, Pokémon TCG local SEO, 12-month timeline)
+- ✅ `skills/qa-build.md` created — pre-build checklist + all Next.js 15 static export gotchas documented
+- ✅ Buffer API → Ayrshare swap (`services/social-poster/buffer_client.py` → `AyrshareClient`, `handler.py` + `ssm.py` updated)
+- ✅ `.gitattributes` created — LF line endings for all text files (resolves Windows CRLF warnings)
+- ✅ Initial git commit of all 8 sessions' work + pushed to GitHub
+
+### Frontend — New Pages ✅
+- ✅ `src/app/about/page.tsx` — E-E-A-T about page
+- ✅ `src/app/privacy-policy/page.tsx` — privacy policy (noindex)
+- ✅ `src/app/pokemon/page.tsx` — full Pokémon TCG hub with JSON-LD
+- ✅ `src/app/layout.tsx` — updated with root metadata, font variables, Header + Footer wrappers
+
+### Frontend — New Components ✅
+- ✅ `src/components/Header.tsx` — sticky nav (logo, links, CTA)
+- ✅ `src/components/Footer.tsx` — dark sage footer with social icons
+
+### Homepage V2 — Shell ✅
+- ✅ `src/app/page.tsx` rewritten — V2 layout structure with JSON-LD schemas; component imports added in Session 13
+
+---
+
+## Session 8b — Content Generator + Blog ✅
+**Date:** 2026-03-18 (commit `22043e7`)
+
+- ✅ `services/content-generator/handler.py` — Lambda entry point; EventBridge triggers Thu 8pm + Mon 6am EST; SSM bootstrap
+- ✅ `services/content-generator/post_builder.py` — 5 prompt builders (weekend, location, free_events, week_ahead, indoor); idempotency via `post_exists()` check
+- ✅ `services/content-generator/prompts.py` — 328-line prompt library; shared voice rules + FAQ instructions injected into every prompt
+- ✅ `services/content-generator/github_trigger.py` — triggers `deploy-frontend` workflow via GitHub repository dispatch API after new posts saved
+- ✅ `services/content-generator/ssm.py` — SSM helper (SUPABASE_URL, SUPABASE_SERVICE_KEY, OPENAI_API_KEY, GITHUB_TOKEN)
+- ✅ `services/content-generator/tests/test_post_builder.py` — 205 lines, 20+ tests
+- ✅ `supabase/migrations/20260318000001_create_blog_posts.sql` — blog_posts table with RLS, GIN index on event_ids[], idempotency unique constraint
+- ✅ `services/api/routes/blog.py` — `GET /blog` (paginated, filtered) + `GET /blog/{slug}` (with joined event previews)
+- ✅ `apps/web/src/app/blog/page.tsx` — blog listing; server component; metadata; Suspense skeleton
+- ✅ `apps/web/src/app/blog/[slug]/page.tsx` — blog detail; Article + BreadcrumbList + Event JSON-LD; Markdown renderer; EventCard grid; social share buttons
+- ✅ `apps/web/src/types/blog.ts` — BlogPost, PostCard, BlogListResponse TypeScript types
+- ✅ `apps/web/src/lib/api.ts` — added `getBlogPosts()` + `getBlogPost()` client functions
+- ✅ `skills/brand-voice.md` — blog voice section added (328 lines): parent-to-parent tone, logistics blocks 📅📍💰, GEO/FAQ optimization, AI generation prompt reference
+- ✅ `docs/competitor-analysis.md` — 389-line competitive analysis (Mommy Poppins, Macaroni Kid, DC Metro Moms, Eventbrite, Patch)
+- ✅ `infra/terraform/lambda.tf` — content-generator Lambda + IAM role/policy
+- ✅ `infra/terraform/eventbridge.tf` — 2 new EventBridge rules for content-generator (Thu + Mon schedules)
+- ✅ `services/events-scraper/config/sources.json` — expanded 59 → 111 Tier 2 sources (+52: Macaroni Kid, Mommy Poppins, Patch cities, NPS parks, town pages, shopping centers)
+
+---
+
+## Session 12 — Launch ✅
+**Date:** 2026-03-18
+
+### Terraform IaC Fixes
+- ✅ `social_poster` Lambda removed from Terraform (code preserved in `services/social-poster/`; removed from `lambda.tf`, `cloudwatch.tf`, `outputs.tf`)
+- ✅ `cloudfront.tf` — removed `logging_config` (conflicts with bucket ownership controls / ACL disabled on modern S3)
+- ✅ `cloudwatch.tf` — added `region` to all dashboard widget properties (required by CloudWatch API); reformatted for `terraform fmt` compliance
+- ✅ `ssm.tf` — replaced `buffer/*` params with `ayrshare/api-key`; added `unsplash/access-key` + `pexels/api-key`
+- ✅ `terraform apply` — all resources provisioned in AWS
+
+### Infrastructure Live
+- ✅ ACM wildcard cert (`*.novakidlife.com`) issued in us-east-1
+- ✅ Route 53 DNS — `novakidlife.com` + `www` → CloudFront; `api.novakidlife.com` → API Gateway
+- ✅ `media.novakidlife.com` → media CloudFront distribution
+- ✅ `novakidlife.com` returning HTTP 200 — site is LIVE
+
+### Lambda Deploy Script
+- ✅ `scripts/deploy-lambdas.py` — Python build + deploy script; pip installs manylinux-compatible dependencies; zips; uploads via S3 for packages >50MB; updates Lambda function code
+
+### Supabase Cloud
+- ✅ Cloud project linked (`ovdnkgpdgkceulkpwedj` — `supabase link --project-ref ovdnkgpdgkceulkpwedj`)
+- ✅ All 12 migrations pushed to cloud (`supabase db push`)
+- ✅ SSM secrets populated in Parameter Store for all Lambda functions
+
+### Event Pipeline End-to-End Fix
+- ✅ `image-gen/handler.py` — added `_upsert_event()` Step 0: upserts RawEvent → Supabase before image generation; maps RawEvent fields to DB column names (`full_description`, `venue_name`, `address`)
+- ✅ `api/routes/events.py` + `routes/pokemon.py` — fixed SELECT column names to match DB schema (`full_description`, `venue_name`, `address` instead of aliases)
+- ✅ `api/handler.py` — added blog route registration, SSM bootstrap, `handler` alias
+- ✅ `events-scraper/handler.py` — added SSM bootstrap
+- ✅ `api/requirements.txt` — added `pydantic[email]` + `email-validator`
+
+### Image Sourcing — 5-Step Cascade
+- ✅ `image-gen/sourcer.py` — Unsplash API (Step 3) + Pexels API (Step 4) added before AI generation fallback
+- ✅ `_build_search_query()` — maps event_type / category / tags to stock photo search terms
+- ✅ Deals + product drops skip free stock (AI-generated branded imagery performs better)
+
+### Homepage V2 Components
+- ✅ `src/app/not-found.tsx` — custom 404 (required for App Router static export)
+- ✅ `src/app/error.tsx` — error boundary (`'use client'`)
+- ✅ `src/app/global-error.tsx` — global error boundary (`'use client'`)
+- ✅ `src/components/HeroSearch.tsx` — Airbnb-style search + weekly calendar strip + social proof
+- ✅ `src/components/WeekendEventsSection.tsx` — Sat/Sun tab toggle + ❤️ save + ⭐ Editor's Pick
+- ✅ `src/components/FreeEventsSection.tsx` — free events spotlight
+- ✅ `src/components/CityStripsSection.tsx` — 4 city event strips
+- ✅ `src/components/NewsletterForm.tsx` — 4-state machine, POSTs to API
+- ✅ `src/app/page.tsx` — imports all components wired into 10-section layout
+
+### Next.js / Web Fixes
+- ✅ `next.config.js` — removed `async headers()` (not supported with `output: 'export'`)
+- ✅ `robots.ts` + `sitemap.ts` — added `export const dynamic = 'force-static'`
+- ✅ `events/[slug]/page.tsx` — `params` typed as `Promise<{slug}>`, awaited; `dynamicParams = false`; `notFound()` outside try/catch; `_placeholder` fallback in `generateStaticParams`
+
+---
+
+## Session 14 — 2026-03-19 ✅
+
+### API Domain — api.novakidlife.com Live
+- ✅ `terraform.tfvars` — added `api_acm_certificate_arn` (reused existing `*.novakidlife.com` wildcard cert)
+- ✅ `terraform apply` — created `aws_api_gateway_domain_name.api[0]` + `aws_api_gateway_base_path_mapping.api[0]`
+- ✅ Route 53 CNAME record: `api.novakidlife.com` → `d-jamvbuw68d.execute-api.us-east-1.amazonaws.com`
+- ✅ `curl https://api.novakidlife.com/events` returning HTTP 200
+
+### Lambda Dependency Deploys
+- ✅ `scripts/deploy-lambdas.py` — added `content-generator` to SERVICES dict
+- ✅ All 4 Lambdas redeployed with manylinux pip dependencies: `api`, `events-scraper`, `image-gen`, `content-generator`
+- ✅ `blog_posts` migration pushed to cloud Supabase (`supabase db push`)
+
+### SSM Secrets
+- ✅ `/novakidlife/github/token` — GitHub fine-grained PAT added (Actions: read+write on novakidlife repo)
+
+### Seasonal Content Generator
+- ✅ `services/content-generator/prompts.py` — `build_seasonal_prompt()` added: seasonal hook, insider angle rules, time-sensitive notes, seasonal FAQ targeting
+- ✅ `services/content-generator/post_builder.py`:
+  - `get_seasonal_context()` — auto-detects seasonal theme from date: Easter (21 days out), Cherry Blossom (Mar 10–Apr 15), Spring Break (Mar 21–Apr 7), Mother's Day, Memorial Day, Halloween, Holiday Season
+  - `PostSpec` — added `season_name`, `focus_keywords`, `seo_title` optional fields
+  - `_build_specs()` — appends `seasonal` spec to weekend trigger when `get_seasonal_context()` returns a theme
+  - `_select_prompt()` + `_make_slug()` — wired for `seasonal` post type
+- ✅ Content generator redeployed — first Thursday run will generate Easter + Cherry Blossom posts
+
+### First Scraper Run
+- ✅ `events-scraper` triggered manually — running against 111 sources (in progress)
+- ✅ Scraper sources updated (new sources committed)
+
+### Pending (carried to Session 15)
+- ⬜ Confirm scraper results — check event count in DB
+- ⬜ Verify image pipeline processed events (photos on event cards)
+- ⬜ Wire homepage sections to live API (currently placeholder data)
+- ⬜ Manually trigger content generator after events populate
 - ⬜ Google Search Console verified
+- ⬜ Lighthouse CI passing all thresholds
+- ⬜ First social posts via Ayrshare
 
 ---
 
-## Session 12 — Launch ⬜
-**Planned focus:** Monitoring, alerting, go-live
+## Session 15 — 2026-03-19 🔄
+**Planned focus:** CORS fix, homepage API wiring
 
-- ⬜ CloudWatch dashboard `novakidlife-prod`
-- ⬜ Alarms: Lambda error rate, DLQ depth, API 5xx rate
-- ⬜ SNS alerts to email/SMS
-- ⬜ Domain DNS configured (Route 53 → CloudFront)
-- ⬜ SSL certificate (ACM)
-- ⬜ `novakidlife.com` live and returning HTTP 200
-- ⬜ First real events published
-- ⬜ First social posts scheduled
-- ⬜ Google Analytics / Plausible wired up
-- ⬜ Go-live announcement
+### CORS Fix ✅
+- ✅ `services/api/router.py` — replaced hardcoded `www.novakidlife.com` origin with dynamic `_cors_headers(origin)` that reflects back request origin if in `_ALLOWED_ORIGINS` set
+- ✅ `services/api/routes/events.py` — all 5 handlers extract `event["_origin"]` and pass to `ok()` / `error()`
+- ✅ `services/api/routes/pokemon.py` — all 3 handlers updated same way
+
+### Pending
+- ⬜ Redeploy API Lambda with CORS fix (`python scripts/deploy-lambdas.py api`)
+- ⬜ Wire homepage sections to live API (WeekendEventsSection, FreeEventsSection, CityStripsSection)
+- ⬜ Check DB event count from first scraper run
+- ⬜ Trigger content generator (once events confirmed in DB)
+- ⬜ Google Search Console verified
+- ⬜ First social posts via Ayrshare

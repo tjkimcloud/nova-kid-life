@@ -5,6 +5,9 @@
 **NovaKidLife** (novakidlife.com) is a family events discovery platform for Northern Virginia.
 Live monetized business + AWS portfolio project. Built across 12 Claude Code sessions.
 
+**Site is LIVE** at https://novakidlife.com — CloudFront + ACM wildcard cert (`*.novakidlife.com`) + Route 53 DNS.
+Supabase cloud project: `ovdnkgpdgkceulkpwedj` (linked via `supabase link --project-ref ovdnkgpdgkceulkpwedj`).
+
 ---
 
 ## Tech Stack
@@ -18,7 +21,7 @@ Live monetized business + AWS portfolio project. Built across 12 Claude Code ses
 | Queue | AWS SQS + DLQ |
 | Scheduler | AWS EventBridge |
 | AI | OpenAI gpt-4o-mini (extraction + alt text) + Imagen 3 / DALL-E 3 (images) |
-| Social | Buffer API |
+| Social | Ayrshare API (replaced Buffer — Buffer removed public API access for new users) |
 | IaC | Terraform (S3 backend, DynamoDB lock) |
 | CI/CD | GitHub Actions (5 workflows incl. Lighthouse CI) |
 
@@ -59,14 +62,21 @@ novakidlife/
 │   │   └── config/sources.json   # All scrape sources (add Tier 2 here, zero code)
 │   ├── image-gen/                # AI image generation Lambda (Python)
 │   │   ├── prompts.py            # Prompt library (WEBSITE_PROMPTS, SOCIAL_PROMPTS, POKEMON_PROMPTS)
-│   │   ├── sourcer.py            # Scraped URL → Google Places → None
+│   │   ├── sourcer.py            # Scraped URL → Google Places → Unsplash → Pexels → None (AI fallback)
 │   │   ├── generator.py          # Imagen 3 primary, DALL-E 3 fallback
 │   │   ├── enhancer.py           # Pillow warm color grade
 │   │   ├── processor.py          # Resize, WebP, LQIP, blurhash
 │   │   ├── alt_text.py           # gpt-4o-mini SEO alt text
 │   │   └── uploader.py           # S3 + CDN URLs
+│   ├── content-generator/        # Blog post generation Lambda (Python)
+│   │   ├── handler.py            # EventBridge-triggered (Thu 8pm + Mon 6am EST)
+│   │   ├── post_builder.py       # 5 prompt builders (weekend/location/free/week-ahead/indoor)
+│   │   ├── prompts.py            # 328-line prompt library with shared voice + FAQ rules
+│   │   ├── github_trigger.py     # Triggers deploy-frontend workflow after new posts saved
+│   │   ├── ssm.py                # SSM helper
+│   │   └── tests/                # pytest: test_post_builder.py
 │   ├── scheduler/                # EventBridge trigger stub
-│   └── social-poster/            # Buffer API Lambda (Python)
+│   └── social-poster/            # Social poster Lambda (code exists, NOT deployed — removed from Terraform pending Ayrshare integration)
 │       ├── handler.py            # EventBridge-triggered Lambda entry point
 │       ├── buffer_client.py      # Buffer API v1 wrapper (Platform enum, BufferClient)
 │       ├── copy_builder.py       # Platform-specific copy: Twitter/Instagram/Facebook
@@ -74,7 +84,9 @@ novakidlife/
 │       ├── ssm.py                # SSM parameter helper with .env fallback
 │       └── tests/                # pytest: test_copy_builder.py, test_scheduler.py
 ├── supabase/
-│   └── migrations/               # 11 migration files (see Database Schema below)
+│   └── migrations/               # 12 migration files (see Database Schema below)
+├── scripts/
+│   └── deploy-lambdas.py         # Lambda build + deploy script (pip manylinux, zip, S3 for >50MB)
 ├── skills/                       # Claude Code operational runbooks
 ├── CLAUDE.md                     # This file
 └── package.json                  # npm workspaces root
@@ -86,6 +98,7 @@ novakidlife/
 
 **Local Supabase via Docker** (ADR-008). Run: `supabase start`
 Studio at: http://127.0.0.1:54323
+**Cloud project:** `ovdnkgpdgkceulkpwedj` — link with `supabase link --project-ref ovdnkgpdgkceulkpwedj`
 
 ### Tables
 
@@ -96,7 +109,7 @@ Studio at: http://127.0.0.1:54323
 | `locations` | id, name, slug, lat, lng (15 NoVa locations seeded) |
 | `newsletter_subs` | id, email, created_at |
 
-> **DB ↔ API column name mapping:** The DB uses `venue_name` / `address` / `full_description`, but the API response (and TypeScript types) expose them as `location_name` / `location_address` / `description`. The `event_to_response()` function in `services/api/models.py` must handle this mapping — verify when wiring end-to-end.
+> **DB ↔ API column name mapping:** The DB uses `venue_name` / `address` / `full_description`; SELECT queries in `routes/events.py` and `routes/pokemon.py` must use these DB names. The `event_to_response()` function in `services/api/models.py` renames them for the frontend response (`location_name` / `location_address` / `description`).
 
 ### Event Types (`event_type` column)
 - `event` — standard family event
@@ -125,9 +138,11 @@ Studio at: http://127.0.0.1:54323
 20260314000004  search_events() pgvector RPC (cosine similarity, OPERATOR(extensions.<=>) syntax)
 20260314000005  fix event_type constraint (adds pokemon_tcg + product_drop values)
 20260315000001  social tracking (social_posted_platforms text[], social_posted_at timestamptz)
+20260318000001  blog_posts table (slug unique, post_type, trigger_type, content Markdown, event_ids uuid[], RLS, idempotency constraint)
 ```
 
-Run migrations: `supabase migration up`
+Run migrations (local): `supabase migration up`
+Run migrations (cloud): `supabase db push` (requires linked project)
 Regenerate types: `supabase gen types typescript --local | Out-File -FilePath apps/web/src/types/supabase.ts -Encoding UTF8`
 
 ---
@@ -159,8 +174,9 @@ events-scraper Lambda
     ▼
 SQS Queue: novakidlife-events-queue
     │
-    ├── image-gen Lambda        (sourcer → generator → enhancer → processor → upload)
-    └── Supabase events table
+    └── image-gen Lambda
+          Step 0: upsert RawEvent → Supabase (on_conflict=source_url) → get DB slug/id
+          Step 1–7: sourcer → generator → enhancer → processor → upload → Supabase PATCH
 ```
 
 ---
@@ -170,11 +186,15 @@ SQS Queue: novakidlife-events-queue
 **Two distinct pipelines** — website and social are always generated separately.
 
 ```
-Event row
+SQS RawEvent payload
+    │
+    ├── Step 0: _upsert_event()  — INSERT/upsert into Supabase (on_conflict=source_url)
+    │                              Maps RawEvent fields → DB column names (venue_name, address, full_description)
+    │                              Returns DB row with assigned slug + id
     │
     ├── Website image (16:9)
-    │     sourcer.py      scraped URL → Google Places → None
-    │     generator.py    Imagen 3 → DALL-E 3 fallback
+    │     sourcer.py      scraped URL → Google Places → Unsplash API → Pexels API → None (AI fallback)
+    │     generator.py    Imagen 3 → DALL-E 3 fallback (last resort only — free stock preferred)
     │     enhancer.py     Pillow warm grade (amber-leaning, no cold blues)
     │     processor.py    hero 1200×675, hero-md 800×450, hero-sm 400×225,
     │                     card 600×400, og 1200×630, LQIP 20×11, blurhash
@@ -231,15 +251,28 @@ Strategy: No real-time inventory scraping (too fragile). Each retailer entry has
 ```
 app/
 ├── layout.tsx                  # Root layout: fonts, global metadata (title template, twitter card)
-├── page.tsx                    # Homepage (design system demo → replace at launch) + WebSite/LocalBusiness JSON-LD
+├── page.tsx                    # Homepage V2 — Airbnb-style hero search, weekend events, age groups, free events, city strips, editorial blog
 ├── globals.css                 # CSS custom properties (color tokens)
+├── error.tsx                   # App Router error boundary ('use client')
+├── global-error.tsx            # Global error boundary — wraps root layout ('use client')
+├── not-found.tsx               # 404 page — required for static export (prevents Pages Router fallback)
 ├── sitemap.ts                  # Dynamic sitemap.xml — fetches all slugs from /sitemap API
 ├── robots.ts                   # robots.txt — allows all + explicit AI bot list
+├── about/
+│   └── page.tsx                # E-E-A-T about page (mission, coverage, 59+ sources)
+├── privacy-policy/
+│   └── page.tsx                # Privacy policy (noindex)
+├── pokemon/
+│   └── page.tsx                # Pokémon TCG hub — event types, 5 LGS cards, retailer guide
 ├── events/
 │   ├── page.tsx                # Events listing — server component, metadata, Suspense wrapper
 │   ├── EventsClient.tsx        # 'use client' — URL-synced filters, search, pagination
 │   └── [slug]/
 │       └── page.tsx            # Event detail — generateStaticParams + generateMetadata + full SEO layout
+├── blog/
+│   ├── page.tsx                # Blog listing — server component, metadata, Suspense skeleton, PostCard grid
+│   └── [slug]/
+│       └── page.tsx            # Blog detail — Article + BreadcrumbList + Event JSON-LD; Markdown renderer; EventCard grid
 └── public/
     └── llms.txt                # GEO file for LLM crawlers (site description, sections, data sources)
 ```
@@ -259,6 +292,13 @@ app/
 | `EventJsonLd` | 3 JSON-LD scripts: Event + BreadcrumbList + FAQPage |
 | `RelatedEvents` | Client-side fetch: 3 events by section + tags |
 | `ShareButtons` | Copy link, Twitter/X intent, Facebook sharer |
+| `Header` | Sticky top nav — logo, Events + Pokémon TCG links, Find Events CTA |
+| `Footer` | Dark sage — brand, social icons, coverage area, site links, copyright |
+| `NewsletterForm` | `'use client'` — POSTs to `NEXT_PUBLIC_API_URL/newsletter/subscribe` |
+| `HeroSearch` | `'use client'` — Airbnb-style search (location/date/age), quick filter pills, weekly calendar strip, social proof |
+| `WeekendEventsSection` | `'use client'` — Sat/Sun tab toggle, ❤️ save buttons, ⭐ Editor's Pick badge |
+| `FreeEventsSection` | Free events spotlight — SEO H2 "Free Things To Do With Kids in NoVa This Weekend" |
+| `CityStripsSection` | 4 city strips (Reston, Fairfax, Arlington, Leesburg) — compact event lists with "See all" links |
 
 ### SEO conventions (see `skills/seo-geo.md` for full spec)
 - Titles: `{Event} — {City}, VA` → template appends `| NovaKidLife` → final 50–60 chars
@@ -266,7 +306,9 @@ app/
 - `extractCity()` in `EventJsonLd.tsx` — parses city from address, falls back to "Northern Virginia"
 - All event pages: Event + BreadcrumbList + FAQPage JSON-LD
 - Homepage: WebSite (sitelinks searchbox) + LocalBusiness JSON-LD
-- `generateStaticParams` returns `[]` gracefully if API is unavailable at build time
+- `generateStaticParams` returns `[{ slug: '_placeholder' }]` as fallback (NOT `[]` — Next.js 15 rejects empty arrays)
+- All API fetches use `AbortSignal.timeout(8000)` to prevent build hangs when API is offline
+- **Build quirk:** Run `npm run build` TWICE without clearing `.next` — first pass fails on Pages Router chunk resolution, second pass succeeds (documented in `skills/qa-build.md`)
 
 ---
 
@@ -311,8 +353,15 @@ supabase gen types typescript --local | Out-File -FilePath apps/web/src/types/su
 pip install -r requirements.txt
 pytest tests/
 
-# Terraform
+# Lambda deployment (from repo root)
+python scripts/deploy-lambdas.py api              # deploy API Lambda
+python scripts/deploy-lambdas.py events-scraper   # deploy scraper
+python scripts/deploy-lambdas.py image-gen        # deploy image-gen (uploads via S3 — package >50MB)
+python scripts/deploy-lambdas.py api events-scraper image-gen  # deploy all three
+
+# Terraform (MUST use default profile — novakidlife-dev used for state)
 cd infra/terraform
+$env:AWS_PROFILE="default"    # PowerShell — required, env has novakidlife profile by default
 terraform init
 terraform plan -out=tfplan
 terraform apply tfplan
@@ -359,6 +408,8 @@ Python services use SSM Parameter Store in production (`/novakidlife/` prefix).
 
 ### Python Services
 - Lambda entry point always `handler.py` at service root
+- All Lambda handlers call `_load_secrets_from_ssm()` at module init — env vars hold SSM paths (`*_PARAM`), not values
+- SSM parameter prefix: `/novakidlife/` (e.g. `/novakidlife/openai/api-key`)
 - Shared DB client: `services/api/db.py` (cached Supabase client)
 - Tests: `tests/` with pytest
 - Linting: ruff
@@ -366,13 +417,17 @@ Python services use SSM Parameter Store in production (`/novakidlife/` prefix).
 ### Database
 - pgvector in `extensions` schema — column type `extensions.vector(1536)`
 - Triggers use `security definer set search_path = ''`
-- `supabase migration up` for local (not `db push` — requires linked remote)
+- `supabase migration up` for local; `supabase db push` for cloud (requires linked project)
 - Supabase CLI v2 keys: `sb_publishable_*` (anon) / `sb_secret_*` (service)
+- Cloud project ID: `ovdnkgpdgkceulkpwedj`
 
 ### Terraform
 - All resources tagged: `project=novakidlife`, `env=prod`
 - State: S3 `novakidlife-tfstate`, DynamoDB `novakidlife-tflock`
+- **Must use `AWS_PROFILE=default`** (TJ admin user) — shell default is `novakidlife` profile which lacks state permissions
+- `terraform.tfvars` contains `web_acm_certificate_arn` (ACM cert ARN in us-east-1)
 - Never `apply` without reviewing `plan` output first
+- social-poster Lambda removed from Terraform (code in `services/social-poster/` is preserved)
 
 ### Git
 - Branch: `main` (direct commits, solo project)
@@ -393,37 +448,153 @@ Python services use SSM Parameter Store in production (`/novakidlife/` prefix).
 | 6 | Frontend: Events listing page (8 components, URL-synced filters) | ✅ |
 | 7 | Frontend: Event detail page + SEO/GEO infrastructure | ✅ |
 | 8 | Social Poster: Buffer API Lambda | ✅ |
-| 9 | Terraform: Full IaC for all resources | ⬜ |
-| 10 | CI/CD: 5 GitHub Actions workflows | ⬜ |
-| 11 | SEO + Performance: Lighthouse 90+, sitemaps, structured data | ⬜ |
-| 12 | Launch: monitoring, alerting, DNS, go-live | ⬜ |
+| 8b | Blog / Content Generator: weekend roundups, SEO blog, 111 scrape sources | ✅ |
+| 9 | Terraform: Full IaC for all resources | ✅ |
+| 10 | CI/CD: 5 GitHub Actions workflows | ✅ |
+| 11 | SEO + Performance: Lighthouse 90+, sitemaps, structured data | ✅ |
+| 12 | Launch: Terraform IaC fixed, Route 53 DNS, ACM cert, Lambda deploy script, SSM secrets, DB migrations pushed to cloud, event pipeline fixed (upsert + column names), site LIVE | ✅ |
+| 13 | Image sourcing expansion (Unsplash + Pexels), Homepage V2 components, API/Lambda SSM fixes, Terraform cleanup | ✅ |
+| 14 | api.novakidlife.com DNS live, Lambda dependency deploys, GitHub token SSM, seasonal content generator (Easter/cherry blossom/spring), first scraper run | ✅ |
+| 15 | CORS origin fix (dynamic reflection for www + non-www), route handler propagation, homepage API wiring | 🔄 |
 
 ---
 
-## Skills Reference
+## Skill Library
 
-Operational runbooks in `/skills/`:
-- `deploy-frontend.md` — S3 deploy + CloudFront invalidation
-- `deploy-api.md` — Lambda package + publish
-- `db-migrate.md` — Supabase migrations
-- `add-component.md` — React component scaffolding
-- `add-lambda.md` — Lambda function scaffolding
-- `generate-event.md` — AI event generation
-- `generate-image.md` — Full image pipeline (source → grade → variants → upload)
-- `post-social.md` — Buffer API posting
-- `scrape-events.md` — Trigger + monitor scraper (all tiers)
-- `terraform-plan.md` — Safe Terraform plan
-- `terraform-apply.md` — Gated Terraform apply
-- `seed-db.md` — Seed Supabase with test data
-- `test-api.md` — API endpoint testing
-- `check-lighthouse.md` — Lighthouse CI
-- `monitor.md` — System health checks
-- `seo-geo.md` — **SEO + GEO standards** (title/description lengths, H1/H2/H3 hierarchy, JSON-LD schemas per page type, GEO platform table, llms.txt, Core Web Vitals targets, pre-ship checklist). **Apply on every session that touches frontend pages.**
-- `social-strategy.md` — Platform-specific social strategy: Twitter/X algorithm optimization, Instagram, Facebook groups, hashtag playbook, content calendar, copy templates by event type
-- `brand-voice.md` — NovaKidLife tone + voice rules, language dos/don'ts, visual identity, color usage, typography, user personas
-- `content-generation.md` — Templates for all content types: event descriptions, short descriptions, meta descriptions, FAQ copy, social captions, weekly roundups, AI generation prompts
-- `autonomous-agents.md` — Full autonomous operation architecture: scheduled triggers, event lifecycle, failure handling, DLQ strategy, human-in-the-loop touchpoints, future agent roadmap
-- `mcp-builder.md` — Guide for building MCP servers: planned MCPs (events, admin, social), design principles, FastMCP patterns, when MCP vs Lambda vs skill
-- `skill-creator.md` — How to create new skills: format, quality checklist, skill categories, step-by-step process
+All skills in `/skills/`. Archived (redistributed) skills in `/skills/archived/`.
+
+### Operational SOPs
+
+| Skill | Triggers | Purpose |
+|-------|----------|---------|
+| `deploy-frontend.md` | deploy, S3, CloudFront | S3 deploy + CloudFront invalidation |
+| `deploy-api.md` | deploy, Lambda, API | Lambda package + publish |
+| `db-migrate.md` | migration, Supabase, schema | Supabase migrations |
+| `add-component.md` | component, React, UI | React component scaffolding |
+| `add-lambda.md` | Lambda, new service | Lambda function scaffolding |
+| `generate-event.md` | event generation, AI | AI event generation |
+| `generate-image.md` | image, WebP, LQIP, S3, pipeline | Image pipeline SOP — invocation, Lambda trigger, costs |
+| `generate-image-source.md` | image sourcing, sourcer, Google Places, Unsplash, Pexels, WEBSITE_PROMPTS, SOCIAL_PROMPTS | Image sourcing logic and all three prompt libraries |
+| `post-social.md` | social post, Buffer, Ayrshare | Social posting via Ayrshare API |
+| `scrape-events.md` | scraper, trigger, monitor, invocation | Trigger and monitor the scraper Lambda |
+| `scraper-add-source.md` | add source, new scraper, sources.json, Tier 2, LGS, RawEvent | Add new event sources; RawEvent model; architecture |
+| `terraform-plan.md` | terraform, plan, IaC | Safe Terraform plan |
+| `terraform-apply.md` | terraform, apply | Gated Terraform apply |
+| `seed-db.md` | seed, database, test data | Seed Supabase with test data |
+| `test-api.md` | API test, endpoint | API endpoint testing |
+| `check-lighthouse.md` | Lighthouse, performance, CI | Lighthouse CI |
+| `monitor.md` | monitor, health, quick check | Full-system quick health check |
+| `monitor-api.md` | API health, Lambda errors, Supabase health | API/Lambda/DB diagnostics |
+| `monitor-infra.md` | SQS, DLQ, CloudFront, cost, dashboard | SQS, CloudFront, cost monitoring |
+| `qa-build.md` | **build, npm run build, pre-commit, static export** | **Pre-build checklist. Run before every `npm run build`.** |
+| `next-15-patterns.md` | generateStaticParams, params Promise, notFound, force-static, Next.js 15, TypeScript error | Next.js 15 static export gotchas and patterns reference |
+
+### SEO — Technical
+
+| Skill | Triggers | Reference files |
+|-------|----------|----------------|
+| `seo-technical.md` | title tag, meta description, H1, canonical, OG image, Core Web Vitals, Lighthouse, pre-ship, sitemap, robots.txt | — |
+| `seo-schema.md` | JSON-LD, structured data, schema, rich results, FAQPage, Event schema, ItemList, LocalBusiness | — |
+| `seo-title-optimizer.md` | headline, title, H1, click-through, title formula | `title-formulas.md` |
+
+### SEO — Content Strategy
+
+| Skill | Triggers | Reference files |
+|-------|----------|----------------|
+| `seo-content-strategy.md` | keyword, content plan, topic cluster, internal linking, E-E-A-T, pillar page, URL structure, competitive, search intent | — |
+| `seo-content-writer.md` | body copy, article, blog post, content structure, long-form, roundup | `content-structure-templates.md` |
+
+### SEO — Analytics & Measurement
+
+| Skill | Triggers | Reference files |
+|-------|----------|----------------|
+| `seo-analytics.md` | analytics, Google Search Console, GA4, KPI, tracking, Lighthouse, CloudWatch, metrics | — |
+
+### GEO — LLM Optimization ⭐ Highest Priority
+
+| Skill | Triggers | Reference files |
+|-------|----------|----------------|
+| `geo-llm-optimizer.md` | **LLM visibility, AI citation, Perplexity, ChatGPT, Claude, Gemini, Copilot, GEO, answer engine, llms.txt, AI search, generative engine** | `llm-citation-targets.md`, `geo-entity-definition.md`, `llms-txt-template.md` |
+
+### Local SEO
+
+| Skill | Triggers | Reference files |
+|-------|----------|----------------|
+| `local-seo-gbp.md` | Google Business Profile, GBP, photos, GBP posts, reviews, Q&A, Nextdoor, Facebook groups, local social, Instagram hashtags | — |
+| `local-seo-citations.md` | citations, NAP, directories, Bing Places, Apple Maps, Yelp, BrightLocal, data aggregators, citation audit | — |
+| `local-seo-content.md` | local link building, outreach, blog, location guide, seasonal guide, neighborhood, hyperlocal, near me, voice search, featured snippet, zero-click, landmark | — |
+| `local-seo-schema.md` | GeoCoordinates, service area schema, areaServed, PostalAddress, GeoCircle, location page schema, Pokémon schema, ItemList location | — |
+| `local-seo-tracking.md` | rank tracking, BrightLocal, citation audit, local SEO audit, launch timeline, GBP insights, Whitespark, monthly checklist | `local-seo-monthly-checklist.md` |
+
+### Strategy & Architecture
+
+| Skill | Triggers | Purpose |
+|-------|----------|---------|
+| `social-strategy.md` | Twitter/X, Instagram, Facebook, content calendar, platform strategy | Platform decision guide + algorithm notes |
+| `social-copy-templates.md` | social copy, caption, post template, copy formula, Twitter copy, Pokémon social | Ready-to-use copy templates by platform and event type |
+| `social-hashtags.md` | hashtag, Instagram hashtags, Twitter hashtags, NoVa hashtags | Full hashtag library by category and platform |
+| `brand-voice.md` | brand voice, tone, language, personas, visual identity | Core brand identity, voice attributes, language rules |
+| `brand-voice-copy.md` | event description, short description, UI copy, error state, email subject | Event card copy rules, UI copy, email/newsletter copy |
+| `brand-voice-blog.md` | blog voice, blog post, roundup, writing style, hook paragraph, sounds human | Blog + long-form editorial voice guide |
+| `content-generation.md` | event description, FAQ copy, social captions, roundup | Content generation templates (all content types) |
+| `autonomous-agents.md` | agent, autonomous, scheduler, DLQ, lifecycle | Full autonomous operation architecture |
+| `mcp-builder.md` | MCP, Model Context Protocol, FastMCP | Guide for building MCP servers |
+| `skill-creator.md` | new skill, skill format | How to create new skills |
+
+### Archived (redistributed — do not use)
+`skills/archived/seo-geo.md` — content fully redistributed into 5 focused SEO skills above
+`skills/archived/local-seo.md` — content fully redistributed into 5 local-seo-* skills above
 
 > **Master reference:** See `docs/system-map.md` for the complete bird's-eye view of the entire system — all files, data flows, configuration, and session roadmap in one place.
+
+---
+
+## Worktree Workflow
+
+Three parallel worktrees for isolated feature development. Each maps to its own git branch.
+
+| Worktree | Branch | Path | Purpose |
+|----------|--------|------|---------|
+| Main | `main` | `C:\Users\kimta\projects\nova-kid-life` | Production — deployments, hotfixes |
+| Content | `feature-content` | `C:\Users\kimta\projects\nova-kid-life-content` | Blog, copy, SEO content work |
+| Events | `feature-events` | `C:\Users\kimta\projects\nova-kid-life-events` | Scraper, image-gen, event pipeline |
+| Infra | `feature-infra` | `C:\Users\kimta\projects\nova-kid-life-infra` | Terraform, Lambda, CI/CD |
+
+### PowerShell Commands
+
+```powershell
+# Enter a worktree (open a new terminal in its directory)
+Set-Location C:\Users\kimta\projects\nova-kid-life-content   # content work
+Set-Location C:\Users\kimta\projects\nova-kid-life-events    # events pipeline
+Set-Location C:\Users\kimta\projects\nova-kid-life-infra     # infra / Terraform
+
+# Return to main worktree
+Set-Location C:\Users\kimta\projects\nova-kid-life
+
+# Check all worktrees and their HEAD commits
+git worktree list
+
+# After merging a feature branch, remove its worktree
+git worktree remove C:\Users\kimta\projects\nova-kid-life-content
+git worktree remove C:\Users\kimta\projects\nova-kid-life-events
+git worktree remove C:\Users\kimta\projects\nova-kid-life-infra
+
+# Merge a feature branch into main (run from main worktree)
+git merge feature-content --no-ff -m "feat: merge feature-content"
+git merge feature-events  --no-ff -m "feat: merge feature-events"
+git merge feature-infra   --no-ff -m "feat: merge feature-infra"
+
+# Re-create a worktree after removing it (e.g. to start a new feature cycle)
+git worktree add ..\nova-kid-life-content -b feature-content
+git worktree add ..\nova-kid-life-events  -b feature-events
+git worktree add ..\nova-kid-life-infra   -b feature-infra
+
+# See which branches have active worktrees
+git worktree list --porcelain
+```
+
+### Rules
+- Never commit directly to `main` from a feature worktree — open PRs or merge explicitly.
+- Each worktree has its own working tree and index; changes in one do not bleed into others.
+- `node_modules`, `.next`, and Python virtualenvs are **not** shared — install dependencies separately in each worktree if running dev servers there.
+- Terraform state is shared (S3 backend) — only one worktree should run `terraform apply` at a time.

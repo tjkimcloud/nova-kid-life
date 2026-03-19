@@ -17,6 +17,7 @@ from router import ok, error
 
 def pokemon_events(event: dict, ctx) -> dict:
     qs     = event.get("queryStringParameters") or {}
+    origin = event.get("_origin")
     limit  = min(int(qs.get("limit", 20)), 100)
     offset = int(qs.get("offset", 0))
     fmt    = qs.get("format")   # league | prerelease | regional | tournament
@@ -37,8 +38,8 @@ def pokemon_events(event: dict, ctx) -> dict:
     data_q = (
         db.table("events")
         .select(
-            "id, slug, title, description, start_at, end_at, "
-            "location_name, location_address, lat, lng, "
+            "id, slug, title, full_description, start_at, end_at, "
+            "venue_name, address, lat, lng, "
             "event_type, tags, is_free, cost_description, "
             "registration_url, image_url, image_url_sm, "
             "image_alt, image_blurhash, image_width, image_height"
@@ -62,7 +63,7 @@ def pokemon_events(event: dict, ctx) -> dict:
     total = count_resp.count or 0
     items = [event_to_response(r) for r in (data_resp.data or [])]
 
-    return ok(paginated(items, total, limit, offset))
+    return ok(paginated(items, total, limit, offset), origin=origin)
 
 
 # ── GET /pokemon/drops ────────────────────────────────────────────────────────
@@ -70,6 +71,7 @@ def pokemon_events(event: dict, ctx) -> dict:
 def pokemon_drops(event: dict, ctx) -> dict:
     """Upcoming Pokémon TCG set releases with NoVa retailer matrix embedded in description."""
     qs     = event.get("queryStringParameters") or {}
+    origin = event.get("_origin")
     limit  = min(int(qs.get("limit", 10)), 20)
     offset = int(qs.get("offset", 0))
 
@@ -103,13 +105,14 @@ def pokemon_drops(event: dict, ctx) -> dict:
     total = count_resp.count or 0
     items = data_resp.data or []
 
-    return ok(paginated(items, total, limit, offset))
+    return ok(paginated(items, total, limit, offset), origin=origin)
 
 
 # ── GET /pokemon/retailers ────────────────────────────────────────────────────
 
 def pokemon_retailers(event: dict, ctx) -> dict:
     """Return the full NoVa retailer matrix — static data from the scraper config."""
+    origin = event.get("_origin")
     # Import directly from the scraper module (same data, no DB query needed)
     import sys
     import os
@@ -131,7 +134,7 @@ def pokemon_retailers(event: dict, ctx) -> dict:
     return ok({
         "retailers": retailers,
         "total":     len(retailers),
-    })
+    }, origin=origin)
 
 
 def _static_retailer_summary() -> list[dict]:

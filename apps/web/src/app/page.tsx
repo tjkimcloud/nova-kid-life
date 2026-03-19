@@ -1,5 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { NewsletterForm }      from '@/components/NewsletterForm'
+import { HeroSearch }          from '@/components/HeroSearch'
+import { WeekendEventsSection } from '@/components/WeekendEventsSection'
+import { FreeEventsSection }   from '@/components/FreeEventsSection'
+import { CityStripsSection }   from '@/components/CityStripsSection'
 
 export const metadata: Metadata = {
   title: 'NovaKidLife — Family Events in Northern Virginia',
@@ -47,22 +52,54 @@ const LOCAL_BUSINESS_SCHEMA = {
   knowsAbout: ['Family Events', 'Kids Activities', 'Northern Virginia', 'Pokémon TCG Events'],
 }
 
-// ── Category cards ───────────────────────────────────────────────────────────
+// ── Static data ──────────────────────────────────────────────────────────────
+
+const AGE_GROUPS = [
+  { emoji: '🍼', label: 'Toddlers',   sub: 'Ages 0–3',  href: '/events?age_min=0&age_max=3'  },
+  { emoji: '🎨', label: 'Little Kids', sub: 'Ages 4–7',  href: '/events?age_min=4&age_max=7'  },
+  { emoji: '🔬', label: 'Big Kids',   sub: 'Ages 8–12', href: '/events?age_min=8&age_max=12' },
+  { emoji: '🎮', label: 'Teens',      sub: 'Ages 13+',  href: '/events?age_min=13'            },
+]
 
 const CATEGORIES = [
-  { emoji: '📚', label: 'Storytime',     desc: 'Library storytimes for toddlers & kids',        href: '/events?category=storytime' },
-  { emoji: '🔬', label: 'STEM',          desc: 'Science, tech & engineering workshops',          href: '/events?category=stem' },
-  { emoji: '🌳', label: 'Outdoors',      desc: 'Hikes, farms, nature programs & more',          href: '/events?category=outdoor' },
-  { emoji: '🎁', label: 'Free Events',   desc: 'Zero cost — just show up',                      href: '/events?free=true' },
-  { emoji: '🎂', label: 'Freebies',      desc: 'Birthday freebies & restaurant deals',          href: '/events?category=birthday_freebie' },
-  { emoji: '🃏', label: 'Pokémon TCG',   desc: 'Leagues, prereleases & tournaments in NoVa',    href: '/pokemon' },
+  { emoji: '📚', label: 'Storytime',   desc: 'Library storytimes for toddlers & kids',     href: '/events?category=storytime'       },
+  { emoji: '🔬', label: 'STEM',        desc: 'Science, tech & engineering workshops',       href: '/events?category=stem'            },
+  { emoji: '🌳', label: 'Outdoors',    desc: 'Hikes, farms, nature programs & more',       href: '/events?category=outdoor'         },
+  { emoji: '🎁', label: 'Free Events', desc: 'Zero cost — just show up',                   href: '/events?free=true'                },
+  { emoji: '🎂', label: 'Freebies',    desc: 'Birthday freebies & restaurant deals',       href: '/events?category=birthday_freebie'},
+  { emoji: '🃏', label: 'Pokémon TCG', desc: 'Leagues, prereleases & tournaments in NoVa', href: '/pokemon'                         },
+]
+
+const BLOG_POSTS = [
+  {
+    category: 'Rainy Day',
+    title:    'Rainy Day Activities for Kids in Northern Virginia',
+    desc:     '25 indoor spots — from trampoline parks to escape rooms — that keep kids busy when the weather turns.',
+    href:     '/events',
+    emoji:    '🌧️',
+    featured: true,
+  },
+  {
+    category: 'Guide',
+    title:    'Best Free Things To Do With Kids in Fairfax County',
+    desc:     'Libraries, parks, museums, and community events that cost nothing.',
+    href:     '/events?q=Fairfax&free=true',
+    emoji:    '🏛️',
+  },
+  {
+    category: 'Pokémon',
+    title:    'NoVa Pokémon TCG Event Guide for 2025',
+    desc:     'Every league, prerelease, and regional championship happening in Northern Virginia.',
+    href:     '/pokemon',
+    emoji:    '🃏',
+  },
 ]
 
 const STATS = [
   { value: '59+',  label: 'Local sources' },
   { value: '4',    label: 'NoVa counties' },
-  { value: 'Free', label: 'Always free' },
-  { value: 'Daily', label: 'Updated' },
+  { value: 'Free', label: 'Always free'   },
+  { value: 'Daily', label: 'Updated'      },
 ]
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -82,56 +119,48 @@ export default function HomePage() {
       <main>
 
         {/* ── Hero ── */}
-        <section className="bg-gradient-to-b from-primary-50 to-white border-b border-primary-100">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
-            <h1 className="font-heading font-extrabold text-4xl sm:text-5xl lg:text-6xl text-secondary-900 leading-tight text-balance">
-              Family Events in{' '}
-              <span className="text-primary-600">Northern Virginia</span>
-            </h1>
-            <p className="mt-5 text-lg sm:text-xl text-secondary-500 max-w-2xl mx-auto leading-relaxed text-balance">
-              The most complete events calendar for NoVa families — free storytime, STEM,
-              outdoor adventures, birthday freebies, and Pokémon TCG. Updated daily from
-              59+ local sources.
-            </p>
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-              <Link
-                href="/events"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-primary-500 text-white font-semibold text-base hover:bg-primary-600 transition-colors shadow-sm"
-              >
-                Browse Events
-                <ArrowRightIcon />
-              </Link>
-              <Link
-                href="/events?free=true"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-white text-secondary-700 font-semibold text-base hover:bg-secondary-50 transition-colors border border-secondary-200 shadow-sm"
-              >
-                Free Events Only
-              </Link>
+        <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-500 to-primary-700 pb-12 pt-16">
+          {/* Decorative background orbs */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute -top-20 -right-20 w-96 h-96 rounded-full bg-white/5 blur-3xl" />
+            <div className="absolute bottom-0 -left-10 w-64 h-64 rounded-full bg-primary-400/30 blur-2xl" />
+          </div>
+
+          <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-10">
+              <h1 className="font-heading font-extrabold text-4xl sm:text-5xl text-white leading-tight text-balance">
+                Find Family Events in{' '}
+                <span className="text-amber-300">Northern Virginia</span>
+              </h1>
+              <p className="mt-4 text-lg text-white/80 max-w-2xl mx-auto leading-relaxed text-balance">
+                Free storytime, STEM workshops, outdoor adventures, birthday freebies,
+                and Pokémon TCG — updated daily from 59+ local sources.
+              </p>
             </div>
+
+            <HeroSearch />
           </div>
         </section>
 
-        {/* ── Stats ── */}
-        <section className="bg-secondary-900 py-8" aria-label="Site statistics">
+        {/* ── Stats bar ── */}
+        <section className="bg-secondary-900 py-6" aria-label="Site statistics">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
               {STATS.map(({ value, label }) => (
                 <div key={label}>
-                  <dt className="font-heading font-extrabold text-3xl text-primary-400">
-                    {value}
-                  </dt>
-                  <dd className="mt-1 text-sm text-secondary-400">{label}</dd>
+                  <dt className="font-heading font-extrabold text-2xl text-primary-400">{value}</dt>
+                  <dd className="mt-0.5 text-xs text-secondary-400">{label}</dd>
                 </div>
               ))}
             </dl>
           </div>
         </section>
 
-        {/* ── Categories ── */}
+        {/* ── Browse by category ── */}
         <section className="py-16 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="font-heading font-bold text-2xl text-secondary-900 mb-8 text-center">
-              What are you looking for?
+              What Are You Looking For?
             </h2>
             <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               {CATEGORIES.map(({ emoji, label, desc, href }) => (
@@ -154,37 +183,121 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Coverage ── */}
-        <section className="py-16 bg-primary-50/50">
+        {/* ── Weekend events with day toggle + save + editor's pick ── */}
+        <WeekendEventsSection />
+
+        {/* ── Browse by age ── */}
+        <section className="py-16 bg-primary-50/40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="font-heading font-bold text-2xl text-secondary-900 mb-8 text-center">
+              Kids&apos; Events by Age Group in Northern Virginia
+            </h2>
+            <ul className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {AGE_GROUPS.map(({ emoji, label, sub, href }) => (
+                <li key={label}>
+                  <Link
+                    href={href}
+                    className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-white border border-secondary-100 hover:border-primary-300 hover:shadow-md transition-all group text-center"
+                  >
+                    <span className="text-4xl" role="img" aria-hidden="true">{emoji}</span>
+                    <div>
+                      <p className="font-heading font-bold text-sm text-secondary-900 group-hover:text-primary-700 transition-colors">
+                        {label}
+                      </p>
+                      <p className="text-xs text-secondary-400 mt-0.5">{sub}</p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ── Free events spotlight ── */}
+        <FreeEventsSection />
+
+        {/* ── Events by city ── */}
+        <CityStripsSection />
+
+        {/* ── Blog / editorial ── */}
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+              <h2 className="font-heading font-bold text-2xl text-secondary-900">
+                NoVa Family Activity Guides
+              </h2>
+              <Link
+                href="/events"
+                className="text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors whitespace-nowrap"
+              >
+                All guides →
+              </Link>
+            </div>
+
+            <ul className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {BLOG_POSTS.map(post => (
+                <li key={post.title}>
+                  <Link
+                    href={post.href}
+                    className={`flex flex-col h-full rounded-2xl border overflow-hidden hover:shadow-md transition-shadow group ${
+                      post.featured
+                        ? 'border-primary-200 bg-primary-50'
+                        : 'border-secondary-100 bg-white'
+                    }`}
+                  >
+                    <div className={`flex items-center justify-center text-5xl py-10 ${
+                      post.featured ? 'bg-primary-100' : 'bg-secondary-50'
+                    }`}>
+                      {post.emoji}
+                    </div>
+                    <div className="p-5 flex flex-col flex-1">
+                      <span className={`text-[10px] font-bold uppercase tracking-widest mb-2 ${
+                        post.featured ? 'text-primary-600' : 'text-secondary-400'
+                      }`}>
+                        {post.category}
+                      </span>
+                      <h3 className="font-heading font-bold text-sm text-secondary-900 group-hover:text-primary-700 transition-colors leading-snug mb-2">
+                        {post.title}
+                      </h3>
+                      <p className="text-xs text-secondary-500 leading-relaxed flex-1">
+                        {post.desc}
+                      </p>
+                      <span className="mt-4 text-xs font-semibold text-primary-600 group-hover:text-primary-700 transition-colors">
+                        Read guide →
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* ── Coverage area ── */}
+        <section className="py-14 bg-secondary-50">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="font-heading font-bold text-2xl text-secondary-900 mb-4">
+            <h2 className="font-heading font-bold text-2xl text-secondary-900 mb-3">
               Covering All of Northern Virginia
             </h2>
-            <p className="text-secondary-500 mb-8 max-w-2xl mx-auto">
+            <p className="text-secondary-500 mb-7 text-sm max-w-xl mx-auto">
               From Leesburg to Woodbridge, Reston to Manassas — we track events across
               Fairfax, Loudoun, Arlington, and Prince William counties.
             </p>
-            <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-2">
               {[
                 'Fairfax', 'Reston', 'Herndon', 'Chantilly', 'McLean',
                 'Leesburg', 'Ashburn', 'Sterling', 'Manassas', 'Woodbridge',
                 'Arlington', 'Alexandria', 'Vienna', 'Springfield', 'Centreville',
               ].map((city) => (
-                <span
+                <Link
                   key={city}
-                  className="px-3 py-1.5 rounded-full text-sm font-medium bg-white border border-secondary-200 text-secondary-600"
+                  href={`/events?q=${city}`}
+                  className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-secondary-200 text-secondary-600 hover:border-primary-300 hover:text-primary-700 transition-colors"
                 >
                   {city}, VA
-                </span>
+                </Link>
               ))}
             </div>
-            <Link
-              href="/events"
-              className="inline-flex items-center gap-2 mt-8 text-sm font-semibold text-primary-600 hover:text-primary-700 transition-colors"
-            >
-              See all upcoming events
-              <ArrowRightIcon />
-            </Link>
           </div>
         </section>
 
@@ -192,46 +305,17 @@ export default function HomePage() {
         <section className="py-16 bg-secondary-800">
           <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="font-heading font-bold text-2xl text-white mb-3">
-              Never miss a NoVa family event
+              Never Miss a NoVa Family Event
             </h2>
             <p className="text-secondary-300 mb-6 text-sm">
               Weekly roundup of the best events, deals, and freebies for Northern Virginia families.
               Free. No spam.
             </p>
-            <form
-              action="/api/newsletter"
-              method="POST"
-              className="flex flex-col sm:flex-row gap-3"
-              aria-label="Newsletter signup"
-            >
-              <label htmlFor="email" className="sr-only">Email address</label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                placeholder="your@email.com"
-                className="flex-1 px-4 py-3 rounded-xl text-sm border border-secondary-600 bg-secondary-700 text-white placeholder-secondary-400 focus:outline-none focus:border-primary-400"
-              />
-              <button
-                type="submit"
-                className="px-6 py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm hover:bg-primary-600 transition-colors shrink-0"
-              >
-                Subscribe
-              </button>
-            </form>
+            <NewsletterForm />
           </div>
         </section>
 
       </main>
     </>
-  )
-}
-
-function ArrowRightIcon() {
-  return (
-    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-      <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
-    </svg>
   )
 }

@@ -21,6 +21,7 @@ from prompts import (
     build_free_events_prompt,
     build_week_ahead_prompt,
     build_indoor_prompt,
+    build_seasonal_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,6 +53,9 @@ class PostSpec:
     area_label:       str
     county_label:     str
     location_names:   Optional[list[str]]
+    season_name:      Optional[str]       = None
+    focus_keywords:   Optional[list[str]] = None
+    seo_title:        Optional[str]       = None
 
 
 # ── Date helpers ───────────────────────────────────────────────────────────────
@@ -72,6 +76,105 @@ def get_upcoming_week(ref: date) -> tuple[date, date]:
         days_until_monday = 7
     monday = ref + timedelta(days=days_until_monday)
     return monday, monday + timedelta(days=6)
+
+
+# ── Seasonal theme detection ───────────────────────────────────────────────────
+
+# Easter dates (hardcoded for the next few years — update as needed)
+_EASTER_DATES = {
+    2026: date(2026, 4, 5),
+    2027: date(2027, 3, 28),
+    2028: date(2028, 4, 16),
+}
+
+
+def get_seasonal_context(ref: date) -> Optional[tuple[str, list[str], str]]:
+    """
+    Return (season_name, focus_keywords, seo_title) if a seasonal theme applies
+    to the upcoming weekend, or None if no seasonal theme is active.
+
+    Priority order: holiday-specific > cherry blossom > spring break > seasonal
+    """
+    year = ref.year
+
+    # ── Easter (3 weeks out through Easter Sunday) ────────────────────────────
+    easter = _EASTER_DATES.get(year)
+    if easter:
+        days_to_easter = (easter - ref).days
+        if 0 <= days_to_easter <= 21:
+            return (
+                "Easter",
+                ["Easter egg hunts Northern Virginia", "Easter activities kids NoVa",
+                 "Easter events Fairfax County", "Easter egg hunt 2026"],
+                f"Easter Egg Hunts & Spring Activities for Kids in Northern Virginia {year}",
+            )
+
+    # ── Cherry Blossom (March 10 – April 15) ─────────────────────────────────
+    cherry_start = date(year, 3, 10)
+    cherry_end   = date(year, 4, 15)
+    if cherry_start <= ref <= cherry_end:
+        return (
+            "Cherry Blossom Season",
+            ["cherry blossom Northern Virginia kids", "cherry blossom DC family",
+             "cherry blossom 2026 things to do", "spring flowers NoVa families"],
+            f"Cherry Blossom Season Activities for Kids in Northern Virginia {year}",
+        )
+
+    # ── Spring Break (last week of March + first week of April) ──────────────
+    spring_break_start = date(year, 3, 21)
+    spring_break_end   = date(year, 4, 7)
+    if spring_break_start <= ref <= spring_break_end:
+        return (
+            "Spring Break",
+            ["spring break activities kids Northern Virginia", "spring break NoVa 2026",
+             "things to do spring break Fairfax", "spring break day trips DC area kids"],
+            f"Spring Break Activities for Kids in Northern Virginia {year}",
+        )
+
+    # ── Mother's Day (2 weeks before — second Sunday in May) ─────────────────
+    # Find second Sunday in May
+    may_first   = date(year, 5, 1)
+    first_sunday = may_first + timedelta(days=(6 - may_first.weekday()) % 7)
+    mothers_day  = first_sunday + timedelta(days=7)
+    if 0 <= (mothers_day - ref).days <= 14:
+        return (
+            "Mother's Day",
+            ["Mother's Day activities kids Northern Virginia", "Mother's Day events NoVa",
+             "things to do Mother's Day DC area families", "family brunch events NoVa"],
+            f"Mother's Day Weekend Activities for Families in Northern Virginia {year}",
+        )
+
+    # ── Memorial Day Weekend (week before) ───────────────────────────────────
+    # Last Monday in May
+    may_last = date(year, 5, 31)
+    memorial_day = may_last - timedelta(days=may_last.weekday())
+    if 0 <= (memorial_day - ref).days <= 7:
+        return (
+            "Memorial Day Weekend",
+            ["Memorial Day weekend kids Northern Virginia", "Memorial Day activities NoVa",
+             "free events Memorial Day weekend Fairfax", "outdoor activities Memorial Day DC"],
+            f"Memorial Day Weekend Activities for Kids in Northern Virginia {year}",
+        )
+
+    # ── Halloween (October) ───────────────────────────────────────────────────
+    if ref.month == 10:
+        return (
+            "Halloween",
+            ["Halloween events kids Northern Virginia", "Halloween activities NoVa 2026",
+             "trick or treat events Fairfax County", "pumpkin patch Northern Virginia"],
+            f"Halloween Events & Fall Activities for Kids in Northern Virginia {year}",
+        )
+
+    # ── Holiday Season (Dec 1 – Dec 24) ──────────────────────────────────────
+    if ref.month == 12 and ref.day <= 24:
+        return (
+            "Holiday Season",
+            ["holiday events kids Northern Virginia", "Christmas activities NoVa families",
+             "holiday lights Northern Virginia", "free holiday events Fairfax"],
+            f"Holiday Events for Kids in Northern Virginia {year}",
+        )
+
+    return None
 
 
 # ── Supabase helpers ───────────────────────────────────────────────────────────
@@ -282,6 +385,19 @@ def _build_specs(trigger: str, start: date, end: date) -> list[PostSpec]:
         # 4. Indoor roundup (useful Oct–Mar and rainy weekends)
         specs.append(PostSpec("indoor", "nova", start, end, "Northern Virginia", "NoVa", None))
 
+        # 5. Seasonal post — only when a seasonal theme is active
+        from datetime import date as today_date
+        seasonal = get_seasonal_context(today_date.today())
+        if seasonal:
+            season_name, focus_keywords, seo_title = seasonal
+            specs.append(PostSpec(
+                "seasonal", "nova", start, end,
+                "Northern Virginia", "NoVa", None,
+                season_name=season_name,
+                focus_keywords=focus_keywords,
+                seo_title=seo_title,
+            ))
+
     elif trigger == "week_ahead":
         specs.append(PostSpec("week_ahead", "nova", start, end, "Northern Virginia", "NoVa", None))
 
@@ -300,6 +416,13 @@ def _select_prompt(spec: PostSpec, events: list[dict], start: date, end: date) -
         return build_week_ahead_prompt(events, start, end, spec.area_label)
     elif spec.post_type == "indoor":
         return build_indoor_prompt(events, start, end, spec.area_label)
+    elif spec.post_type == "seasonal":
+        return build_seasonal_prompt(
+            events, start, end, spec.area_label,
+            spec.season_name or "Spring",
+            spec.focus_keywords or ["spring activities kids Northern Virginia"],
+            spec.seo_title or f"Spring Activities for Kids in {spec.area_label}",
+        )
     else:
         raise ValueError(f"Unknown post_type: {spec.post_type}")
 
@@ -317,6 +440,7 @@ def _make_slug(spec: PostSpec) -> str:
         "location_specific": f"things-to-do-{area}-this-weekend-{date_str}-{end_str}",
         "free_events":       f"free-things-to-do-with-kids-{area}-{date_str}-{end_str}",
         "indoor":            f"indoor-activities-kids-{area}-{date_str}-{end_str}",
+        "seasonal":          f"{spec.season_name.lower().replace(' ', '-').replace('/', '-')}-activities-kids-{area}-{start.year}" if spec.season_name else f"seasonal-activities-{area}-{date_str}",
         "date_specific":     f"things-to-do-{area}-{date_str}-{start.year}",
     }
 

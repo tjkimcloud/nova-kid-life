@@ -2,6 +2,230 @@
 
 ---
 
+## Session 15 — 2026-03-19
+**Theme:** CORS origin fix, route handler propagation, homepage API wiring
+
+### CORS — Dynamic Origin Reflection
+The router was hardcoding `Access-Control-Allow-Origin: https://www.novakidlife.com`, which blocked requests from `https://novakidlife.com` (non-www). Browser CORS errors were appearing on the homepage because CloudFront serves the non-www origin.
+
+**Fix (`services/api/router.py`):**
+- Added `_ALLOWED_ORIGINS` set: `novakidlife.com` + `www.novakidlife.com`
+- `_cors_headers(origin)` — reflects back the request origin if it's in the allowed set, else defaults to `https://novakidlife.com`
+- `dispatch()` — extracts `origin` header (case-insensitive), stashes in `event["_origin"]`
+- All `ok()` / `error()` calls in dispatch now pass `origin` through
+
+**Fix (route handlers):**
+- `services/api/routes/events.py` — all 5 handlers (`list_events`, `featured_events`, `upcoming_events`, `get_event`, `search_events`) extract `event.get("_origin")` and pass it to every `ok()` / `error()` call
+- `services/api/routes/pokemon.py` — all 3 handlers (`pokemon_events`, `pokemon_drops`, `pokemon_retailers`) updated same way
+
+### Pending in Session 15
+- ⬜ Redeploy API Lambda with CORS fix
+- ⬜ Wire homepage sections to live API (WeekendEventsSection, FreeEventsSection, CityStripsSection use placeholder data)
+- ⬜ Check DB event count from first scraper run
+- ⬜ Trigger content generator (once events confirmed in DB)
+- ⬜ Update session notes (CLAUDE.md session table, progress.md)
+
+---
+
+## Session 14 — 2026-03-19
+**Theme:** API domain live, Lambda deploys, seasonal content generator, first scraper run
+
+### api.novakidlife.com
+The custom domain was never created — `api_acm_certificate_arn` was missing from `terraform.tfvars`. Fixed by reusing the existing `*.novakidlife.com` wildcard cert (already in us-east-1, valid for regional API Gateway). Added cert ARN to tfvars, ran `terraform apply` (created `aws_api_gateway_domain_name` + base path mapping), added Route 53 CNAME record manually. API now responding at `https://api.novakidlife.com`.
+
+### Lambda Dependency Deploys
+All four Lambdas were deployed via Terraform with source-only zips (no pip dependencies). The `deploy-lambdas.py` script was only missing `content-generator` — added it to the SERVICES dict. Ran the script for all four: api, events-scraper, image-gen, content-generator. Each package installs manylinux-compatible wheels for Python 3.12 Lambda runtime. Also pushed `blog_posts` migration to cloud Supabase (`supabase db push`) and added `/novakidlife/github/token` to SSM (GitHub fine-grained PAT with Actions read+write).
+
+### Seasonal Content Generator
+Added a `seasonal` post type that auto-detects the current holiday/season and generates a targeted SEO post. The detection logic (`get_seasonal_context()`) returns a season name, focus keywords, and pre-built SEO title based on the current date:
+
+| Window | Season |
+|--------|--------|
+| 21 days before Easter | Easter egg hunts + spring activities |
+| Mar 10 – Apr 15 | Cherry blossom season |
+| Mar 21 – Apr 7 | Spring break |
+| 14 days before Mother's Day | Mother's Day |
+| 7 days before Memorial Day | Memorial Day weekend |
+| October | Halloween + fall activities |
+| Dec 1–24 | Holiday season |
+
+Easter takes priority over cherry blossom (both active now — Easter is April 5, cherry blossom peak is March 22). The seasonal post fires as part of the Thursday weekend trigger alongside the existing 6 post types. `build_seasonal_prompt()` emphasizes insider local knowledge, time-sensitive notes (peak bloom window, sell-out risk), and FAQ questions targeting exact parent search queries.
+
+### First Scraper Run
+Triggered `novakidlife-prod-events-scraper` manually. Running against 111 sources — expected to take 10–15 minutes. 404s and 403s on some sources are expected (Macaroni Kid, Mommy Poppins, KidsOutAndAbout block scrapers). Tier 1 library APIs and Eventbrite are the reliable high-volume sources.
+
+---
+
+## Session 13 (interrupted) — 2026-03-18
+**Theme:** Homepage V2 components, image sourcing expansion (Unsplash + Pexels), API/Lambda fixes, Terraform cleanup
+
+> Session cut off mid-way by power outage. All changes written to disk, uncommitted at time of outage.
+
+### Homepage V2 — New Components
+Session 11 committed the page shell (Header, Footer, About, Pokémon, Privacy), but the homepage section components were built here:
+- `HeroSearch.tsx` — `'use client'`; Airbnb-style Location/Date/Age Group selects, quick filter pills (Today/Weekend/Free), Mon–Sun weekly calendar strip, social proof row
+- `WeekendEventsSection.tsx` — `'use client'`; Sat/Sun tab toggle, ❤️ save buttons (useState Set), ⭐ Editor's Pick amber badge on first card each day
+- `FreeEventsSection.tsx` — green-themed free events spotlight; SEO H2 targeting "free things to do with kids northern virginia"
+- `CityStripsSection.tsx` — 4 city strips (Reston, Fairfax, Arlington, Leesburg); compact event rows; "See all events in [City] →" links
+- `NewsletterForm.tsx` — `'use client'`; 4-state machine (idle/loading/success/error); POSTs JSON to `NEXT_PUBLIC_API_URL/newsletter/subscribe`
+- `error.tsx`, `global-error.tsx`, `not-found.tsx` — all required for App Router static export
+- `page.tsx` updated to import and use all new components
+
+### Image Sourcing — 5-Step Cascade (`services/image-gen/sourcer.py`)
+Expanded from 3-step to 5-step priority cascade:
+1. Scraped image URL on event (existing)
+2. Google Places Photos for venue (existing)
+3. **NEW — Unsplash API** (`UNSPLASH_ACCESS_KEY`): keyword-matched free stock photo (landscape orientation, safe content filter, 50 req/hr free tier)
+4. **NEW — Pexels API** (`PEXELS_API_KEY`): free stock fallback (unlimited, large2x ~1200px wide)
+5. AI generation — Imagen 3 → DALL-E 3 (last resort only)
+
+Added `_build_search_query()`: maps `event_type` → `category` → `tags` to stock photo search terms via three keyword dictionaries (`_EVENT_TYPE_KEYWORDS`, `_CATEGORY_KEYWORDS`, `_TAG_KEYWORDS`). Deals and product drops skip free stock and go directly to AI (branded imagery performs better). Unsplash/Pexels URLs added to `_looks_like_image()` good-patterns list.
+
+### Image Pipeline — Step 0 Upsert (`services/image-gen/handler.py`)
+Added `_upsert_event()` as Step 0 in `process_event()`:
+- Upserts RawEvent into Supabase (`on_conflict=source_url`) before image generation begins
+- Maps RawEvent field names → DB column names (`description` → `full_description`, `location_name` → `venue_name`, `location_address` → `address`)
+- Returns the saved DB row with assigned `slug` + `id` — image pipeline uses these for S3 paths and PATCH calls
+- Added `_headers()` helper (DRY Supabase auth headers)
+- Added SSM bootstrap (`_load_secrets_from_ssm()`) including `UNSPLASH_ACCESS_KEY_PARAM` and `PEXELS_API_KEY_PARAM`
+- Added `handler = lambda_handler` alias for Terraform handler config
+
+### API Lambda — Blog Routes + Fixes (`services/api/`)
+- `handler.py`: added SSM bootstrap, registered `GET /blog` + `GET /blog/{slug}` routes, added `handler` alias
+- `routes/events.py`: fixed DB column name mismatches — `SELECT` now uses `full_description`, `venue_name`, `address`, `location_id` (DB names) instead of aliases that don't exist in the schema
+- `routes/pokemon.py`: same fix — `full_description`, `venue_name`, `address`
+- `requirements.txt`: added `pydantic[email]` + `email-validator>=2.0`
+
+### Events Scraper Lambda (`services/events-scraper/handler.py`)
+Added `_load_secrets_from_ssm()` with mappings for `OPENAI_API_KEY_PARAM`, `SUPABASE_URL_PARAM`, `SUPABASE_KEY_PARAM`, `MEETUP_CLIENT_ID_PARAM`, `MEETUP_SECRET_PARAM`. Called at module init (container warm-up).
+
+### Terraform Cleanup
+- `cloudfront.tf`: removed `logging_config` block — conflicts with modern S3 bucket ownership controls (ACL disabled). CloudFront access logging can be enabled manually via AWS Console if needed.
+- `cloudwatch.tf`: removed `social_poster` Lambda references from log group, dashboard Lambda invocations/errors/duration metrics; added `region` key to all CloudWatch dashboard widget `properties` (required by API); reformatted multi-attribute blocks for Terraform fmt compliance
+- `outputs.tf`: removed `lambda_social_poster_arn` output
+- `ssm.tf`: replaced `buffer/access-token` + `buffer/profile-ids` with `ayrshare/api-key`; added `unsplash/access-key` + `pexels/api-key` SSM parameter descriptions
+
+### Next.js / Web Fixes
+- `next.config.js`: removed `async headers()` block — `headers()` is not supported with `output: 'export'` (static export); CloudFront handles cache headers in production
+- `robots.ts` + `sitemap.ts`: added `export const dynamic = 'force-static'` to both files (prevents dynamic route resolution errors in static export)
+
+### CLAUDE.md
+Partially updated on disk (not committed at session end). Updated: "Site is LIVE" note, Buffer → Ayrshare in tech stack, social-poster description, `scripts/` directory entry, cloud Supabase project note, DB column mapping clarification, migration commands (local vs cloud), image pipeline architecture (upsert step + Unsplash/Pexels).
+
+---
+
+## Session 8b — 2026-03-18
+**Theme:** Content Generator Lambda + blog system + brand voice blog section + 111 scraper sources
+
+### Content Generator Lambda (`services/content-generator/`)
+New Lambda that generates SEO blog posts from live event data. Triggers twice weekly via EventBridge:
+- **Thursday 8:00 PM EST** → `weekend` posts ("Things To Do This Weekend in NoVa")
+- **Monday 6:00 AM EST** → `week_ahead` posts ("This Week in NoVa with Kids")
+
+**`post_builder.py`** — 5 prompt builders:
+1. `weekend` — weekend roundup (main section events Fri–Sun)
+2. `location` — city-specific roundups (Reston, Fairfax, Arlington, Leesburg)
+3. `free_events` — free events spotlight ("Free Things To Do With Kids This Weekend")
+4. `week_ahead` — week-ahead planning post
+5. `indoor` — rainy day / indoor activity guide
+
+All prompts inject shared voice rules (brand-voice.md parent-to-parent tone) and FAQ instructions. Idempotency: `post_exists()` checks for existing slug before generating (no duplicate posts on re-runs).
+
+**`prompts.py`** — 328-line prompt library. Each prompt type generates: hook paragraph, logistics blocks (📅📍💰), H2 section headers, insider details rule, FAQ section (4 questions), closing CTA. GPT-4o-mini returns structured Markdown.
+
+**`github_trigger.py`** — after saving new posts, triggers `deploy-frontend` GitHub Actions workflow via repository dispatch API (`POST /repos/owner/repo/dispatches`). Frontend rebuild picks up new blog pages. Requires `GITHUB_TOKEN` with `repo` scope in SSM.
+
+**`handler.py`** — Lambda entry point. Bootstrap secrets from SSM (SUPABASE_URL, SUPABASE_SERVICE_KEY, OPENAI_API_KEY, GITHUB_TOKEN). Infers trigger type from EventBridge schedule day if not explicitly passed. Calls `build_posts_for_trigger()` → triggers frontend rebuild if posts saved.
+
+**Tests** (`tests/test_post_builder.py`) — 205 lines, 20+ tests: prompt builder output, SSM mock, idempotency check, trigger inference, GitHub trigger call.
+
+### Supabase Migration — Blog Posts Table
+`supabase/migrations/20260318000001_create_blog_posts.sql`:
+- `blog_posts` table: id, slug (unique), title, post_type, trigger_type, date_range_start, date_range_end, location_filter, content (Markdown), event_ids (uuid[]), published_at, created_at
+- RLS: anon can select published posts, service role can insert/update
+- GIN index on `event_ids[]` for fast event → post lookups
+- Unique constraint: `(post_type, trigger_type, date_range_start, location_filter)` — idempotency key
+
+### Blog API Routes (`services/api/routes/blog.py`)
+- `GET /blog` — paginated post listing (20/page), filters: `post_type`, `trigger_type`, `location`; joins event preview data (slug, title, image_url, start_at)
+- `GET /blog/{slug}` — single post with full content + joined event objects for EventCard grid
+
+### Blog Frontend Pages (`apps/web/src/app/blog/`)
+- `blog/page.tsx` — listing page; server component; metadata; Suspense skeleton; grid of PostCard components
+- `blog/[slug]/page.tsx` — detail page; `generateStaticParams` from `/blog` API; `generateMetadata`; Article + BreadcrumbList + per-event Event JSON-LD schemas; minimal Markdown renderer (converts GPT output headings/bold/lists/links to HTML); EventCard grid for events referenced in post; social share buttons; internal links back to `/events`
+- `src/types/blog.ts` — BlogPost, PostCard, BlogListResponse TypeScript types
+- `src/lib/api.ts` updated — `getBlogPosts()`, `getBlogPost()` client functions
+
+### Brand Voice Updates (`skills/brand-voice.md`)
+Added 328-line blog voice section (Section 7 onward):
+- **Core principle:** "The most organized parent in the neighborhood Facebook group" — peer, not press release
+- **POV rules:** second person ("you/your kids"), "we" sparingly, never third-person ("parents should...")
+- **Hook paragraph rules:** 2–3 sentence max; must acknowledge Saturday situation, frame the weekend, or lead with the best thing; 4 approved hook archetypes + 3 rejected examples
+- **Event blurb format:** logistics block (📅📍💰) + 3–5 sentence blurb; insider detail rule (2–3 per post minimum; skip rather than fabricate)
+- **Enthusiasm calibration table:** approved vs rejected phrases; earn enthusiasm with specificity
+- **Tone by post type:** weekend/free/date-specific/location/rainy-day/week-ahead each with hook energy, blurb length, humor, insider tip count
+- **Writing craft — sounds human, not AI:** em dash usage, sentence variety rules, contractions always, AI phrases to never use (Furthermore/Additionally/It's worth noting/etc.)
+- **Blog UX (mobile-first):** 2–3 sentence paragraphs, logistics blocks as scan anchors, H2 headers every 4–6 events, jump nav for 8+ events, one CTA every 5–6 events
+- **GEO + backlink optimization:** why logistics blocks get LLM citations, why specificity drives backlinks, FAQ section required on every post
+- **AI generation prompt reference:** full system prompt to inject into GPT-4o-mini calls
+
+### Scraper Sources — 111 Total (`services/events-scraper/config/sources.json`)
+Expanded from 59 → 111 Tier 2 sources (+52 new). New sources added:
+- 5 Macaroni Kid regional editions (Fairfax, Loudoun, Arlington, Prince William, Reston/Herndon)
+- Mommy Poppins DC, Kids Out and About DC/Northern Virginia
+- 11 additional Patch hyperlocal city pages
+- Community reporters: Reston Patch, Burke Patch, Centreville Patch, Manassas Patch
+- Arts venues: Workhouse Arts Center, ArtSpace Herndon, McLean Community Center
+- 5 NPS / state park sites (Manassas National Battlefield, Shenandoah, Prince William Forest)
+- Town event pages: Town of Herndon, Town of Vienna, City of Falls Church, Town of Leesburg
+- Shopping center event calendars: Dulles Town Center, Loudoun Station, One Loudoun, Fair Oaks
+
+### Competitor Analysis (`docs/competitor-analysis.md`)
+Full 389-line competitive analysis: Mommy Poppins, Macaroni Kid, DC Metro Moms, Eventbrite, Patch. Covers SEO gaps, content differentiation, monetization comparison, NovaKidLife competitive moats (Pokémon TCG niche, real-time scraping, GEO optimization, local specificity).
+
+### Terraform — Content Generator Infrastructure (`infra/terraform/`)
+- `lambda.tf` updated: content-generator Lambda function, IAM role + policy (Supabase, SSM, EventBridge invoke)
+- `eventbridge.tf`: 2 new rules — `content-generator-weekend` (Thu 8pm EST `cron(0 0 ? * FRI *)`) and `content-generator-week-ahead` (Mon 6am EST `cron(0 11 ? * MON *)`)
+- `variables.tf` updated: `github_token_param` + `github_repo_owner` + `github_repo_name` variables
+
+### CI/CD Workflow Fixes (`.github/workflows/deploy-api.yml`)
+Fixed Lambda function names to match actual deployed names: `novakidlife-prod-api`, `novakidlife-prod-events-scraper`, `novakidlife-prod-image-gen`, `novakidlife-prod-content-generator`. (Commit `3241cb1`)
+
+---
+
+## Session 11 — 2026-03-16
+**Theme:** SEO infrastructure, skills expansion, Buffer → Ayrshare swap, V2 homepage redesign
+
+### Skills & Infrastructure
+Expanded `seo-geo.md` to Fortune 100 level (13 sections covering every SEO/GEO dimension). Created `local-seo.md` from scratch — complete 3-pillar local ranking playbook, 4-tier citation system, GBP setup templates, outreach email scripts, Pokémon TCG niche SEO strategy, 12-month timeline. Created `qa-build.md` — pre-build checklist with all Next.js 15 static export gotchas so the iterative fix-run-fix-run loop never happens again.
+
+**Buffer → Ayrshare:** Buffer removed public API access for new users after Session 8. Rewrote `buffer_client.py` as `AyrshareClient` using Ayrshare API (`POST /api/post`, Bearer token, platforms array). Removed profile ID lookup logic — Ayrshare doesn't need it. Updated `handler.py` and `ssm.py`. SSM parameter path: `/novakidlife/ayrshare/api-key`.
+
+Made initial git commit of all 8 sessions' work (repo had been written directly to disk with no commits). Added `.gitattributes` for LF normalization on Windows first.
+
+### New Pages
+- `about/page.tsx` — E-E-A-T signals: mission, 59+ named sources, coverage area, always-free commitment
+- `privacy-policy/page.tsx` — minimal policy, noindexed
+- `pokemon/page.tsx` — full Pokémon TCG hub with ItemList JSON-LD, event type cards, 5 LGS cards
+
+### New Components
+- `Header.tsx` — sticky, amber/sage split logo, Events + Pokémon TCG nav, Find Events CTA
+- `Footer.tsx` — dark sage, social icons (Twitter/Instagram/Facebook), 4-county coverage, site links
+- `NewsletterForm.tsx` — `'use client'`, 4-state machine (idle/loading/success/error), POSTs JSON to API
+- `HeroSearch.tsx` — `'use client'`, Location/Date/Age Group selects + Find Events, quick filter pills (Today/Weekend/Free), weekly Mon–Sun calendar strip with placeholder counts, social proof row
+- `WeekendEventsSection.tsx` — `'use client'`, Sat/Sun tab toggle, ❤️ heart save buttons (useState Set), ⭐ Editor's Pick amber badge on first card each day
+- `FreeEventsSection.tsx` — green-themed free events spotlight, SEO H2 targeting "free things to do with kids northern virginia"
+- `CityStripsSection.tsx` — 4 city strips (Reston, Fairfax, Arlington, Leesburg), compact event rows, "See all events in [City] →" links
+- `not-found.tsx`, `error.tsx`, `global-error.tsx` — all required for App Router static export
+
+### Homepage V2
+Replaced Session 1 design system demo with real homepage. Ten sections in order: gradient hero with HeroSearch embedded → stats bar (59+ sources, 4 counties, Free, Daily) → browse by category (6 cards) → WeekendEventsSection → browse by age (4 age group cards) → FreeEventsSection → CityStripsSection → editorial blog (Rainy Day Activities featured + 2 more) → coverage area (15 clickable city chips) → newsletter. All event data is placeholder — wired to live API in Session 12.
+
+### Build Fixes
+All documented in `skills/qa-build.md`. Key fixes: Next.js 15 `params` must be `Promise<{slug}>` and awaited; `generateStaticParams` must return at least one entry (`_placeholder` fallback); `notFound()` must be outside try/catch; `robots.ts`/`sitemap.ts` need `export const dynamic = 'force-static'`; `AbortSignal.timeout(8000)` on all API fetches prevents build hangs; two-pass build required (first pass creates chunk cache for Pages Router, second pass builds clean).
+
+---
+
 ## Session 1 — 2026-03-13
 **Theme:** Foundation — repo structure, design system, Next.js 14 setup
 

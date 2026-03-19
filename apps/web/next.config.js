@@ -11,20 +11,7 @@ const nextConfig = {
       },
     ],
   },
-  // Ensure font files are served correctly
-  async headers() {
-    return [
-      {
-        source: '/fonts/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-    ]
-  },
+  // Font cache headers are set by CloudFront in production (headers() not supported with static export)
 }
 
 module.exports = nextConfig

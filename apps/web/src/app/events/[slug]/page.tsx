@@ -70,25 +70,34 @@ function AgeRange({ event }: { event: Event }) {
 
 // ── Static generation ──────────────────────────────────────────────────────────
 
+// Only render slugs returned by generateStaticParams; 404 everything else.
+// When the API is unavailable at build time, returns [] gracefully.
+export const dynamicParams = false
+
 export async function generateStaticParams() {
   try {
     const API = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/\/$/, '')
     const data = await fetch(`${API}/sitemap`, { cache: 'no-store' }).then((r) => r.json())
     const slugs: string[] = data.main ?? []
-    return slugs.map((slug) => ({ slug }))
+    if (slugs.length > 0) return slugs.map((slug) => ({ slug }))
   } catch {
-    return []
+    // API unavailable at build time — fall through to placeholder
   }
+  // Next.js requires at least one entry for static export.
+  // The placeholder slug hits notFound() in the page component.
+  return [{ slug: '_placeholder' }]
 }
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   try {
-    const event = await getEvent(params.slug)
+    const { slug } = await params
+    const event = await getEvent(slug).catch(() => null)
+    if (!event) return { title: 'Event Not Found | NovaKidLife' }
     const title       = buildSeoTitle(event)
     const description = buildMetaDescription(event)
-    const pageUrl     = `https://novakidlife.com/events/${event.slug}`
+    const pageUrl     = `https://novakidlife.com/events/${slug}`
 
     return {
       title,
@@ -117,14 +126,11 @@ export async function generateMetadata(
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default async function EventDetailPage(
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  let event: Event
-  try {
-    event = await getEvent(params.slug)
-  } catch {
-    notFound()
-  }
+  const { slug } = await params
+  const event = await getEvent(slug).catch(() => null)
+  if (!event) notFound()
 
   const pageUrl = `https://novakidlife.com/events/${event.slug}`
   const city    = extractCity(event)

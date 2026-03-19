@@ -23,8 +23,9 @@ locals {
     "media/cdn-url"                = "Media CDN base URL (https://media.novakidlife.com)"
     "meetup/client-id"             = "Meetup OAuth client ID"
     "meetup/client-secret"         = "Meetup OAuth client secret"
-    "buffer/access-token"          = "Buffer API access token"
-    "buffer/profile-ids"           = "Buffer profile IDs (comma-separated)"
+    "ayrshare/api-key"             = "Ayrshare API key for social posting (replaced Buffer)"
+    "unsplash/access-key"          = "Unsplash API access key for free stock photos"
+    "pexels/api-key"               = "Pexels API key for free stock photos"
     "admin/api-key"                = "Admin API key for /admin/* endpoints"
   }
 }

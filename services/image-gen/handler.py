@@ -21,6 +21,36 @@ import logging
 import os
 import sys
 
+
+def _load_secrets_from_ssm() -> None:
+    """Resolve *_PARAM env vars from SSM into their canonical env var names."""
+    param_map = {
+        "SUPABASE_URL_PARAM":           "SUPABASE_URL",
+        "SUPABASE_KEY_PARAM":           "SUPABASE_SERVICE_KEY",
+        "OPENAI_API_KEY_PARAM":         "OPENAI_API_KEY",
+        "GOOGLE_PROJECT_ID_PARAM":      "GOOGLE_PROJECT_ID",
+        "GOOGLE_LOCATION_PARAM":        "GOOGLE_LOCATION",
+        "GOOGLE_SA_JSON_PARAM":         "GOOGLE_SERVICE_ACCOUNT_JSON",
+        "GOOGLE_PLACES_API_KEY_PARAM":  "GOOGLE_PLACES_API_KEY",
+        "UNSPLASH_ACCESS_KEY_PARAM":    "UNSPLASH_ACCESS_KEY",
+        "PEXELS_API_KEY_PARAM":         "PEXELS_API_KEY",
+    }
+    ssm_paths = {v: os.environ[k] for k, v in param_map.items() if k in os.environ}
+    if not ssm_paths:
+        return
+    try:
+        import boto3
+        ssm = boto3.client("ssm", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+        for env_key, param_path in ssm_paths.items():
+            if not os.environ.get(env_key):
+                result = ssm.get_parameter(Name=param_path, WithDecryption=True)
+                os.environ[env_key] = result["Parameter"]["Value"]
+    except Exception as exc:
+        logging.getLogger(__name__).warning("SSM bootstrap warning: %s", exc)
+
+
+_load_secrets_from_ssm()
+
 import httpx
 
 # Add service root to path for local imports
@@ -44,6 +74,60 @@ _SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 
 # ── DB helpers ─────────────────────────────────────────────────────────────────
 
+def _headers() -> dict:
+    return {
+        "apikey":        _SUPABASE_KEY,
+        "Authorization": f"Bearer {_SUPABASE_KEY}",
+        "Content-Type":  "application/json",
+    }
+
+
+def _upsert_event(event: dict) -> dict:
+    """Upsert an event row and return the saved row (with slug assigned by DB).
+
+    Uses external_id (scraper source+title hash) as the conflict key so
+    re-runs don't create duplicate rows.
+    """
+    if not _SUPABASE_URL or not _SUPABASE_KEY:
+        logger.warning("Supabase credentials not set — skipping upsert")
+        return event
+
+    # Map RawEvent fields → DB column names
+    row = {
+        "title":            event.get("title", ""),
+        "short_description": event.get("short_description", ""),
+        "full_description": event.get("description", event.get("full_description", "")),
+        "start_at":         event.get("start_at"),
+        "end_at":           event.get("end_at"),
+        "venue_name":       event.get("venue_name", event.get("location_name", "")),
+        "address":          event.get("address", event.get("location_address", "")),
+        "location_text":    event.get("location_text", ""),
+        "lat":              event.get("lat"),
+        "lng":              event.get("lng"),
+        "tags":             event.get("tags", []),
+        "event_type":       event.get("event_type", "event"),
+        "section":          event.get("section", "main"),
+        "brand":            event.get("brand"),
+        "is_free":          event.get("is_free", False),
+        "cost_description": event.get("cost_description"),
+        "registration_url": event.get("registration_url") or event.get("source_url"),
+        "source_url":       event.get("source_url", event.get("registration_url", "")),
+        "status":           "published",
+    }
+    # Remove None values to let DB use defaults
+    row = {k: v for k, v in row.items() if v is not None}
+
+    url = f"{_SUPABASE_URL}/rest/v1/events?on_conflict=source_url"
+    headers = {**_headers(), "Prefer": "resolution=merge-duplicates,return=representation"}
+    resp = httpx.post(url, json=row, headers=headers, timeout=15)
+    resp.raise_for_status()
+
+    saved = resp.json()
+    if isinstance(saved, list) and saved:
+        return saved[0]
+    return event
+
+
 def _update_event_images(event_id: str, payload: dict) -> None:
     """PATCH the events row with image URLs and metadata."""
     if not _SUPABASE_URL or not _SUPABASE_KEY:
@@ -51,12 +135,7 @@ def _update_event_images(event_id: str, payload: dict) -> None:
         return
 
     url = f"{_SUPABASE_URL}/rest/v1/events?id=eq.{event_id}"
-    headers = {
-        "apikey":        _SUPABASE_KEY,
-        "Authorization": f"Bearer {_SUPABASE_KEY}",
-        "Content-Type":  "application/json",
-        "Prefer":        "return=minimal",
-    }
+    headers = {**_headers(), "Prefer": "return=minimal"}
     resp = httpx.patch(url, json=payload, headers=headers, timeout=10)
     resp.raise_for_status()
 
@@ -69,9 +148,13 @@ def process_event(event: dict) -> dict:
 
     Returns a result dict with status and any error message.
     """
+    title = event.get("title", "event")
+
+    # Step 0: Upsert event into DB to get the assigned slug/id
+    event = _upsert_event(event)
+
     event_id   = event.get("id", "")
     event_slug = event.get("slug", event_id)
-    title      = event.get("title", "event")
 
     logger.info("Processing images for event: %s (%s)", title, event_slug)
 
@@ -199,3 +282,6 @@ def lambda_handler(event: dict, context) -> dict:
             "results":   results,
         }),
     }
+
+# Alias for Terraform handler config (handler.handler)
+handler = lambda_handler

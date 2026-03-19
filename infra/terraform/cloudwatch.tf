@@ -39,10 +39,8 @@ resource "aws_cloudwatch_log_group" "lambda_image_gen" {
   retention_in_days = 30
 }
 
-resource "aws_cloudwatch_log_group" "lambda_social_poster" {
-  name              = "/aws/lambda/${aws_lambda_function.social_poster.function_name}"
-  retention_in_days = 30
-}
+# Social poster log group — deferred (Lambda removed, re-add when social posting is implemented)
+# resource "aws_cloudwatch_log_group" "lambda_social_poster" { ... }
 
 resource "aws_cloudwatch_log_group" "lambda_scheduler" {
   name              = "/aws/lambda/${aws_lambda_function.scheduler.function_name}"
@@ -56,7 +54,6 @@ locals {
     api            = aws_lambda_function.api.function_name
     events_scraper = aws_lambda_function.events_scraper.function_name
     image_gen      = aws_lambda_function.image_gen.function_name
-    social_poster  = aws_lambda_function.social_poster.function_name
     scheduler      = aws_lambda_function.scheduler.function_name
   }
 }
@@ -197,40 +194,52 @@ resource "aws_cloudwatch_dashboard" "main" {
       # Row 1: Lambda invocations + errors
       {
         type   = "metric"
-        x      = 0; y = 0; width = 12; height = 6
+        x      = 0
+        y      = 0
+        width  = 12
+        height = 6
         properties = {
           title  = "Lambda Invocations"
+          region = var.aws_region
           period = 300
           stat   = "Sum"
           metrics = [
             ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.api.function_name],
             ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.events_scraper.function_name],
             ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.image_gen.function_name],
-            ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.social_poster.function_name],
+            ["AWS/Lambda", "Invocations", "FunctionName", aws_lambda_function.scheduler.function_name],
           ]
         }
       },
       {
         type   = "metric"
-        x      = 12; y = 0; width = 12; height = 6
+        x      = 12
+        y      = 0
+        width  = 12
+        height = 6
         properties = {
           title  = "Lambda Errors"
+          region = var.aws_region
           period = 300
           stat   = "Sum"
           metrics = [
             ["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.api.function_name],
             ["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.events_scraper.function_name],
             ["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.image_gen.function_name],
-            ["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.social_poster.function_name],
+            ["AWS/Lambda", "Errors", "FunctionName", aws_lambda_function.scheduler.function_name],
           ]
         }
       },
       # Row 2: Lambda duration
       {
         type   = "metric"
-        x      = 0; y = 6; width = 12; height = 6
+        x      = 0
+        y      = 6
+        width  = 12
+        height = 6
         properties = {
           title  = "Lambda Duration (ms)"
+          region = var.aws_region
           period = 300
           stat   = "Average"
           metrics = [
@@ -243,9 +252,13 @@ resource "aws_cloudwatch_dashboard" "main" {
       # Row 2: SQS queue depths
       {
         type   = "metric"
-        x      = 12; y = 6; width = 12; height = 6
+        x      = 12
+        y      = 6
+        width  = 12
+        height = 6
         properties = {
           title  = "SQS Queue Depth"
+          region = var.aws_region
           period = 300
           stat   = "Maximum"
           metrics = [
@@ -259,9 +272,13 @@ resource "aws_cloudwatch_dashboard" "main" {
       # Row 3: API Gateway
       {
         type   = "metric"
-        x      = 0; y = 12; width = 12; height = 6
+        x      = 0
+        y      = 12
+        width  = 12
+        height = 6
         properties = {
           title  = "API Gateway Requests"
+          region = var.aws_region
           period = 300
           stat   = "Sum"
           metrics = [
@@ -273,9 +290,13 @@ resource "aws_cloudwatch_dashboard" "main" {
       },
       {
         type   = "metric"
-        x      = 12; y = 12; width = 12; height = 6
+        x      = 12
+        y      = 12
+        width  = 12
+        height = 6
         properties = {
           title  = "API Gateway Latency (ms)"
+          region = var.aws_region
           period = 300
           stat   = "p99"
           metrics = [

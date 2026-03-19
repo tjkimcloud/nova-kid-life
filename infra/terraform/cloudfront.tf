@@ -161,11 +161,8 @@ resource "aws_cloudfront_distribution" "web" {
     minimum_protocol_version       = var.web_acm_certificate_arn != "" ? "TLSv1.2_2021" : "TLSv1"
   }
 
-  logging_config {
-    bucket          = aws_s3_bucket.web.bucket_domain_name
-    prefix          = "cloudfront-logs/"
-    include_cookies = false
-  }
+  # CloudFront access logging omitted — requires S3 ACL which conflicts with
+  # modern bucket ownership controls. Enable manually via AWS Console if needed.
 }
 
 # CloudFront function — handle trailing-slash URLs for Next.js static export

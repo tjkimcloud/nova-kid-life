@@ -22,7 +22,8 @@ _MAX_LIMIT   = 100
 # ── GET /events ────────────────────────────────────────────────────────────────
 
 def list_events(event: dict, ctx) -> dict:
-    qs = event.get("queryStringParameters") or {}
+    qs     = event.get("queryStringParameters") or {}
+    origin = event.get("_origin")
 
     limit      = min(int(qs.get("limit", 20)), _MAX_LIMIT)
     offset     = int(qs.get("offset", 0))
@@ -49,8 +50,8 @@ def list_events(event: dict, ctx) -> dict:
     data_q = (
         db.table("events")
         .select(
-            "id, slug, title, description, start_at, end_at, "
-            "location_name, location_address, lat, lng, "
+            "id, slug, title, full_description, short_description, start_at, end_at, "
+            "venue_name, address, lat, lng, location_id, "
             "event_type, section, brand, tags, age_min, age_max, "
             "is_free, cost_description, registration_url, "
             "image_url, image_url_md, image_url_sm, image_alt, "
@@ -101,13 +102,14 @@ def list_events(event: dict, ctx) -> dict:
     total = count_resp.count or 0
     items = [event_to_response(r) for r in (data_resp.data or [])]
 
-    return ok(paginated(items, total, limit, offset))
+    return ok(paginated(items, total, limit, offset), origin=origin)
 
 
 # ── GET /events/featured ──────────────────────────────────────────────────────
 
 def featured_events(event: dict, ctx) -> dict:
     qs      = event.get("queryStringParameters") or {}
+    origin  = event.get("_origin")
     section = qs.get("section", "main")
     limit   = min(int(qs.get("limit", 6)), 12)
 
@@ -115,7 +117,7 @@ def featured_events(event: dict, ctx) -> dict:
     resp = (
         db.table("events")
         .select(
-            "id, slug, title, start_at, location_name, "
+            "id, slug, title, start_at, venue_name, "
             "event_type, section, tags, is_free, "
             "image_url, image_url_sm, image_alt, image_blurhash, image_width, image_height"
         )
@@ -127,7 +129,7 @@ def featured_events(event: dict, ctx) -> dict:
         .execute()
     )
 
-    return ok({"items": resp.data or []})
+    return ok({"items": resp.data or []}, origin=origin)
 
 
 # ── GET /events/upcoming ──────────────────────────────────────────────────────
@@ -137,6 +139,7 @@ def upcoming_events(event: dict, ctx) -> dict:
     from datetime import datetime, timedelta, timezone
 
     qs      = event.get("queryStringParameters") or {}
+    origin  = event.get("_origin")
     section = qs.get("section", "main")
     limit   = min(int(qs.get("limit", 10)), 20)
 
@@ -147,7 +150,7 @@ def upcoming_events(event: dict, ctx) -> dict:
     resp = (
         db.table("events")
         .select(
-            "id, slug, title, start_at, location_name, "
+            "id, slug, title, start_at, venue_name, "
             "event_type, section, tags, is_free, "
             "image_url, image_url_sm, image_alt, image_blurhash, image_width, image_height"
         )
@@ -160,15 +163,16 @@ def upcoming_events(event: dict, ctx) -> dict:
         .execute()
     )
 
-    return ok({"items": resp.data or []})
+    return ok({"items": resp.data or []}, origin=origin)
 
 
 # ── GET /events/{slug} ────────────────────────────────────────────────────────
 
 def get_event(event: dict, ctx) -> dict:
+    origin = event.get("_origin")
     slug = (event.get("pathParameters") or {}).get("slug", "")
     if not slug:
-        return error("Missing slug", 400)
+        return error("Missing slug", 400, origin)
 
     db = get_client()
     resp = (
@@ -183,27 +187,28 @@ def get_event(event: dict, ctx) -> dict:
     )
 
     if not resp.data:
-        return error("Event not found", 404)
+        return error("Event not found", 404, origin)
 
-    return ok(event_to_response(resp.data))
+    return ok(event_to_response(resp.data), origin=origin)
 
 
 # ── POST /events/search ───────────────────────────────────────────────────────
 
 def search_events(event: dict, ctx) -> dict:
     """Semantic search using pgvector cosine similarity."""
+    origin = event.get("_origin")
     body = json.loads(event.get("body") or "{}")
 
     try:
         req = SearchRequest(**body)
     except Exception as exc:
-        return error(str(exc), 400)
+        return error(str(exc), 400, origin)
 
     # Generate embedding for query
     try:
         embedding = _embed(req.query)
     except Exception as exc:
-        return error(f"Embedding failed: {exc}", 500)
+        return error(f"Embedding failed: {exc}", 500, origin)
 
     db = get_client()
 
@@ -218,7 +223,7 @@ def search_events(event: dict, ctx) -> dict:
     ).execute()
 
     items = [event_to_response(r) for r in (resp.data or [])]
-    return ok({"items": items, "query": req.query})
+    return ok({"items": items, "query": req.query}, origin=origin)
 
 
 def _embed(text: str) -> list[float]:

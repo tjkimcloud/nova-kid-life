@@ -64,10 +64,7 @@ output "lambda_image_gen_arn" {
   value       = aws_lambda_function.image_gen.arn
 }
 
-output "lambda_social_poster_arn" {
-  description = "Social poster Lambda ARN"
-  value       = aws_lambda_function.social_poster.arn
-}
+# Social poster ARN output removed — Lambda deferred
 
 # ── SQS ───────────────────────────────────────────────────────────────────────
 

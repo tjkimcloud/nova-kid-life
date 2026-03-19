@@ -1,9 +1,11 @@
-# Skill: Generate Event Images
+# Skill: Generate Event Images — SOP
 
 **Purpose:** Run the image generation pipeline for one or more events.
 Produces all WebP variants, LQIP placeholder, blurhash, SEO alt text, and uploads to S3.
 
-## Service: `services/image-gen/`
+**Service:** `services/image-gen/`
+
+> For sourcing logic, prompt libraries, and venue Place IDs — see `generate-image-source.md`.
 
 ---
 
@@ -12,12 +14,11 @@ Produces all WebP variants, LQIP placeholder, blurhash, SEO alt text, and upload
 ```
 Event dict (id, slug, title, tags, section, ...)
     │
-    ├── sourcer.py       scraped image_url → Google Places Photos → None
+    ├── sourcer.py       scraped image_url → Google Places → Unsplash → Pexels → None (AI fallback)
     │
-    ├── generator.py     (only if sourcer returns None)
-    │                    Imagen 3 (Vertex AI) → DALL-E 3 fallback
+    ├── generator.py     Imagen 3 (Vertex AI) → DALL-E 3 fallback (only if sourcer returns None)
     │
-    ├── enhancer.py      Pillow warm color grade on all images
+    ├── enhancer.py      Pillow warm color grade
     │                    warmth shift (R×1.05, B×0.90), contrast, saturation, vignette
     │
     ├── processor.py     Resize + WebP encode all variants:
@@ -39,56 +40,6 @@ Event dict (id, slug, title, tags, section, ...)
     │
     └── Supabase PATCH   Updates 10 image columns on events row
 ```
-
----
-
-## Prompt Libraries (`prompts.py`)
-
-### Website (photorealistic editorial photography)
-`WEBSITE_PROMPTS` — 14 keys:
-`library`, `outdoor`, `arts-crafts`, `sports`, `educational`, `music`, `nature`,
-`holiday`, `swimming`, `theater`, `food`, `deal_restaurant`, `deal_birthday`,
-`deal_amusement`, `default`
-
-Style constant: `"Professional editorial photography, warm golden hour lighting, amber and sage color tones, sharp focus, Northern Virginia suburban setting"`
-
-### Social (flat editorial illustration)
-`SOCIAL_PROMPTS` — same 14 keys
-
-Style constant: `"Flat editorial illustration, warm amber and sage green color palette, rounded friendly shapes, clean vector art style, families and children, joyful community atmosphere"`
-
-### Pokémon TCG (`section = 'pokemon'`)
-`POKEMON_PROMPTS` — 7 keys:
-`league`, `prerelease`, `regional`, `product_drop`, `product_drop_social`,
-`league_social`, `default`
-
-Events with `section = 'pokemon'` automatically route to `POKEMON_PROMPTS`.
-
-### Prompt selection
-```python
-from prompts import get_website_prompt, get_social_prompt, get_pokemon_prompt
-
-# Standard events
-website_prompt = get_website_prompt(event)   # tag-based matching
-social_prompt  = get_social_prompt(event)
-
-# Pokémon events
-website_prompt = get_pokemon_prompt(event, style="website")
-social_prompt  = get_pokemon_prompt(event, style="social")
-```
-
----
-
-## Image Sourcing (`sourcer.py`)
-
-Priority order:
-1. `event["image_url"]` — if present and looks like a real image (not placeholder/icon)
-2. Google Places Photos API — for known NoVa venues (pre-seeded Place IDs)
-3. `None` → AI generation
-
-Pre-seeded Place IDs cover: Fairfax County Library, George Mason University, Reston Town Center, Wolf Trap, Burke Lake Park, Meadowlark Botanical Gardens, Claude Moore Colonial Farm, Sully Historic Site.
-
-Requires: `GOOGLE_PLACES_API_KEY` env var (optional — falls back gracefully without it)
 
 ---
 
@@ -165,7 +116,7 @@ pytest tests/test_processor.py -v
 | Imagen 3 | ~$0.04/image | Primary — all AI-generated images |
 | DALL-E 3 HD | ~$0.08/image | Fallback — only if Imagen 3 fails |
 | gpt-4o-mini | ~$0.001/call | Alt text generation |
-| Google Places Photos | ~$0.017/call | Venue photo lookup (skipped if pre-seeded) |
+| Google Places Photos | ~$0.017/call | Venue photo lookup |
 
-Sourced images (from scraped URL): **$0** — skips all AI calls.
+Sourced images (scraped URL, Unsplash, Pexels): **$0** — skips all AI calls.
 Estimated blended cost with ~60% sourced: **~$0.02/event**

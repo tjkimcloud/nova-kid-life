@@ -19,6 +19,34 @@ from scrapers.tier2.ai_extractor import AITier2Scraper
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+
+def _load_secrets_from_ssm() -> None:
+    """Resolve *_PARAM env vars by fetching their values from SSM and
+    injecting the plaintext values as the canonical env var names."""
+    param_map = {
+        "OPENAI_API_KEY_PARAM":       "OPENAI_API_KEY",
+        "SUPABASE_URL_PARAM":         "SUPABASE_URL",
+        "SUPABASE_KEY_PARAM":         "SUPABASE_SERVICE_KEY",
+        "MEETUP_CLIENT_ID_PARAM":     "MEETUP_CLIENT_ID",
+        "MEETUP_SECRET_PARAM":        "MEETUP_CLIENT_SECRET",
+    }
+    ssm_paths = {v: os.environ[k] for k, v in param_map.items() if k in os.environ}
+    if not ssm_paths:
+        return
+    try:
+        import boto3
+        ssm = boto3.client("ssm", region_name=os.environ.get("AWS_REGION", "us-east-1"))
+        for env_key, param_path in ssm_paths.items():
+            if not os.environ.get(env_key):
+                result = ssm.get_parameter(Name=param_path, WithDecryption=True)
+                os.environ[env_key] = result["Parameter"]["Value"]
+    except Exception as exc:
+        logger.warning("SSM bootstrap warning: %s", exc)
+
+
+# Bootstrap secrets once at container init
+_load_secrets_from_ssm()
+
 # Load source registry
 _SOURCES_PATH = Path(__file__).parent / "config" / "sources.json"
 with open(_SOURCES_PATH) as f:

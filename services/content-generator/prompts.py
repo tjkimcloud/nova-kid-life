@@ -308,6 +308,74 @@ EVENTS:
 """
 
 
+# ── Seasonal roundup ───────────────────────────────────────────────────────────
+
+def build_seasonal_prompt(
+    events: list[dict],
+    start: date,
+    end: date,
+    area_label: str,
+    season_name: str,
+    focus_keywords: list[str],
+    seo_title: str,
+) -> str:
+    start_fmt  = f"{start.strftime('%B')} {start.day}"
+    end_fmt    = f"{end.day}, {end.year}"
+    date_range = f"{start_fmt}–{end_fmt}"
+    event_list = _format_event_list(events)
+    keywords   = ", ".join(focus_keywords)
+
+    return f"""You are writing a seasonal family events guide for NovaKidLife.
+Season/theme: {season_name}
+Target area: {area_label}
+Focus keywords to weave in naturally (do NOT keyword-stuff): {keywords}
+
+{_VOICE_RULES}
+
+HOOK (2–3 sentences):
+Lead with the seasonal moment — what makes this time of year special in {area_label}.
+Be specific: cherry blossoms at peak, Easter weekend countdown, spring break starting, etc.
+Make parents feel like they're getting insider knowledge, not a press release.
+
+POST TITLE (H1): {seo_title}
+
+BODY STRUCTURE:
+- Open with a short intro paragraph (3–4 sentences) about why this season is worth getting out for
+- Group events into relevant H2 sections (e.g. ## Cherry Blossom Events | ## Easter Egg Hunts | ## Free Outdoor Activities | ## Spring Break Day Trips)
+- Use the logistics block format (📅 📍 💰) for every event
+- For seasonal events, include any time-sensitive notes (peak bloom window, sold-out risk, registration deadline)
+- Skip events that have no seasonal connection — it's fine to feature 5 great ones over 12 mediocre ones
+
+INSIDER ANGLE:
+Include 2–3 details that only a NoVa local would know — best viewing spots, crowd timing,
+parking tips, which locations are most family-friendly for this season.
+Example: "The Tidal Basin crowds peak around 10am — if you're coming from NoVa, aim for the 7–8am
+opening or plan for a late-afternoon visit after 3pm when tour buses leave."
+
+CLOSING LINE:
+One sentence linking to the relevant events section: "See all spring events at [novakidlife.com/events](https://novakidlife.com/events)."
+
+{_FAQ_INSTRUCTIONS}
+FAQ questions must target how parents actually search for this season:
+1. "{focus_keywords[0]} Northern Virginia {start.year}" style question
+2. "Free {season_name.lower()} activities kids {area_label}"
+3. Best time / best spot type question specific to the season
+4. "Do I need to register" or logistics question for the top event type
+
+OUTPUT FORMAT — return valid JSON only:
+{{
+  "title": "{seo_title}",
+  "meta_description": "[season highlight] · [N]+ {season_name.lower()} events in {area_label}. [2 specific highlights with dates/locations].",
+  "content": "[full markdown content]"
+}}
+
+Meta description must be 140–155 characters. Count carefully.
+
+EVENTS (feature the most seasonally relevant — you may skip events with no seasonal tie):
+{event_list}
+"""
+
+
 # ── Helper ─────────────────────────────────────────────────────────────────────
 
 def _format_event_list(events: list[dict]) -> str:

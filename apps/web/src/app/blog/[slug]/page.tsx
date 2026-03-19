@@ -14,19 +14,21 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://novakidlife.com'
 export async function generateStaticParams() {
   try {
     const data = await getBlogPosts({ limit: 100 })
-    return data.items.map(p => ({ slug: p.slug }))
+    const slugs = data.items.map(p => ({ slug: p.slug }))
+    return slugs.length > 0 ? slugs : [{ slug: '_placeholder' }]
   } catch {
-    return []
+    return [{ slug: '_placeholder' }]
   }
 }
 
 // ── Metadata ───────────────────────────────────────────────────────────────────
 
 export async function generateMetadata(
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ): Promise<Metadata> {
   try {
-    const post = await getBlogPost(params.slug)
+    const { slug } = await params
+    const post = await getBlogPost(slug)
     return {
       title:       post.title,
       description: post.meta_description ?? undefined,
@@ -48,11 +50,12 @@ export async function generateMetadata(
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-export default async function BlogPostPage({ params }: { params: { slug: string } }) {
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
   let post: BlogPostWithEvents
 
   try {
-    post = await getBlogPost(params.slug)
+    post = await getBlogPost(slug)
   } catch {
     notFound()
   }
