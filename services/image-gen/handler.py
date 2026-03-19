@@ -82,22 +82,35 @@ def _headers() -> dict:
     }
 
 
-def _upsert_event(event: dict) -> dict:
-    """Upsert an event row and return the saved row (with slug assigned by DB).
+def _make_slug(title: str, source_url: str) -> str:
+    """Generate a URL-safe slug from title + a short hash of source_url."""
+    import re
+    import hashlib
+    base = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:60]
+    suffix = hashlib.md5(source_url.encode()).hexdigest()[:6]
+    return f"{base}-{suffix}" if base else f"event-{suffix}"
 
-    Uses external_id (scraper source+title hash) as the conflict key so
-    re-runs don't create duplicate rows.
+
+def _upsert_event(event: dict) -> dict:
+    """Upsert an event row and return the saved row (with slug + id from DB).
+
+    Conflict key: source_url (unique). slug is generated from title + url hash
+    so it is always present on INSERT and ignored on UPDATE (merge-duplicates).
     """
     if not _SUPABASE_URL or not _SUPABASE_KEY:
         logger.warning("Supabase credentials not set — skipping upsert")
         return event
 
+    source_url = event.get("source_url", event.get("registration_url", ""))
+    title      = event.get("title", "untitled")
+
     # Map RawEvent fields → DB column names
     row = {
-        "title":            event.get("title", ""),
+        "slug":             event.get("slug") or _make_slug(title, source_url),
+        "title":            title,
         "short_description": event.get("short_description", ""),
         "full_description": event.get("description", event.get("full_description", "")),
-        "start_at":         event.get("start_at"),
+        "start_at":         event.get("start_at") or "2026-01-01T00:00:00+00:00",
         "end_at":           event.get("end_at"),
         "venue_name":       event.get("venue_name", event.get("location_name", "")),
         "address":          event.get("address", event.get("location_address", "")),
@@ -110,8 +123,8 @@ def _upsert_event(event: dict) -> dict:
         "brand":            event.get("brand"),
         "is_free":          event.get("is_free", False),
         "cost_description": event.get("cost_description"),
-        "registration_url": event.get("registration_url") or event.get("source_url"),
-        "source_url":       event.get("source_url", event.get("registration_url", "")),
+        "registration_url": event.get("registration_url") or source_url,
+        "source_url":       source_url,
         "status":           "published",
     }
     # Remove None values to let DB use defaults
