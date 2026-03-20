@@ -457,6 +457,7 @@ Python services use SSM Parameter Store in production (`/novakidlife/` prefix).
 | 14 | api.novakidlife.com DNS live, Lambda dependency deploys, GitHub token SSM, seasonal content generator (Easter/cherry blossom/spring), first scraper run | ✅ |
 | 15 | CORS fix, image-gen pipeline fixes (slug + image_lqip column), homepage API wiring, scraper source fixes, frontend deployed | ✅ |
 | 16 | Autonomy + Bug Fix | ✅ | Fixed localhost API URL in build, deleted stale events, daily auto-deploy cron, full docs refresh |
+| 17 | Cost efficiency + CI/CD + Key rotation | ✅ | Content hash cache (skip GPT if page unchanged), weekly scraper, removed redundant daily cron, CI/CD GitHub secrets diagnosed, social-poster removed from deploy matrix, OpenAI key rotated, dangerouslySkipPermissions enabled |
 
 ---
 

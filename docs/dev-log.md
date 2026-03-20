@@ -2,6 +2,61 @@
 
 ---
 
+## Session 17 — 2026-03-20
+**Theme:** Cost efficiency + full autonomy + CI/CD fix + OpenAI key rotation
+
+### Content Hash Cache — Tier 2 Scraper Cost Optimization
+Built per-source content hash cache to skip GPT extraction when a page hasn't changed since the last run.
+
+- `supabase/migrations/20260320000001_create_scraper_source_cache.sql` — `scraper_source_cache` table (source_name PK, content_hash, last_scraped_at, events_found); pushed to cloud Supabase
+- `services/events-scraper/scrapers/source_cache.py` — `SourceCache` class: `load()` (one SELECT at start), `has_changed()` (SHA-256 of cleaned HTML), `mark_scraped()`, `save()` (one bulk upsert at end)
+- `services/events-scraper/scrapers/tier2/ai_extractor.py` — `AITier2Scraper.scrape()`: fetches HTML, cleans it, checks hash cache, skips GPT if unchanged, marks cache on success
+- `services/events-scraper/handler.py` — creates `SourceCache`, attaches to every Tier 2 scraper before `.scrape()`, saves at end
+
+**Cost impact:** At 46+ Tier 2 sources (~15K input tokens each), skipping 60% of unchanged sources saves ~$0.24/week. First run always hits all sources; subsequent runs skip unchanged ones.
+
+### Weekly Scraper (was: daily)
+- `infra/terraform/variables.tf` — `scraper_schedule` default: `cron(0 11 * * ? *)` → `cron(0 11 ? * WED *)`
+- `infra/terraform/eventbridge.tf` — description updated; comment explains weekly cycle
+- EventBridge rule updated directly via AWS CLI (immediate effect): `novakidlife-prod-daily-scraper` now fires Wednesday 11:00 UTC (6am EST)
+
+**Weekly cycle:** Wed 6am scrape → image-gen processes queue → Thu 8pm content-gen writes weekend roundup + triggers deploy → Mon 6am content-gen writes week-ahead + triggers deploy
+
+### Removed Unnecessary Daily Frontend Cron
+- `.github/workflows/deploy-frontend.yml` — removed `schedule: cron: '0 15 * * *'` (10am EST)
+- Content-generator already triggers `deploy-frontend` workflow via GitHub API after each blog post (Thu + Mon). Daily cron was redundant.
+
+### CI/CD Failures Diagnosed + Fixed
+All GitHub Actions workflows were failing at "Configure AWS credentials" because `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` secrets were never set in the GitHub repository.
+
+Also: `deploy-api.yml` included `social-poster` Lambda in matrix — that function doesn't exist in AWS yet (pending Ayrshare setup). Removed it from matrix.
+
+**Files changed:**
+- `.github/workflows/deploy-api.yml` — removed `social-poster` from matrix
+
+**User action required:** Set these 9 GitHub secrets at https://github.com/tjkimcloud/nova-kid-life/settings/secrets/actions:
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION=us-east-1`
+- `NEXT_PUBLIC_API_URL=https://api.novakidlife.com`, `NEXT_PUBLIC_SITE_URL=https://novakidlife.com`
+- `NEXT_PUBLIC_SUPABASE_URL=https://ovdnkgpdgkceulkpwedj.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` (from Supabase dashboard)
+- `WEB_BUCKET_NAME=novakidlife-web`, `CLOUDFRONT_DISTRIBUTION_ID=E1GSDDQH95EO6C`
+
+### OpenAI API Key Rotation
+OpenAI disabled the API key (automated abuse detection). Key was NOT exposed in git history or local `.env` files — only stored in SSM. User updated SSM `/novakidlife/openai/api-key` with new key; Lambdas need cold-start to pick up new value.
+
+**PowerShell commands (run with new key):**
+```powershell
+$env:AWS_PROFILE = "default"
+aws lambda update-function-configuration --function-name novakidlife-prod-events-scraper --description "key-rotation"
+aws lambda update-function-configuration --function-name novakidlife-prod-image-gen --description "key-rotation"
+aws lambda update-function-configuration --function-name novakidlife-prod-content-generator --description "key-rotation"
+```
+
+### Autonomy Enabled
+- `.claude/settings.local.json` — `"dangerouslySkipPermissions": true` added — Claude will no longer prompt for tool approval on this project
+
+---
+
 ## Session 16 — 2026-03-20
 **Theme:** Homepage fix (localhost API URL), stale data cleanup, daily auto-deploy, full docs refresh
 

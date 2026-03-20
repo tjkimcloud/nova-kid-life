@@ -6,9 +6,8 @@ on:
     paths:
       - 'apps/web/**'
   workflow_dispatch:
-  schedule:
-    # Daily 10am EST (15:00 UTC) — after the 6am scraper + image-gen pipeline completes
-    - cron: '0 15 * * *'
+  # No daily schedule — content-generator triggers this workflow automatically
+  # after each blog post run (Thu 8pm EST + Mon 6am EST via github_trigger.py)
 
 jobs:
   deploy:
@@ -44,7 +43,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: us-east-1
 
       - name: Sync HTML files (no-cache)
         run: |

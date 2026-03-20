@@ -1,6 +1,6 @@
 """
 events-scraper Lambda handler.
-Triggered by: EventBridge schedule (daily 6am EST) or manual invocation.
+Triggered by: EventBridge schedule (weekly Wednesday 6am EST) or manual invocation.
 
 Event payload:
   { "source": "eventbridge" | "manual", "targets": ["all"] | ["fairfax-library", ...] }
@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 
 from scrapers.publisher import publish
+from scrapers.source_cache import SourceCache
 from scrapers.tier2.ai_extractor import AITier2Scraper
 
 logger = logging.getLogger(__name__)
@@ -63,6 +64,11 @@ def handler(event: dict, context) -> dict:
 
     stats = {"scraped": 0, "published": 0, "errors": 0, "sources": {}}
 
+    # Load content hash cache once — used by all Tier 2 scrapers to skip
+    # unchanged pages and avoid redundant GPT extraction calls
+    source_cache = SourceCache()
+    source_cache.load()
+
     # ── Tier 1: Structured scrapers ───────────────────────────────────────────
     for source_config in _SOURCES.get("tier1_events", []):
         if not source_config.get("enabled"):
@@ -98,6 +104,7 @@ def handler(event: dict, context) -> dict:
                 url=source_config["url"],
                 tags=source_config.get("tags", []),
             )
+            scraper._source_cache = source_cache
             events = scraper.scrape()
             published = publish(events, _QUEUE_URL) if _QUEUE_URL else len(events)
             stats["scraped"] += len(events)
@@ -168,6 +175,9 @@ def handler(event: dict, context) -> dict:
             logger.exception("[%s] Deal scraper failed: %s", name, exc)
             stats["errors"] += 1
             stats["sources"][name] = {"error": str(exc)}
+
+    # Persist content hashes back to Supabase (one bulk upsert)
+    source_cache.save()
 
     logger.info(
         "Scrape complete: scraped=%d published=%d errors=%d",

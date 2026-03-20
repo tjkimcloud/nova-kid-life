@@ -158,6 +158,10 @@ class AITier2Scraper(BaseScraper):
     Config-driven Tier 2 scraper.
     Instantiated from sources.json entries with a 'url' field.
     No custom code needed — just add a JSON entry.
+
+    Attach a SourceCache before calling scrape() to skip GPT when content
+    hasn't changed since the last run:
+        scraper._source_cache = cache
     """
 
     def __init__(self, source_name: str, url: str, tags: list[str] | None = None, **kwargs) -> None:
@@ -166,10 +170,30 @@ class AITier2Scraper(BaseScraper):
         self.url = url
         self.extra_tags = tags or []
         self._extractor = AIEventExtractor(source_name=source_name)
+        self._source_cache = None  # set by handler.py before scrape()
 
     def scrape(self) -> list[RawEvent]:
         logger.info("[%s] Tier 2 AI scrape of %s", self.source_name, self.url)
-        events = self._extractor.extract_from_url(self.url)
+
+        # Fetch and clean HTML first so we can hash-check before calling GPT
+        try:
+            html = self._fetch(self.url)
+        except Exception as exc:
+            logger.error("[%s] Failed to fetch %s: %s", self.source_name, self.url, exc)
+            return []
+
+        cleaned = self._extractor._clean_html(html, max_chars=80_000)
+
+        # Skip GPT extraction if page content hasn't changed
+        cache = self._source_cache
+        if cache and not cache.has_changed(self.source_name, cleaned):
+            logger.info("[%s] Content unchanged — skipping GPT extraction", self.source_name)
+            return []
+
+        events = self._extractor.extract_from_html(html, source_url=self.url)
+
+        if cache:
+            cache.mark_scraped(self.source_name, cleaned, len(events))
 
         # Inject config-level tags
         if self.extra_tags:

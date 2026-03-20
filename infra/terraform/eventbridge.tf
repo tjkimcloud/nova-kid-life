@@ -1,14 +1,17 @@
 # ── EventBridge ───────────────────────────────────────────────────────────────
 #
-# Daily scraper trigger:
-#   cron(0 11 * * ? *) = 11:00 UTC = 6:00 AM EST (UTC-5) / 7:00 AM EDT (UTC-4)
+# Weekly scraper trigger:
+#   cron(0 11 ? * WED *) = Wednesday 11:00 UTC = Wednesday 6:00 AM EST (UTC-5)
+#
+# Weekly cadence: scrape Wed → image-gen processes queue → content-gen Thu 8pm
+# triggers deploy-frontend → site rebuilt with fresh events by Friday morning.
 #
 # EventBridge → events-scraper Lambda directly.
 # Lambda permission for EventBridge is defined in lambda.tf.
 
 resource "aws_cloudwatch_event_rule" "daily_scraper" {
   name                = "${local.name_prefix}-daily-scraper"
-  description         = "Trigger events-scraper Lambda daily at 6am EST"
+  description         = "Trigger events-scraper Lambda weekly on Wednesday at 6am EST"
   schedule_expression = var.scraper_schedule
   state               = "ENABLED"
 }
