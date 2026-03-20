@@ -392,14 +392,34 @@ Legend: ✅ Complete | 🔄 In Progress | ⬜ Not Started
 **Planned focus:** CORS fix, homepage API wiring
 
 ### CORS Fix ✅
-- ✅ `services/api/router.py` — replaced hardcoded `www.novakidlife.com` origin with dynamic `_cors_headers(origin)` that reflects back request origin if in `_ALLOWED_ORIGINS` set
-- ✅ `services/api/routes/events.py` — all 5 handlers extract `event["_origin"]` and pass to `ok()` / `error()`
-- ✅ `services/api/routes/pokemon.py` — all 3 handlers updated same way
+- ✅ `services/api/router.py` — dynamic `_cors_headers(origin)` reflects request origin if in `_ALLOWED_ORIGINS`
+- ✅ `services/api/routes/events.py` — all 5 handlers propagate `event["_origin"]` to `ok()` / `error()`
+- ✅ `services/api/routes/pokemon.py` — all 3 handlers updated
+- ✅ API Lambda redeployed
+
+### Image Pipeline Fixes ✅
+- ✅ `image-gen/handler.py` — `_make_slug()`: slug generated from title + md5(source_url); random seed when source_url empty
+- ✅ `image-gen/handler.py` — removed non-existent `image_lqip` column from PATCH payload
+- ✅ `image-gen/handler.py` — added `resp.text` logging on upsert failures
+- ✅ image-gen Lambda redeployed; test invocation confirmed `ok: 1, errors: 0`
+- ✅ DLQ redriven twice; scraper retriggered
+
+### Homepage Wiring ✅
+- ✅ `page.tsx` — blog section fetches `/blog?limit=3` as async server component; falls back to placeholders
+- ✅ `HeroSearch.tsx` — `DAY_COUNTS` replaced with live `useEffect` fetch; real counts per day
+- ✅ Homepage sections (`WeekendEventsSection`, `FreeEventsSection`, `CityStripsSection`) confirmed already API-wired
+
+### Scraper Source Fixes ✅
+- ✅ `sources.json` — `birthday-freebies` disabled (`birthday_freebies.py` was never built)
+- ✅ `krazy_coupon_lady.py` — 3 dead URLs updated to current site structure
+
+### Frontend Build + Deploy ✅
+- ✅ `npm run build` (two passes) — clean export
+- ✅ `aws s3 sync` → `novakidlife-web`
+- ✅ CloudFront `/*` invalidation — `https://novakidlife.com` returning HTTP 200
 
 ### Pending
-- ⬜ Redeploy API Lambda with CORS fix (`python scripts/deploy-lambdas.py api`)
-- ⬜ Wire homepage sections to live API (WeekendEventsSection, FreeEventsSection, CityStripsSection)
-- ⬜ Check DB event count from first scraper run
-- ⬜ Trigger content generator (once events confirmed in DB)
-- ⬜ Google Search Console verified
+- ⬜ Confirm images on event cards (scraper re-run in progress)
+- ⬜ Trigger content generator (once events + images confirmed)
+- ⬜ Google Search Console — submit sitemap, verify ownership
 - ⬜ First social posts via Ayrshare

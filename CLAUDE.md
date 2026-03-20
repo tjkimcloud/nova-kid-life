@@ -455,7 +455,7 @@ Python services use SSM Parameter Store in production (`/novakidlife/` prefix).
 | 12 | Launch: Terraform IaC fixed, Route 53 DNS, ACM cert, Lambda deploy script, SSM secrets, DB migrations pushed to cloud, event pipeline fixed (upsert + column names), site LIVE | ✅ |
 | 13 | Image sourcing expansion (Unsplash + Pexels), Homepage V2 components, API/Lambda SSM fixes, Terraform cleanup | ✅ |
 | 14 | api.novakidlife.com DNS live, Lambda dependency deploys, GitHub token SSM, seasonal content generator (Easter/cherry blossom/spring), first scraper run | ✅ |
-| 15 | CORS origin fix (dynamic reflection for www + non-www), route handler propagation, homepage API wiring | 🔄 |
+| 15 | CORS fix, image-gen pipeline fixes (slug + image_lqip column), homepage API wiring, scraper source fixes, frontend deployed | ✅ |
 
 ---
 

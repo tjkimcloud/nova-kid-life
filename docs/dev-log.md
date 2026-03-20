@@ -18,12 +18,37 @@ The router was hardcoding `Access-Control-Allow-Origin: https://www.novakidlife.
 - `services/api/routes/events.py` — all 5 handlers (`list_events`, `featured_events`, `upcoming_events`, `get_event`, `search_events`) extract `event.get("_origin")` and pass it to every `ok()` / `error()` call
 - `services/api/routes/pokemon.py` — all 3 handlers (`pokemon_events`, `pokemon_drops`, `pokemon_retailers`) updated same way
 
-### Pending in Session 15
-- ⬜ Redeploy API Lambda with CORS fix
-- ⬜ Wire homepage sections to live API (WeekendEventsSection, FreeEventsSection, CityStripsSection use placeholder data)
-- ⬜ Check DB event count from first scraper run
-- ⬜ Trigger content generator (once events confirmed in DB)
-- ⬜ Update session notes (CLAUDE.md session table, progress.md)
+### Image Pipeline Debugging + Fixes
+
+Three bugs found and fixed in `services/image-gen/handler.py`:
+
+**Bug 1 — Upsert 400: missing slug**
+`slug` is `NOT NULL UNIQUE` with no DB default. Upsert was sending no slug → 400 on every event. Fix: added `_make_slug(title, source_url)` — generates `{title-slug}-{md5hex[:6]}` from source URL. When source_url is empty, uses `secrets.token_hex(8)` as seed to prevent duplicate slugs.
+
+**Bug 2 — PATCH 400: non-existent column**
+`db_payload` included `"image_lqip": processed.lqip_data_url` but the DB schema has no `image_lqip` column (only `image_blurhash`). Removed from payload.
+
+**Bug 3 — Silent failures swallowing errors**
+`process_event()` catches all exceptions and returns `{"status": "error"}`. Lambda returns HTTP 200 → SQS considers message "processed" and deletes it. Events that failed never went to DLQ a second time. Added `resp.text` logging before `raise_for_status()` to expose Supabase error bodies in future.
+
+**Fix sequence:** Deploy → DLQ redrive → confirmed `ok: 1, errors: 0` on test invocation → retrigger scraper.
+
+### Homepage Wiring
+All three homepage sections (`WeekendEventsSection`, `FreeEventsSection`, `CityStripsSection`) were already fetching from the live API — they just showed empty states because the DB was empty. No code changes needed.
+
+Two remaining hardcoded items were wired:
+- `page.tsx` — blog section now fetches `/blog?limit=3` as async server component at build time; falls back to placeholder cards when no posts exist; "All guides →" link updated to `/blog`
+- `HeroSearch.tsx` — `DAY_COUNTS` replaced with `useEffect` fetch of current week's events; counts per day shown live in calendar strip (blank when 0)
+
+### Scraper Source Fixes
+- `sources.json` — `birthday-freebies` set `enabled: false` (`scrapers/tier3/birthday_freebies.py` was never built)
+- `krazy_coupon_lady.py` — 3 dead URLs updated to current KrazyCouponLady site structure
+
+### Frontend Build + Deploy
+- `npm run build` (two passes) — clean, no errors
+- `aws s3 sync` — pushed to `novakidlife-web` bucket
+- CloudFront invalidation `E1GSDDQH95EO6C` — `/*` invalidated
+- `https://novakidlife.com` returning HTTP 200 with updated `last-modified`
 
 ---
 
