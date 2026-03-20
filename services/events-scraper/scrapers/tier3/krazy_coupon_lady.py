@@ -19,9 +19,9 @@ from ..models import DealCategory, EventType, RawEvent
 logger = logging.getLogger(__name__)
 
 _URLS = [
-    "https://www.krazycouponlady.com/deals/restaurants",
-    "https://www.krazycouponlady.com/tips/food/free-food-deals",
-    "https://www.krazycouponlady.com/deals/freebies",
+    "https://www.krazycouponlady.com/deals/food",
+    "https://www.krazycouponlady.com/deals/freebies-and-samples",
+    "https://www.krazycouponlady.com/deals",
 ]
 
 _SYSTEM_PROMPT = """Extract all restaurant and food deals from this page.

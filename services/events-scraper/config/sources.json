@@ -786,9 +786,9 @@
     {
       "name": "birthday-freebies",
       "class": "scrapers.tier3.birthday_freebies.BirthdayFreebieScraper",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Birthday freebies — restaurants and brands with birthday rewards",
+      "description": "Birthday freebies — NOT YET BUILT (scrapers/tier3/birthday_freebies.py missing)",
       "deal_category": "restaurant"
     },
     {
