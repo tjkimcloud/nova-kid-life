@@ -83,11 +83,14 @@ def _headers() -> dict:
 
 
 def _make_slug(title: str, source_url: str) -> str:
-    """Generate a URL-safe slug from title + a short hash of source_url."""
+    """Generate a URL-safe slug from title + a short hash of source_url.
+    Falls back to a random suffix when source_url is empty to avoid collisions."""
     import re
     import hashlib
+    import secrets
     base = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:60]
-    suffix = hashlib.md5(source_url.encode()).hexdigest()[:6]
+    seed = source_url if source_url else secrets.token_hex(8)
+    suffix = hashlib.md5(seed.encode()).hexdigest()[:6]
     return f"{base}-{suffix}" if base else f"event-{suffix}"
 
 
@@ -133,6 +136,8 @@ def _upsert_event(event: dict) -> dict:
     url = f"{_SUPABASE_URL}/rest/v1/events?on_conflict=source_url"
     headers = {**_headers(), "Prefer": "resolution=merge-duplicates,return=representation"}
     resp = httpx.post(url, json=row, headers=headers, timeout=15)
+    if not resp.is_success:
+        logger.error("Upsert failed %s — body: %s — row keys: %s", resp.status_code, resp.text[:500], list(row.keys()))
     resp.raise_for_status()
 
     saved = resp.json()
@@ -224,17 +229,15 @@ def process_event(event: dict) -> dict:
 
         # ── Step 7: Update Supabase ────────────────────────────────────────────
         db_payload = {
-            "image_url":       urls.hero,
-            "image_url_md":    urls.hero_md,
-            "image_url_sm":    urls.hero_sm,
-            "og_image_url":    urls.og,
+            "image_url":        urls.hero,
+            "image_url_md":     urls.hero_md,
+            "image_url_sm":     urls.hero_sm,
+            "og_image_url":     urls.og,
             "social_image_url": urls.social,
-            "image_alt":       alt_text,
-            "image_width":     1200,
-            "image_height":    675,
-            "image_blurhash":  processed.blurhash,
-            # LQIP stored inline in DB — no CDN round-trip needed
-            "image_lqip":      processed.lqip_data_url,
+            "image_alt":        alt_text,
+            "image_width":      1200,
+            "image_height":     675,
+            "image_blurhash":   processed.blurhash,
         }
         _update_event_images(event_id, db_payload)
 
