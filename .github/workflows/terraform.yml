@@ -57,14 +57,7 @@ jobs:
         id: plan
         run: terraform plan -no-color -out=tfplan
         continue-on-error: true
-        env:
-          # Add all TF_VAR_* secrets here when Session 9 (Terraform) is complete.
-          # Example:
-          # TF_VAR_openai_api_key: ${{ secrets.TF_VAR_OPENAI_API_KEY }}
-          # TF_VAR_supabase_url: ${{ secrets.TF_VAR_SUPABASE_URL }}
-          # TF_VAR_supabase_service_key: ${{ secrets.TF_VAR_SUPABASE_SERVICE_KEY }}
-          # TF_VAR_google_project_id: ${{ secrets.TF_VAR_GOOGLE_PROJECT_ID }}
-          # TF_VAR_buffer_access_token: ${{ secrets.TF_VAR_BUFFER_ACCESS_TOKEN }}
+        # TF_VAR_* secrets can be added here if Terraform variables need them
 
       - name: Post plan as PR comment
         if: github.event_name == 'pull_request'
