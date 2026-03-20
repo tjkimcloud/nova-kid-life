@@ -17,8 +17,8 @@ Legend: ✅ Done | 🔄 In Progress | ⬜ Not Started
 - ⬜ Website URL: `https://novakidlife.com`
 - ⬜ Call-to-action button: "Learn More"
 - ⬜ Page verified (if eligible)
-- ⬜ Buffer connected to Facebook page
-- ⬜ Buffer profile ID saved to SSM: `/novakidlife/buffer/profile-ids`
+- ⬜ Ayrshare connected to Facebook page
+- ⬜ Ayrshare API key saved to SSM: `/novakidlife/ayrshare/api-key`
 
 ### Instagram
 - ⬜ Account created: `@novakidlife`
@@ -27,8 +27,7 @@ Legend: ✅ Done | 🔄 In Progress | ⬜ Not Started
 - ⬜ Bio written (150 chars max, include link in bio)
 - ⬜ Link in bio: `novakidlife.com` (or Linktree if multi-link needed)
 - ⬜ Connected to Facebook page
-- ⬜ Buffer connected to Instagram business account
-- ⬜ Buffer profile ID saved to SSM
+- ⬜ Ayrshare connected to Instagram business account
 
 ### Twitter / X
 - ⬜ Account created: `@novakidlife`
@@ -36,14 +35,13 @@ Legend: ✅ Done | 🔄 In Progress | ⬜ Not Started
 - ⬜ Header image: NoVa landscape with family (1500×500px)
 - ⬜ Bio written (160 chars max, include NoVa, family events)
 - ⬜ Website URL set
-- ⬜ Buffer connected
-- ⬜ Buffer profile ID saved to SSM
+- ⬜ Ayrshare connected
 
 ---
 
 ## Content Strategy
 
-### Posting Schedule (automated via Buffer + social-poster Lambda)
+### Posting Schedule (automated via Ayrshare + social-poster Lambda — pending deployment)
 
 | Platform | Frequency | Times (EST) |
 |----------|-----------|-------------|
@@ -53,7 +51,7 @@ Legend: ✅ Done | 🔄 In Progress | ⬜ Not Started
 
 ### Post Types
 
-1. **Event announcement** (primary) — automated via `social-poster` Lambda
+1. **Event announcement** (primary) — automated via `social-poster` Lambda (pending Ayrshare deployment)
    - Event title, date, location, image, link
 
 2. **Weekend roundup** (manual, weekly) — "Top 5 things to do this weekend in NoVa"
@@ -92,19 +90,18 @@ Full details + tickets → novakidlife.com/events/[slug]
 
 ---
 
-## Buffer Configuration
+## Ayrshare Configuration
 
-- ⬜ Buffer account: Free tier initially (10 posts/profile queued)
-- ⬜ Upgrade to Essentials ($6/mo) when queue regularly hits limit
-- ⬜ Posting schedule configured in Buffer dashboard
-- ⬜ All 3 profiles connected
-- ⬜ API access token generated and stored in SSM
-- ⬜ Profile IDs retrieved from API and stored in SSM
+> **Note:** Buffer was replaced by Ayrshare in Session 11. Buffer deprecated public API access for new users. The `social-poster` Lambda code was updated but the Lambda is NOT deployed yet.
 
-Retrieve profile IDs:
-```bash
-curl "https://api.bufferapp.com/1/profiles.json?access_token=<TOKEN>" | jq '.[].id'
-```
+- ⬜ Ayrshare account created at ayrshare.com
+- ⬜ API key generated
+- ⬜ API key stored in SSM: `/novakidlife/ayrshare/api-key`
+- ⬜ All 3 social profiles linked in Ayrshare dashboard
+- ⬜ social-poster Lambda updated for Ayrshare API calls
+- ⬜ social-poster Lambda added back to Terraform + deployed
+
+Ayrshare post endpoint: `POST https://app.ayrshare.com/api/post`
 
 ---
 
@@ -121,7 +118,7 @@ curl "https://api.bufferapp.com/1/profiles.json?access_token=<TOKEN>" | jq '.[].
 | Website sessions from social | 5% of total | 15% of total |
 
 ### Tools
-- Buffer Analytics (built-in with paid plan)
+- Ayrshare Analytics (built-in)
 - Google Analytics UTM parameters on all social links
 - Facebook Insights
 - Instagram Insights
@@ -148,4 +145,8 @@ https://novakidlife.com/events/[slug]?utm_source=[fb|ig|twitter]&utm_medium=soci
 ---
 
 ## Notes & Observations
+
+### 2026-03-11 — Buffer deprecated, migrated to Ayrshare
+Buffer removed public API access for new users. All social automation code in `services/social-poster/` was updated to reference Ayrshare. The Lambda is not deployed until Ayrshare is set up (account + API key + profiles connected). SSM param `/novakidlife/ayrshare/api-key` needs to be populated before deployment.
+
 <!-- Add session notes here as social strategy evolves -->

@@ -1,7 +1,7 @@
 # NovaKidLife — Master System Map
 
 > One-stop reference for the entire platform. Read this first in any new session.
-> Last updated: 2026-03-15 | Sessions complete: 1–7, 9 of 12
+> Last updated: 2026-03-19 | Sessions complete: 1–15 | Site LIVE at novakidlife.com
 
 ---
 
@@ -40,24 +40,27 @@
     │  EventBridge     │  Daily 6am EST trigger
     └────────┬─────────┘
              ▼
-    ┌──────────────────┐
-    │ events-scraper   │  59 sources, 4 tiers
-    │    Lambda        │
-    └────────┬─────────┘
-             ▼
-    ┌──────────────────┐
-    │   SQS Queue      │  novakidlife-events-queue
+    ┌──────────────────┐   ┌─────────────────────┐
+    │ events-scraper   │   │  content-generator  │  Thu 8pm + Mon 6am EST
+    │    Lambda        │   │      Lambda         │
+    │  111 sources     │   │  5 post types       │
+    └────────┬─────────┘   └──────────┬──────────┘
+             ▼                        │
+    ┌──────────────────┐              │ GitHub API
+    │   SQS Queue      │              ▼ (triggers deploy-frontend workflow)
+    │  events-queue    │
     └──┬───────────────┘
-       │           │
-       ▼           ▼
-┌──────────┐  ┌──────────────┐
-│image-gen │  │ social-poster│
-│  Lambda  │  │    Lambda    │
-└────┬─────┘  └──────┬───────┘
-     │               │
-     ▼               ▼
-  S3 media        Buffer API
-  (WebP uploads)  (scheduled posts)
+       ▼
+┌──────────┐
+│image-gen │
+│  Lambda  │
+└────┬─────┘
+     ▼
+  S3 media
+  (WebP uploads)
+
+Social Poster Lambda: code in services/social-poster/, NOT deployed
+(pending Ayrshare API integration — Buffer removed public API access)
 ```
 
 ---
@@ -69,13 +72,21 @@
 | File / Directory | Purpose | Status |
 |-----------------|---------|--------|
 | `src/app/layout.tsx` | Root layout, fonts, global SEO metadata, title template | ✅ |
-| `src/app/page.tsx` | Homepage (design system demo) + WebSite + LocalBusiness JSON-LD | ✅ |
+| `src/app/page.tsx` | Homepage V2 — async server component, live API data, blog section | ✅ |
 | `src/app/globals.css` | CSS custom properties (color tokens) | ✅ |
+| `src/app/error.tsx` | App Router error boundary (`'use client'`) | ✅ |
+| `src/app/global-error.tsx` | Global error boundary — wraps root layout | ✅ |
+| `src/app/not-found.tsx` | 404 page — required for static export | ✅ |
 | `src/app/sitemap.ts` | Dynamic sitemap.xml — fetches all slugs from /sitemap API | ✅ |
 | `src/app/robots.ts` | robots.txt — allows all crawlers + explicit AI bot list | ✅ |
+| `src/app/about/page.tsx` | E-E-A-T about page (mission, 59+ sources, coverage area) | ✅ |
+| `src/app/privacy-policy/page.tsx` | Privacy policy (noindex) | ✅ |
+| `src/app/pokemon/page.tsx` | Pokémon TCG hub — event types, 5 LGS cards, retailer guide | ✅ |
 | `src/app/events/page.tsx` | Events listing — server component, metadata, Suspense wrapper | ✅ |
 | `src/app/events/EventsClient.tsx` | URL-synced filters, semantic search, pagination | ✅ |
 | `src/app/events/[slug]/page.tsx` | Event detail — generateStaticParams + full SEO layout | ✅ |
+| `src/app/blog/page.tsx` | Blog listing — PostCard grid, Suspense skeleton | ✅ |
+| `src/app/blog/[slug]/page.tsx` | Blog detail — Article JSON-LD, Markdown renderer, EventCard grid | ✅ |
 | `src/components/BlurImage.tsx` | LQIP blur-up image, explicit dimensions (CLS prevention) | ✅ |
 | `src/components/EventCard.tsx` | Event card with date, cost badge, tags | ✅ |
 | `src/components/EventCardSkeleton.tsx` | Pulse skeleton placeholder | ✅ |
@@ -88,20 +99,19 @@
 | `src/components/EventJsonLd.tsx` | Event + BreadcrumbList + FAQPage JSON-LD scripts | ✅ |
 | `src/components/RelatedEvents.tsx` | 3 related events by section + tags (client fetch) | ✅ |
 | `src/components/ShareButtons.tsx` | Copy link, Twitter/X, Facebook share | ✅ |
+| `src/components/Header.tsx` | Sticky top nav — logo, Events + Pokémon TCG links, CTA | ✅ |
+| `src/components/Footer.tsx` | Dark sage — brand, social icons, coverage area, site links | ✅ |
+| `src/components/HeroSearch.tsx` | `'use client'` — Airbnb-style search + live day-count calendar strip | ✅ |
+| `src/components/WeekendEventsSection.tsx` | `'use client'` — Sat/Sun tab toggle, save buttons, Editor's Pick | ✅ |
+| `src/components/FreeEventsSection.tsx` | Free events spotlight — SEO H2 for free NoVa events | ✅ |
+| `src/components/CityStripsSection.tsx` | 4 city strips (Reston/Fairfax/Arlington/Leesburg) | ✅ |
+| `src/components/NewsletterForm.tsx` | `'use client'` — POSTs to API /newsletter/subscribe | ✅ |
 | `src/lib/api.ts` | Typed API client — all endpoints | ✅ |
 | `src/types/events.ts` | TypeScript interfaces: Event, Category, Location, etc. | ✅ |
 | `src/types/supabase.ts` | Generated Supabase types | ✅ |
 | `public/llms.txt` | LLM crawler file for GEO (ChatGPT, Perplexity, Claude, etc.) | ✅ |
 | `public/fonts/` | Self-hosted woff2 font files | ✅ |
 | `next.config.js` | output: 'export', trailingSlash: true | ✅ |
-
-**Pages not yet built:**
-| Page | Session | Notes |
-|------|---------|-------|
-| `/pokemon` hub | 8+ | Listing of Pokémon TCG events + set drops |
-| `/pokemon/events/[slug]` | 8+ | Pokemon event detail (reuse [slug] layout) |
-| `/pokemon/drops` | 8+ | Set releases + NoVa retailer matrix |
-| Homepage (real) | 12 | Replace design system demo at launch |
 
 ---
 
@@ -157,12 +167,13 @@ GET  /admin/health/detailed         [X-Api-Key required]
 | `scrapers/tier3/` | KrazyCouponLady, Hip2Save, Google News RSS deals | ✅ |
 | `scrapers/pokemon/events_scraper.py` | Play! Pokémon + 5 NoVa LGS | ✅ |
 | `scrapers/pokemon/drops_scraper.py` | Release calendar + 15-store retailer matrix | ✅ |
-| `config/sources.json` | All 59 sources — add Tier 2 here, zero code | ✅ |
+| `config/sources.json` | All 111 sources — add Tier 2 here, zero code | ✅ |
 
 **Source breakdown:**
 ```
 Tier 1 (5):  Fairfax Library, Loudoun Library, Arlington Library, Eventbrite, Meetup API
-Tier 2 (46): 11 Patch cities, 7 local news, 6 gov/parks, 10 venues, + more
+Tier 2 (98): Patch cities, local news, gov/parks, venues, blogs, museum sites, etc.
+             (birthday_freebies disabled — scraper not implemented)
 Tier 3 (5):  KrazyCouponLady, Hip2Save, Google News RSS × 3
 Pokémon (3): Play! Pokémon locator, 5 LGS websites, Google News RSS
 ```
@@ -174,7 +185,7 @@ Pokémon (3): Play! Pokémon locator, 5 LGS websites, Google News RSS
 | File | Purpose | Status |
 |------|---------|--------|
 | `prompts.py` | WEBSITE_PROMPTS (14), SOCIAL_PROMPTS (14), POKEMON_PROMPTS (7) | ✅ |
-| `sourcer.py` | Scraped URL → Google Places Photos → None | ✅ |
+| `sourcer.py` | Scraped URL → Google Places → Unsplash → Pexels → None (AI fallback) | ✅ |
 | `generator.py` | Imagen 3 (primary) → DALL-E 3 (fallback) | ✅ |
 | `enhancer.py` | Pillow warm grade: warmth, contrast, saturation, vignette | ✅ |
 | `processor.py` | All WebP variants + LQIP base64 + blurhash | ✅ |
@@ -195,20 +206,38 @@ social.webp   1080×1080   Social post (always AI illustration)
 
 ---
 
-### Social Poster — `services/social-poster/` ⬜ Session 8
+### Content Generator — `services/content-generator/` ✅ Session 8b
+
+| Component | Purpose | Status |
+|-----------|---------|--------|
+| `handler.py` | EventBridge-triggered (Thu 8pm + Mon 6am EST) | ✅ |
+| `post_builder.py` | 5 post type builders (weekend/location/free/week-ahead/indoor) | ✅ |
+| `prompts.py` | 5 prompt builders with shared brand voice + FAQ rules | ✅ |
+| `github_trigger.py` | Triggers deploy-frontend workflow after new posts saved to DB | ✅ |
+| `ssm.py` | SSM parameter helper | ✅ |
+| `tests/test_post_builder.py` | pytest for post builder | ✅ |
+
+Seasonal detection built-in: Easter, cherry blossom (April 1–20), spring break (late March).
+
+---
+
+### Social Poster — `services/social-poster/` ⚠️ Code preserved, NOT deployed
 
 | Component | Purpose |
 |-----------|---------|
-| `handler.py` | Lambda SQS trigger |
-| `buffer_client.py` | Buffer API wrapper |
-| `copy_builder.py` | Platform-specific copy from event data |
-| `scheduler.py` | Optimal posting time calculator |
+| `handler.py` | EventBridge-triggered Lambda entry point |
+| `buffer_client.py` | Buffer API wrapper (Platform enum — **NOT USED**, Buffer removed public API) |
+| `copy_builder.py` | Platform-specific copy builder (Twitter/Instagram/Facebook) |
+| `scheduler.py` | Optimal posting slot calculator (Eastern timezone) |
+| `tests/` | pytest: test_copy_builder.py, test_scheduler.py |
+
+> Status: Lambda removed from Terraform pending Ayrshare API integration (Buffer deprecated public API access for new users in 2025). Code preserved in `services/social-poster/`. Ayrshare SSM param: `/novakidlife/ayrshare/api-key`.
 
 ---
 
 ### Database — `supabase/`
 
-**All 11 migrations (all applied ✅):**
+**All 13 migrations (all applied ✅ to cloud Supabase `ovdnkgpdgkceulkpwedj`):**
 ```
 20260313000001  pgvector + uuid-ossp extensions
 20260313000002  locations table (15 NoVa locations seeded)
@@ -221,6 +250,8 @@ social.webp   1080×1080   Social post (always AI illustration)
 20260314000003  section field (main | pokemon routing)
 20260314000004  search_events() RPC (pgvector cosine similarity)
 20260314000005  fix event_type constraint (adds pokemon_tcg + product_drop)
+20260315000001  social tracking (social_posted_platforms text[], social_posted_at timestamptz)
+20260318000001  blog_posts table (slug unique, post_type, trigger_type, content Markdown, event_ids uuid[], RLS)
 ```
 
 **Critical DB note — column name mapping:**
@@ -243,11 +274,11 @@ Handled by `event_to_response()` in `services/api/models.py`.
 | `variables.tf` | All input variables (region, domains, cert ARNs, Lambda sizing, alarm config) | ✅ |
 | `s3.tf` | novakidlife-web + novakidlife-media + novakidlife-tfstate + DynamoDB lock table | ✅ |
 | `cloudfront.tf` | 2 distributions (web + media CDN), OAC, cache policies, CloudFront Function (URL rewrite) | ✅ |
-| `lambda.tf` | 5 Lambda functions + IAM roles (api, events-scraper, image-gen, social-poster, scheduler) | ✅ |
+| `lambda.tf` | 4 Lambda functions + IAM roles (api, events-scraper, image-gen, content-generator — social-poster removed) | ✅ |
 | `api_gateway.tf` | Regional REST API, /{proxy+} catch-all, CORS OPTIONS, prod stage, custom domain | ✅ |
 | `sqs.tf` | 4 queues (events-queue + events-dlq + social-queue + social-dlq), queue policies | ✅ |
-| `eventbridge.tf` | Daily scraper rule cron(0 11 * * ? *) → events-scraper Lambda | ✅ |
-| `ssm.tf` | 14 SecureString placeholders under /novakidlife/* | ✅ |
+| `eventbridge.tf` | Daily scraper cron(0 11 * * ? *) + content-gen Thu/Mon rules → Lambdas | ✅ |
+| `ssm.tf` | SecureString placeholders under /novakidlife/* (18+ params including Unsplash, Pexels, GitHub, Ayrshare) | ✅ |
 | `cloudwatch.tf` | SNS topic, Lambda log groups, error/duration/DLQ/5xx alarms, ops dashboard | ✅ |
 | `outputs.tf` | CloudFront domains, distribution IDs, API URLs, queue ARNs, DNS records to create | ✅ |
 
@@ -301,24 +332,21 @@ Then pass ARN as `web_acm_certificate_arn` and `api_acm_certificate_arn` variabl
       │      source → generate → enhance → process → upload → DB PATCH
       │      (sets status = 'enriched')
       │
-      └──► [Content Enrichment — future]
-             generate descriptions → DB PATCH
-             (sets status = 'published')
       │
       ▼
-[Supabase events table]  status = 'published'
+[Supabase events table]  — enriched with images
+      │
+      │   [Content Generator Lambda]  Thu 8pm + Mon 6am EST
+      │         queries recent events → GPT-4o-mini blog post
+      │         saves to blog_posts table → triggers GitHub Actions deploy
       │
       ▼
 [Next.js static build]   generateStaticParams fetches all slugs
-      │                   → builds /events/[slug] HTML files
+      │                   → builds /events/[slug] + /blog/[slug] HTML files
       ▼
 [S3 + CloudFront]   HTML served globally
-      │
-      ▼
-[Social Poster Lambda]   SQS trigger on new published events
-      │                   generates platform copy → Buffer API
-      ▼
-[Buffer]   Schedules posts for optimal times
+
+[Social Poster Lambda]   NOT deployed — pending Ayrshare integration
 ```
 
 ### Search Flow
@@ -364,12 +392,14 @@ GOOGLE_PROJECT_ID=...
 GOOGLE_LOCATION=us-central1
 GOOGLE_SERVICE_ACCOUNT_JSON={...}
 GOOGLE_PLACES_API_KEY=...
+UNSPLASH_ACCESS_KEY=...
+PEXELS_API_KEY=...
 MEDIA_BUCKET_NAME=novakidlife-media
 MEDIA_CDN_URL=https://media.novakidlife.com
-MEETUP_CLIENT_ID=...             ← register at meetup.com/api/oauth/list/
+MEETUP_CLIENT_ID=...
 MEETUP_CLIENT_SECRET=...
-BUFFER_ACCESS_TOKEN=...
-BUFFER_PROFILE_IDS=id1,id2,id3
+AYRSHARE_API_KEY=...             ← replaced Buffer (Buffer deprecated public API access)
+GITHUB_TOKEN=...                 ← content-generator deploy trigger
 ```
 
 **SSM Parameter Store paths (production)**
@@ -380,13 +410,18 @@ BUFFER_PROFILE_IDS=id1,id2,id3
 /novakidlife/google/project-id
 /novakidlife/google/service-account-json
 /novakidlife/google/places-api-key
+/novakidlife/google/location
+/novakidlife/unsplash/access-key
+/novakidlife/pexels/api-key
 /novakidlife/media/bucket-name
 /novakidlife/media/cdn-url
 /novakidlife/meetup/client-id
 /novakidlife/meetup/client-secret
-/novakidlife/buffer/access-token
-/novakidlife/buffer/profile-ids
+/novakidlife/ayrshare/api-key       ← replaces buffer/access-token
+/novakidlife/github/token           ← content-generator deploy trigger
 /novakidlife/admin/api-key
+/novakidlife/sqs/events-queue-url
+/novakidlife/aws/cloudfront-distribution-id
 ```
 
 ---
@@ -402,7 +437,7 @@ BUFFER_PROFILE_IDS=id1,id2,id3
 | `add-lambda.md` | Lambda function scaffolding |
 | `generate-event.md` | AI event generation |
 | `generate-image.md` | Full image pipeline |
-| `post-social.md` | Buffer API posting (technical) |
+| `post-social.md` | Ayrshare API posting (technical) |
 | `scrape-events.md` | Trigger + monitor scraper |
 | `terraform-plan.md` | Safe Terraform plan |
 | `terraform-apply.md` | Gated Terraform apply |
@@ -426,17 +461,21 @@ BUFFER_PROFILE_IDS=id1,id2,id3
 |---|-------|--------|-----------------|
 | 1 | Foundation | ✅ | Repo, Next.js 15, design system, 15 skills |
 | 2 | Database | ✅ | Supabase, 11 migrations, pgvector, RLS |
-| 3 | Scraper | ✅ | 3-tier, 59 sources, deal types |
+| 3 | Scraper | ✅ | 3-tier, 111 sources, deal types |
 | 4 | Image Gen | ✅ | Two pipelines, all WebP variants, LQIP |
 | 4b | Pokémon | ✅ | Section routing, scrapers, retailer matrix |
 | 5 | API | ✅ | 15 endpoints, pgvector search, 21 tests |
 | 6 | Events Listing | ✅ | 8 components, URL state, search |
 | 7 | Event Detail + SEO | ✅ | Detail page, JSON-LD, sitemap, robots, llms.txt |
-| **8** | **Social Poster** | ⬜ | Buffer Lambda, platform copy builder |
-| **9** | **Terraform** | ✅ | Full IaC, all AWS resources |
-| **10** | **CI/CD** | ⬜ | 5 GitHub Actions workflows |
-| **11** | **SEO + Performance** | ⬜ | Lighthouse 90+, audit fixes |
-| **12** | **Launch** | ⬜ | DNS, SSL, monitoring, go-live |
+| 8 | Social Poster | ✅ | Lambda code built (EventBridge-triggered), NOT deployed (Ayrshare pending) |
+| 8b | Content Generator | ✅ | Blog Lambda, 5 post types, seasonal detection, GitHub deploy trigger |
+| 9 | Terraform | ✅ | Full IaC, all AWS resources |
+| 10 | CI/CD | ✅ | 5 GitHub Actions workflows |
+| 11 | SEO + GEO | ✅ | Skills expanded, Buffer→Ayrshare swap, Homepage V1 |
+| 12 | Launch | ✅ | Route 53 DNS, ACM cert, Lambdas deployed, SSM secrets, DB migrations, site LIVE |
+| 13 | Image Sourcing + Homepage V2 | ✅ | Unsplash/Pexels cascade, new homepage components, error pages |
+| 14 | api.novakidlife.com DNS | ✅ | API Gateway custom domain, manylinux Lambda deps, blog migration, first scraper run |
+| 15 | Pipeline Fixes + Deploy | ✅ | CORS fix, slug fix, image_lqip removed, homepage wired to live API, frontend deployed |
 
 ---
 
@@ -448,7 +487,7 @@ BUFFER_PROFILE_IDS=id1,id2,id3
 | Vector search | pgvector in Supabase | No separate vector DB needed |
 | Image AI | Imagen 3 + DALL-E 3 fallback | Imagen quality; DALL-E as safety net |
 | Image format | WebP + LQIP + blurhash | Fastest load + no layout shift |
-| Social | Buffer API | Handles scheduling + multi-platform |
+| Social | Ayrshare API (planned) | Buffer deprecated public API access for new users |
 | IaC | Terraform | State in S3, reproducible infra |
 | Local DB | Supabase Docker | Free tier avoidance until launch (ADR-008) |
 | pgvector operators | `OPERATOR(extensions.<=>)` syntax | Required when `search_path = ''` |

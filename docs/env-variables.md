@@ -52,25 +52,47 @@ Never commit actual values. Never put secrets in Lambda environment variables di
 |----------|----------|-------------|
 | `SUPABASE_URL` | `/novakidlife/supabase/url` | Supabase project URL |
 | `SUPABASE_SERVICE_KEY` | `/novakidlife/supabase/service-key` | Supabase service role key |
-| `OPENAI_API_KEY` | `/novakidlife/openai/api-key` | OpenAI key for DALL-E 3 fallback |
+| `OPENAI_API_KEY` | `/novakidlife/openai/api-key` | OpenAI key for DALL-E 3 fallback + alt text |
 | `GOOGLE_PROJECT_ID` | `/novakidlife/gcp/project-id` | GCP project for Vertex AI (Imagen 3) |
 | `GOOGLE_LOCATION` | `/novakidlife/gcp/location` | Vertex AI region (e.g. `us-central1`) |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | `/novakidlife/gcp/service-account-json` | GCP service account key JSON |
+| `GOOGLE_PLACES_API_KEY` | `/novakidlife/google/places-api-key` | Google Places Photos API key |
+| `UNSPLASH_ACCESS_KEY` | `/novakidlife/unsplash/access-key` | Unsplash API key (free stock photos — step 3 in sourcing cascade) |
+| `PEXELS_API_KEY` | `/novakidlife/pexels/api-key` | Pexels API key (free stock photos — step 4 in sourcing cascade) |
 | `MEDIA_BUCKET_NAME` | `/novakidlife/s3/media-bucket` | S3 bucket name for event images |
 | `MEDIA_CDN_URL` | `/novakidlife/cdn/media-url` | CloudFront URL for media (e.g. `https://media.novakidlife.com`) |
 | `IMAGE_PROVIDER` | — | `imagen3` or `dalle3` (overrides default) |
 | `ENVIRONMENT` | — | `production` or `development` |
 
+**Image sourcing cascade** (sourcer.py): scraped URL → Google Places → Unsplash → Pexels → AI generation (last resort)
+
 ---
 
-## Social Poster Lambda — `services/social-poster/.env` (local dev only)
+## Content Generator Lambda — `services/content-generator/.env` (local dev only)
 
 | Variable | SSM Path | Description |
 |----------|----------|-------------|
 | `SUPABASE_URL` | `/novakidlife/supabase/url` | Supabase project URL |
 | `SUPABASE_SERVICE_KEY` | `/novakidlife/supabase/service-key` | Supabase service role key |
-| `BUFFER_ACCESS_TOKEN` | `/novakidlife/buffer/access-token` | Buffer API access token |
-| `BUFFER_PROFILE_IDS` | `/novakidlife/buffer/profile-ids` | Comma-separated Buffer profile IDs (FB, IG, X) |
+| `OPENAI_API_KEY` | `/novakidlife/openai/api-key` | OpenAI key for blog post generation |
+| `GITHUB_TOKEN` | `/novakidlife/github/token` | GitHub PAT for triggering deploy-frontend workflow |
+| `GITHUB_REPO` | — | `novakidlife/novakidlife` (hardcoded in github_trigger.py) |
+| `ENVIRONMENT` | — | `production` or `development` |
+
+EventBridge triggers: Thu 8pm EST + Mon 6am EST. Generates 5 post types (weekend/location/free/week-ahead/indoor).
+
+---
+
+## Social Poster Lambda — `services/social-poster/.env` ⚠️ NOT deployed
+
+> Buffer deprecated public API access for new users (2025). Lambda code preserved but Terraform resource removed.
+> Migration to Ayrshare API is pending. When integrated, replace all Buffer variables with Ayrshare below.
+
+| Variable | SSM Path | Description |
+|----------|----------|-------------|
+| `SUPABASE_URL` | `/novakidlife/supabase/url` | Supabase project URL |
+| `SUPABASE_SERVICE_KEY` | `/novakidlife/supabase/service-key` | Supabase service role key |
+| `AYRSHARE_API_KEY` | `/novakidlife/ayrshare/api-key` | Ayrshare API key (replaces Buffer) |
 | `ENVIRONMENT` | — | `production` or `development` |
 
 ---
@@ -117,9 +139,16 @@ All production secrets live here. IAM roles grant Lambda read-only access to `/n
 │   ├── project-id                 (String)
 │   ├── location                   (String)
 │   └── service-account-json       (SecureString)
-├── buffer/
-│   ├── access-token               (SecureString)
-│   └── profile-ids                (String)
+├── google/
+│   └── places-api-key             (SecureString)
+├── unsplash/
+│   └── access-key                 (SecureString)       ← added Session 13
+├── pexels/
+│   └── api-key                    (SecureString)       ← added Session 13
+├── ayrshare/
+│   └── api-key                    (SecureString)       ← replaces buffer/ (Session 11)
+├── github/
+│   └── token                      (SecureString)       ← added Session 14
 ├── api/
 │   ├── allowed-origins            (String)
 │   └── admin-key                  (SecureString)
@@ -129,8 +158,11 @@ All production secrets live here. IAM roles grant Lambda read-only access to `/n
 │   └── media-bucket               (String)
 ├── cdn/
 │   └── media-url                  (String)
-├── lambda/
-│   └── scraper-name               (String)
+├── meetup/
+│   ├── client-id                  (SecureString)
+│   └── client-secret              (SecureString)
 └── aws/
-    └── cloudfront-distribution-id (String)
+    └── cloudfront-distribution-id (String)             ← E1GSDDQH95EO6C
 ```
+
+> Note: `/novakidlife/buffer/*` params are STALE — Buffer API access deprecated. Replaced by `ayrshare/api-key`.
