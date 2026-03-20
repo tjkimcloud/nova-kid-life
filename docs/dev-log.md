@@ -2,6 +2,49 @@
 
 ---
 
+## Session 16 — 2026-03-20
+**Theme:** Homepage fix (localhost API URL), stale data cleanup, daily auto-deploy, full docs refresh
+
+### Root Cause: Homepage Sections Showing "Check Back Soon"
+All client-side homepage sections (`WeekendEventsSection`, `FreeEventsSection`, `CityStripsSection`) were silently failing — every API fetch was hitting `http://localhost:3001` instead of the live API. Root cause: `apps/web/.env.local` had `NEXT_PUBLIC_API_URL=http://localhost:3001`, which gets baked into the static bundle at build time. The `|| 'https://api.novakidlife.com'` fallback in component code never triggers because the env var IS set (just to the wrong value).
+
+**Fix:** Updated `.env.local`:
+- `NEXT_PUBLIC_API_URL=https://api.novakidlife.com`
+- `NEXT_PUBLIC_SITE_URL=https://novakidlife.com`
+
+Note: `.env.local` is gitignored — this is a local-only fix. GitHub Actions builds use `${{ secrets.NEXT_PUBLIC_API_URL }}` (secret must be set to `https://api.novakidlife.com` in repo settings).
+
+### Stale Data Cleanup
+Deleted 21 events from cloud Supabase with `start_at < 2026-03-20`. These were leftover from old test scraper runs (2021–2023 dates: Chipotle Friday the 13th BOGO, Chick-fil-A March deals, etc.). 53 current events remain.
+
+### Frontend Rebuild + Deploy
+- `npm run build` — clean single-pass, no errors
+- `aws s3 sync out/ s3://novakidlife-web --delete`
+- CloudFront invalidation `E1GSDDQH95EO6C` — `/*` — ID: `I2L3MM1FNE76GIZZ7739L5HWB6`
+
+### Daily Auto-Deploy Scheduled
+Added `schedule: cron: '0 15 * * *'` (10am EST) to `.github/workflows/deploy-frontend.yml`. The site now automatically rebuilds every day at 10am EST, picking up new event slugs after the 6am scraper + image-gen pipeline.
+
+### Full Automation Picture
+| Component | Schedule | Status |
+|-----------|----------|--------|
+| Scraper (111 sources) | Daily 6am EST (EventBridge) | ✅ Live |
+| Image generation | After each scraper batch (SQS) | ✅ Live |
+| Frontend rebuild | Daily 10am EST (GitHub Actions cron) | ✅ Live (added this session) |
+| Blog post generation | Thu 8pm + Mon 6am EST (EventBridge) | ✅ Live |
+| Social posting | Pending Ayrshare setup | ⚠️ Lambda code exists, not deployed |
+
+### Docs Updated
+- `docs/system-map.md` — sessions 1-15, new components, content-generator, 111 sources, Ayrshare SSM
+- `docs/env-variables.md` — Buffer→Ayrshare, Unsplash/Pexels/GitHub params, content-generator section
+- `docs/errors-and-fixes.md` — 7 new entries from sessions 12-15
+- `docs/social-media-log.md` — Buffer→Ayrshare throughout, Ayrshare setup checklist added
+
+### Scraper Re-triggered
+Triggered `novakidlife-prod-events-scraper` Lambda to pull fresh events (202 accepted).
+
+---
+
 ## Session 15 — 2026-03-19
 **Theme:** CORS origin fix, route handler propagation, homepage API wiring
 

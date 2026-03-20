@@ -388,7 +388,7 @@ Legend: ✅ Complete | 🔄 In Progress | ⬜ Not Started
 
 ---
 
-## Session 15 — 2026-03-19 🔄
+## Session 15 — 2026-03-19 ✅
 **Planned focus:** CORS fix, homepage API wiring
 
 ### CORS Fix ✅
@@ -418,8 +418,48 @@ Legend: ✅ Complete | 🔄 In Progress | ⬜ Not Started
 - ✅ `aws s3 sync` → `novakidlife-web`
 - ✅ CloudFront `/*` invalidation — `https://novakidlife.com` returning HTTP 200
 
-### Pending
-- ⬜ Confirm images on event cards (scraper re-run in progress)
+### Pending (carried forward)
+- ⬜ Confirm images on event cards (image-gen processing in background)
 - ⬜ Trigger content generator (once events + images confirmed)
 - ⬜ Google Search Console — submit sitemap, verify ownership
-- ⬜ First social posts via Ayrshare
+- ⬜ First social posts via Ayrshare (pending Ayrshare account setup)
+
+---
+
+## Session 16 — 2026-03-20 ✅
+**Theme:** Homepage fix, stale data cleanup, daily auto-deploy, docs refresh
+
+### Critical Bug Fix — Wrong API URL in Build ✅
+- ✅ `apps/web/.env.local` — `NEXT_PUBLIC_API_URL` changed from `http://localhost:3001` → `https://api.novakidlife.com`
+- ✅ `NEXT_PUBLIC_SITE_URL` changed from `http://localhost:3000` → `https://novakidlife.com`
+- Root cause: production build was baking localhost URL into static bundle; all client-side fetches silently failed
+
+### Stale Data Cleanup ✅
+- ✅ Deleted 21 events with `start_at < 2026-03-20` via Supabase REST API (old 2021–2023 deal dates)
+- ✅ 53 current + future events remain in DB
+
+### Frontend Rebuild + Deploy ✅
+- ✅ `npm run build` — clean, single-pass, all 13 pages exported
+- ✅ `aws s3 sync out/ s3://novakidlife-web --delete` — full deploy
+- ✅ CloudFront invalidation `E1GSDDQH95EO6C` `/*` — ID: `I2L3MM1FNE76GIZZ7739L5HWB6`
+
+### Daily Auto-Deploy ✅
+- ✅ `.github/workflows/deploy-frontend.yml` — added `schedule: cron: '0 15 * * *'` (10am EST daily)
+- ✅ Pushed to main → GitHub Actions now rebuilds site automatically every morning
+
+### Scraper Re-triggered ✅
+- ✅ `novakidlife-prod-events-scraper` Lambda triggered (202 accepted) — fresh events incoming
+
+### Documentation Refresh ✅
+- ✅ `docs/system-map.md` — full update: sessions 1-15, all new components, content-generator Lambda, 111 sources, Ayrshare SSM params
+- ✅ `docs/env-variables.md` — Buffer→Ayrshare, added image sourcing vars, added content-generator section, SSM index updated
+- ✅ `docs/errors-and-fixes.md` — 7 new entries from sessions 12-15
+- ✅ `docs/social-media-log.md` — Buffer→Ayrshare throughout, setup checklist added
+
+### Pending
+- ⬜ Set GitHub secret `NEXT_PUBLIC_API_URL=https://api.novakidlife.com` in repo settings (for GitHub Actions builds)
+- ⬜ Confirm images processing on event cards (image-gen pipeline running)
+- ⬜ Trigger content generator (once events confirmed in DB with images)
+- ⬜ Google Search Console — submit sitemap.xml, verify ownership
+- ⬜ Ayrshare account setup + social-poster Lambda deployment
+- ⬜ Monitor daily scraper + 10am rebuild for first full autonomous cycle

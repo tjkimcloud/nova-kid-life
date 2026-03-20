@@ -3,7 +3,7 @@
 ## Project Overview
 
 **NovaKidLife** (novakidlife.com) is a family events discovery platform for Northern Virginia.
-Live monetized business + AWS portfolio project. Built across 12 Claude Code sessions.
+Live monetized business + AWS portfolio project. Built across 16 sessions and running autonomously.
 
 **Site is LIVE** at https://novakidlife.com — CloudFront + ACM wildcard cert (`*.novakidlife.com`) + Route 53 DNS.
 Supabase cloud project: `ovdnkgpdgkceulkpwedj` (linked via `supabase link --project-ref ovdnkgpdgkceulkpwedj`).
@@ -308,7 +308,7 @@ app/
 - Homepage: WebSite (sitelinks searchbox) + LocalBusiness JSON-LD
 - `generateStaticParams` returns `[{ slug: '_placeholder' }]` as fallback (NOT `[]` — Next.js 15 rejects empty arrays)
 - All API fetches use `AbortSignal.timeout(8000)` to prevent build hangs when API is offline
-- **Build quirk:** Run `npm run build` TWICE without clearing `.next` — first pass fails on Pages Router chunk resolution, second pass succeeds (documented in `skills/qa-build.md`)
+- **Build quirk:** In some environments `npm run build` requires TWO passes — first pass may fail on Pages Router chunk resolution, second pass succeeds. Try single pass first; if it fails, run again without clearing `.next`. Documented in `skills/qa-build.md`.
 
 ---
 
@@ -357,7 +357,7 @@ pytest tests/
 python scripts/deploy-lambdas.py api              # deploy API Lambda
 python scripts/deploy-lambdas.py events-scraper   # deploy scraper
 python scripts/deploy-lambdas.py image-gen        # deploy image-gen (uploads via S3 — package >50MB)
-python scripts/deploy-lambdas.py api events-scraper image-gen  # deploy all three
+python scripts/deploy-lambdas.py api events-scraper image-gen content-generator  # deploy all four
 
 # Terraform (MUST use default profile — novakidlife-dev used for state)
 cd infra/terraform
@@ -456,6 +456,7 @@ Python services use SSM Parameter Store in production (`/novakidlife/` prefix).
 | 13 | Image sourcing expansion (Unsplash + Pexels), Homepage V2 components, API/Lambda SSM fixes, Terraform cleanup | ✅ |
 | 14 | api.novakidlife.com DNS live, Lambda dependency deploys, GitHub token SSM, seasonal content generator (Easter/cherry blossom/spring), first scraper run | ✅ |
 | 15 | CORS fix, image-gen pipeline fixes (slug + image_lqip column), homepage API wiring, scraper source fixes, frontend deployed | ✅ |
+| 16 | Autonomy + Bug Fix | ✅ | Fixed localhost API URL in build, deleted stale events, daily auto-deploy cron, full docs refresh |
 
 ---
 
