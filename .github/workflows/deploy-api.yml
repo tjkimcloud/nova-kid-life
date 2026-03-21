@@ -62,10 +62,21 @@ jobs:
       - name: Deploy to Lambda
         working-directory: services/${{ matrix.service }}
         run: |
-          aws lambda update-function-code \
-            --function-name ${{ matrix.function }} \
-            --zip-file fileb://function.zip \
-            --no-cli-pager
+          SIZE=$(stat -c%s function.zip)
+          if [ "$SIZE" -gt 52428800 ]; then
+            echo "Package > 50MB ($SIZE bytes) — deploying via S3"
+            aws s3 cp function.zip s3://novakidlife-tfstate/lambda-deploys/${{ matrix.service }}/deploy.zip
+            aws lambda update-function-code \
+              --function-name ${{ matrix.function }} \
+              --s3-bucket novakidlife-tfstate \
+              --s3-key lambda-deploys/${{ matrix.service }}/deploy.zip \
+              --no-cli-pager
+          else
+            aws lambda update-function-code \
+              --function-name ${{ matrix.function }} \
+              --zip-file fileb://function.zip \
+              --no-cli-pager
+          fi
 
       - name: Wait for update to complete
         run: |
