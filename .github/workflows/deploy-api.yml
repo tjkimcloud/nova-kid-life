@@ -45,7 +45,11 @@ jobs:
         working-directory: services/${{ matrix.service }}
         run: |
           mkdir -p .pkg
-          pip install -r requirements.txt -t .pkg/ -q
+          pip install -r requirements.txt -t .pkg/ -q \
+            --platform manylinux2014_x86_64 \
+            --implementation cp \
+            --python-version 3.12 \
+            --only-binary=:all:
           rsync -a \
             --exclude='.pkg/' \
             --exclude='tests/' \
