@@ -458,6 +458,7 @@ Python services use SSM Parameter Store in production (`/novakidlife/` prefix).
 | 15 | CORS fix, image-gen pipeline fixes (slug + image_lqip column), homepage API wiring, scraper source fixes, frontend deployed | ✅ |
 | 16 | Autonomy + Bug Fix | ✅ | Fixed localhost API URL in build, deleted stale events, daily auto-deploy cron, full docs refresh |
 | 17 | Cost efficiency + CI/CD + Key rotation | ✅ | Content hash cache (skip GPT if page unchanged), weekly scraper, removed redundant daily cron, CI/CD GitHub secrets diagnosed, social-poster removed from deploy matrix, OpenAI key rotated, dangerouslySkipPermissions enabled |
+| 18 | CI/CD fix + pipeline end-to-end | ✅ | Hardcoded aws-region in all 3 workflows (was secret causing 100% failure), excluded image-gen from CI/CD (google-cloud-aiplatform exceeds 250MB Lambda unzipped limit — deploy manually), fixed package-lock.json sync, blog_posts unique constraint fix (COALESCE functional index → plain UNIQUE constraint), content generator first post created, scraper ran (119 scraped), stale events deleted, 63 events / 28 with images |
 
 ---
 
