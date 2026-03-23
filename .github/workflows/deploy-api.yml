@@ -19,8 +19,8 @@ jobs:
             function: novakidlife-prod-api
           - service: events-scraper
             function: novakidlife-prod-events-scraper
-          - service: image-gen
-            function: novakidlife-prod-image-gen
+          # image-gen excluded: google-cloud-aiplatform pushes unzipped size >250MB
+          # (Lambda hard limit). Deploy manually: python scripts/deploy-lambdas.py image-gen
           - service: content-generator
             function: novakidlife-prod-content-generator
           # social-poster excluded — Lambda not deployed (pending Ayrshare setup)
