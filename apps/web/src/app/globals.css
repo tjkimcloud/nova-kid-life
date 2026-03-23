@@ -2,47 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Color System ─────────────────────────────────────────────────────────────
-   CSS custom properties mirror the Tailwind config values in tailwind.config.ts.
-   Use Tailwind utilities (bg-primary-500) for most cases.
-   Use CSS vars (var(--color-primary-500)) for inline styles or custom CSS.
-   ─────────────────────────────────────────────────────────────────────────── */
+/* ── Creamsicle Modern — Design Token Layer ────────────────────────────────
+   CSS custom properties. Values mirror tailwind.config.ts.
+   Per DESIGN_SYSTEM.md: every section must set background-color explicitly.
+   ─────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* ── Amber — Primary ──────────────────────────────────────────────────── */
-  --color-primary-50:  #FFFBEB;
-  --color-primary-100: #FEF3C7;
-  --color-primary-200: #FDE68A;
-  --color-primary-300: #FCD34D;
-  --color-primary-400: #FBBF24;
-  --color-primary-500: #F59E0B;
-  --color-primary-600: #D97706;
-  --color-primary-700: #B45309;
-  --color-primary-800: #92400E;
-  --color-primary-900: #78350F;
-  --color-primary-950: #451A03;
+  /* ── Surface ──────────────────────────────────────────────────────────── */
+  --bg:           #FFF8F2;   /* page background */
+  --bg2:          #F5EDE0;   /* card footers, subtle dividers */
+  --bg3:          #EDE0CF;   /* deepest tint */
+  --white:        #FFFFFF;
 
-  /* ── Sage — Secondary ─────────────────────────────────────────────────── */
-  --color-secondary-50:  #F4F7F4;
-  --color-secondary-100: #E2EAE2;
-  --color-secondary-200: #C5D5C6;
-  --color-secondary-300: #9DB89E;
-  --color-secondary-400: #739775;
-  --color-secondary-500: #537A55;
-  --color-secondary-600: #406143;
-  --color-secondary-700: #344E37;
-  --color-secondary-800: #2B3F2D;
-  --color-secondary-900: #243427;
-  --color-secondary-950: #131D15;
+  /* ── Orange — Primary Brand ───────────────────────────────────────────── */
+  --orange:       #E85D1A;
+  --orange-soft:  #FF8C55;
+  --orange-pale:  #FFF0E6;
 
-  /* ── Semantic Tokens ──────────────────────────────────────────────────── */
-  --color-background:     var(--color-primary-50);
-  --color-surface:        #FFFFFF;
-  --color-text-primary:   #1C1917;   /* stone-900 */
-  --color-text-secondary: #78716C;   /* stone-500 */
-  --color-text-muted:     #A8A29E;   /* stone-400 */
-  --color-border:         #E7E5E4;   /* stone-200 */
-  --color-border-strong:  #D6D3D1;   /* stone-300 */
+  /* ── Text ─────────────────────────────────────────────────────────────── */
+  --text:         #1C1714;
+  --text2:        #6B5E54;
+  --text3:        #A89588;
+
+  /* ── Border ───────────────────────────────────────────────────────────── */
+  --border:       #EDE0CF;
+
+  /* ── Semantic tag colors ─────────────────────────────────────────────── */
+  --green:        #16A34A;
+  --green-pale:   #DCFCE7;
+  --blue:         #1D4ED8;
+  --blue-pale:    #DBEAFE;
+  --yellow:       #92400E;
+  --yellow-pale:  #FEF3C7;
+  --purple:       #6D28D9;
+  --purple-pale:  #EDE9FE;
+
+  /* ── Radius ───────────────────────────────────────────────────────────── */
+  --radius-sm:    10px;
+  --radius:       16px;
+  --radius-lg:    22px;
+
+  /* ── Shadows ──────────────────────────────────────────────────────────── */
+  --shadow-sm:     0 1px 4px rgba(0,0,0,0.06);
+  --shadow:        0 4px 20px rgba(0,0,0,0.08);
+  --shadow-orange: 0 6px 20px rgba(232,93,26,0.28);
+
+  /* ── Legacy aliases (keep Tailwind opacity modifiers working) ─────────── */
+  --color-primary-50:  #FFF0E6;
+  --color-primary-500: #E85D1A;
+  --color-secondary-50:  #FFF8F2;
+  --color-secondary-900: #1C1714;
+  --color-background:    var(--bg);
+  --color-surface:       var(--white);
+  --color-text-primary:  var(--text);
+  --color-text-secondary: var(--text2);
+  --color-text-muted:    var(--text3);
+  --color-border:        var(--border);
+}
+
+/* ── Dark Mode — DISABLED ─────────────────────────────────────────────────
+   NovaKidLife is light-only. Prevent any system dark-mode bleed on
+   iOS/Android/desktop. Per DESIGN_SYSTEM.md.
+   ─────────────────────────────────────────────────────────────────────── */
+
+html {
+  color-scheme: light only;
+  background: #FFF8F2 !important;
+}
+
+body {
+  background: #FFF8F2 !important;
+  color: #1C1714 !important;
+}
+
+* {
+  color-scheme: light only;
 }
 
 /* ── Base Reset ───────────────────────────────────────────────────────────── */
@@ -60,17 +94,19 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-text-primary);
-    font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: var(--font-dm-sans), 'DM Sans', ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-nunito), ui-rounded, sans-serif;
-    font-weight: 700;
+    font-family: var(--font-plus-jakarta), 'Plus Jakarta Sans', ui-sans-serif, sans-serif;
+    font-weight: 800;
     line-height: 1.2;
+    letter-spacing: -0.3px;
+    color: var(--text);
   }
 
   img, video {
@@ -84,18 +120,34 @@
   }
 }
 
-/* ── Utility Layer Additions ──────────────────────────────────────────────── */
+/* ── Utility Layer ────────────────────────────────────────────────────────── */
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
 
+  /* Heading font — Plus Jakarta Sans 800 */
   .font-heading {
-    font-family: var(--font-nunito), ui-rounded, sans-serif;
+    font-family: var(--font-plus-jakarta), 'Plus Jakarta Sans', ui-sans-serif, sans-serif;
   }
 
+  /* Body font — DM Sans */
   .font-body {
-    font-family: var(--font-plus-jakarta), ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-dm-sans), 'DM Sans', ui-sans-serif, system-ui, sans-serif;
   }
+
+  /* Category tags */
+  .tag {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  .tag-o { background: var(--orange-pale); color: var(--orange); }
+  .tag-g { background: var(--green-pale);  color: var(--green);  }
+  .tag-b { background: var(--blue-pale);   color: var(--blue);   }
+  .tag-y { background: var(--yellow-pale); color: var(--yellow); }
+  .tag-p { background: var(--purple-pale); color: var(--purple); }
 }

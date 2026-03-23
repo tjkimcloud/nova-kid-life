@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { nunito, plusJakarta } from '@/lib/fonts'
+import { nunito, plusJakarta, dmSans } from '@/lib/fonts'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import './globals.css'
@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${nunito.variable} ${plusJakarta.variable}`}
+      className={`${nunito.variable} ${plusJakarta.variable} ${dmSans.variable}`}
     >
       <body className="font-body antialiased min-h-screen flex flex-col">
         <Header />

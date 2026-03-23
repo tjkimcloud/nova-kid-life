@@ -1,63 +1,30 @@
-import localFont from 'next/font/local'
+import { Plus_Jakarta_Sans, DM_Sans } from 'next/font/google'
 
 /**
- * Nunito — headings and UI elements
- * Weights: 600 (SemiBold), 700 (Bold), 800 (ExtraBold)
- *
- * Font files live at src/fonts/. Download them once with:
- *   bash apps/web/scripts/download-fonts.sh
+ * Plus Jakarta Sans — display / headings
+ * Weights: 400–800 (all needed for responsive scale)
+ * CSS var: --font-plus-jakarta
  */
-export const nunito = localFont({
-  src: [
-    {
-      path: '../fonts/Nunito-600.woff2',
-      weight: '600',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/Nunito-700.woff2',
-      weight: '700',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/Nunito-800.woff2',
-      weight: '800',
-      style: 'normal',
-    },
-  ],
-  variable: '--font-nunito',
-  display: 'swap',
-  preload: true,
-  fallback: ['ui-rounded', 'Helvetica Neue', 'Arial', 'sans-serif'],
-})
-
-/**
- * Plus Jakarta Sans — body text and captions
- * Weights: 400 (Regular), 500 (Medium), 600 (SemiBold)
- *
- * Font files live at src/fonts/. Download them once with:
- *   bash apps/web/scripts/download-fonts.sh
- */
-export const plusJakarta = localFont({
-  src: [
-    {
-      path: '../fonts/PlusJakartaSans-400.woff2',
-      weight: '400',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/PlusJakartaSans-500.woff2',
-      weight: '500',
-      style: 'normal',
-    },
-    {
-      path: '../fonts/PlusJakartaSans-600.woff2',
-      weight: '600',
-      style: 'normal',
-    },
-  ],
+export const plusJakarta = Plus_Jakarta_Sans({
+  subsets:  ['latin'],
+  weight:   ['400', '500', '600', '700', '800'],
   variable: '--font-plus-jakarta',
-  display: 'swap',
-  preload: true,
-  fallback: ['ui-sans-serif', 'system-ui', 'Arial', 'sans-serif'],
+  display:  'swap',
+  preload:  true,
 })
+
+/**
+ * DM Sans — body / UI text
+ * Weights: 400, 500, 600
+ * CSS var: --font-dm-sans
+ */
+export const dmSans = DM_Sans({
+  subsets:  ['latin'],
+  weight:   ['400', '500', '600'],
+  variable: '--font-dm-sans',
+  display:  'swap',
+  preload:  true,
+})
+
+// Legacy alias — layout.tsx uses this name
+export const nunito = plusJakarta

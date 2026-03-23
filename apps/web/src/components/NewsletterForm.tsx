@@ -19,7 +19,7 @@ export function NewsletterForm() {
       })
       if (!res.ok) throw new Error('Failed')
       setStatus('success')
-      setMessage('You\'re in! Check your inbox for the first roundup.')
+      setMessage("You're in! Check your inbox for the first roundup.")
       setEmail('')
     } catch {
       setStatus('error')
@@ -29,39 +29,62 @@ export function NewsletterForm() {
 
   if (status === 'success') {
     return (
-      <p className="text-primary-400 font-semibold text-sm py-3">
+      <p className="font-body font-semibold text-sm py-3" style={{ color: 'var(--orange)' }}>
         {message}
       </p>
     )
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="flex flex-col sm:flex-row gap-3"
-      aria-label="Newsletter signup"
-    >
-      <label htmlFor="newsletter-email" className="sr-only">Email address</label>
-      <input
-        id="newsletter-email"
-        type="email"
-        required
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        placeholder="your@email.com"
-        disabled={status === 'loading'}
-        className="flex-1 px-4 py-3 rounded-xl text-sm border border-secondary-600 bg-secondary-700 text-white placeholder-secondary-400 focus:outline-none focus:border-primary-400 disabled:opacity-60"
-      />
-      <button
-        type="submit"
-        disabled={status === 'loading'}
-        className="px-6 py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm hover:bg-primary-600 transition-colors shrink-0 disabled:opacity-60"
+    <form onSubmit={handleSubmit} aria-label="Newsletter signup">
+      {/* Pill-style fused input + button */}
+      <div
+        className="flex items-center overflow-hidden w-full max-w-md mx-auto"
+        style={{
+          background:    '#fff',
+          borderRadius:  '999px',
+          boxShadow:     'var(--shadow)',
+          border:        '1.5px solid var(--border)',
+        }}
       >
-        {status === 'loading' ? 'Subscribing…' : 'Subscribe'}
-      </button>
+        <label htmlFor="newsletter-email" className="sr-only">Email address</label>
+        <input
+          id="newsletter-email"
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="your@email.com"
+          disabled={status === 'loading'}
+          className="flex-1 min-w-0 px-5 py-3.5 text-sm font-body bg-transparent outline-none placeholder:text-secondary-400 disabled:opacity-60"
+          style={{ color: 'var(--text)' }}
+        />
+        <button
+          type="submit"
+          disabled={status === 'loading'}
+          className="shrink-0 mx-1.5 my-1.5 px-5 py-2.5 text-sm font-body font-semibold text-white rounded-full transition-opacity hover:opacity-90 disabled:opacity-60"
+          style={{ background: 'var(--orange)' }}
+        >
+          {status === 'loading' ? 'Subscribing…' : 'Subscribe'}
+        </button>
+      </div>
+
       {status === 'error' && (
-        <p className="text-red-400 text-xs mt-1 w-full">{message}</p>
+        <p className="font-body text-xs mt-2 text-center text-red-500">{message}</p>
       )}
+
+      {/* Benefit chips */}
+      <div className="flex flex-wrap justify-center gap-2 mt-4">
+        {['Free weekly guide', 'Best local events', 'No spam, ever'].map((b) => (
+          <span
+            key={b}
+            className="font-body text-[11px] font-medium px-3 py-1 rounded-full border"
+            style={{ color: 'var(--text2)', borderColor: 'var(--border)', background: '#fff' }}
+          >
+            {b}
+          </span>
+        ))}
+      </div>
     </form>
   )
 }

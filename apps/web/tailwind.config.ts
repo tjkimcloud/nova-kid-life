@@ -8,49 +8,62 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // ── Brand Colors ──────────────────────────────────────────────────────
-      // Values mirror CSS custom properties in globals.css.
-      // Hardcoded here so Tailwind opacity modifiers (bg-primary-500/50) work.
+      // ── Creamsicle Modern Palette ──────────────────────────────────────────
+      // primary = orange family | secondary = warm neutral family
+      // Values mirror DESIGN_SYSTEM.md and CSS vars in globals.css.
+      // Hardcoded so Tailwind opacity modifiers (bg-primary-500/50) work.
       colors: {
         primary: {
-          50:  '#FFFBEB',
-          100: '#FEF3C7',
-          200: '#FDE68A',
-          300: '#FCD34D',
-          400: '#FBBF24',
-          500: '#F59E0B',
-          600: '#D97706',
-          700: '#B45309',
+          50:  '#FFF0E6',  // orange-pale
+          100: '#FFD9C0',
+          200: '#FFC09A',
+          300: '#FF9E6E',
+          400: '#FF8C55',  // orange-soft
+          500: '#E85D1A',  // orange — main brand CTA
+          600: '#D44E10',
+          700: '#B8410D',
           800: '#92400E',
-          900: '#78350F',
-          950: '#451A03',
+          900: '#7A3509',
+          950: '#5C2807',
         },
         secondary: {
-          50:  '#F4F7F4',
-          100: '#E2EAE2',
-          200: '#C5D5C6',
-          300: '#9DB89E',
-          400: '#739775',
-          500: '#537A55',
-          600: '#406143',
-          700: '#344E37',
-          800: '#2B3F2D',
-          900: '#243427',
-          950: '#131D15',
+          50:  '#FFF8F2',  // --bg  (page background)
+          100: '#F5EDE0',  // --bg2 (card footers)
+          200: '#EDE0CF',  // --bg3 / --border
+          300: '#D4C0AA',
+          400: '#A89588',  // --text3
+          500: '#6B5E54',  // --text2
+          600: '#554A42',
+          700: '#3D342E',
+          800: '#2A221D',
+          900: '#1C1714',  // --text (headings, body)
+          950: '#0E0B09',
         },
       },
       // ── Typography ────────────────────────────────────────────────────────
       fontFamily: {
-        heading: ['var(--font-nunito)', 'Nunito', 'ui-rounded', 'sans-serif'],
-        body:    ['var(--font-plus-jakarta)', 'Plus Jakarta Sans', 'ui-sans-serif', 'sans-serif'],
+        heading: ['var(--font-plus-jakarta)', 'Plus Jakarta Sans', 'ui-sans-serif', 'sans-serif'],
+        body:    ['var(--font-dm-sans)',       'DM Sans',           'ui-sans-serif', 'sans-serif'],
       },
-      // ── Spacing / Layout ──────────────────────────────────────────────────
+      // ── Spacing / Radius ──────────────────────────────────────────────────
       maxWidth: {
-        content: '1200px',
+        content: '900px',
       },
       borderRadius: {
-        '2xl': '1rem',
-        '3xl': '1.5rem',
+        DEFAULT: '10px',   // --radius-sm
+        md:      '10px',
+        lg:      '16px',   // --radius
+        xl:      '16px',
+        '2xl':   '22px',   // --radius-lg (event cards)
+        '3xl':   '22px',
+      },
+      // ── Shadows ───────────────────────────────────────────────────────────
+      boxShadow: {
+        sm:     '0 1px 4px rgba(0,0,0,0.06)',
+        DEFAULT: '0 4px 20px rgba(0,0,0,0.08)',
+        md:     '0 4px 20px rgba(0,0,0,0.08)',
+        lg:     '0 8px 30px rgba(0,0,0,0.10)',
+        orange: '0 6px 20px rgba(232,93,26,0.28)',
       },
     },
   },
