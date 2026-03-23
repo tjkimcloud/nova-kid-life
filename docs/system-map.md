@@ -1,7 +1,7 @@
 # NovaKidLife — Master System Map
 
 > One-stop reference for the entire platform. Read this first in any new session.
-> Last updated: 2026-03-19 | Sessions complete: 1–15 | Site LIVE at novakidlife.com
+> Last updated: 2026-03-23 | Sessions complete: 1–18 | Site LIVE at novakidlife.com
 
 ---
 

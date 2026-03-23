@@ -125,6 +125,54 @@ Page background is `#FFFBEB` (amber-50) rather than pure white.
 
 ---
 
+## Homepage V2 — Airbnb-Style Layout
+**Date:** 2026-03-18 | **Status:** Built (Sessions 13–15)
+
+Replaced the original placeholder homepage with a full content-driven layout:
+
+**Structure:**
+1. `HeroSearch` — full-width hero with date/location/age pickers, quick-filter pills ("Free", "This Weekend", "Indoors"), week calendar strip, social proof counter
+2. Dark stats bar — event count, source count, geographic coverage area
+3. Category grid (6 emoji cards) — browse by type
+4. `WeekendEventsSection` — Sat/Sun tab toggle, Editor's Pick badge, save buttons
+5. Age group grid (4 cards: Babies, Toddlers, Elementary, Tweens+)
+6. `FreeEventsSection` — SEO-targeted "Free Things To Do With Kids in NoVa"
+7. `CityStripsSection` — 4 horizontal strips (Reston, Fairfax, Arlington, Leesburg)
+8. Blog/editorial section (3 post cards from `/blog` API)
+9. Coverage area pill links
+10. Newsletter CTA
+
+**Known issues after V2 launch (Session 18 feedback):**
+- The layout still feels "directory-ish" — too many grids, too structured, not enough warmth
+- Hero has no real photo — gradient only, feels generic
+- Blog cards use emoji as image placeholder — breaks trust/quality perception
+- First impression doesn't convey warmth, family joy, or community feel
+
+---
+
+## Homepage V3 — Warm Editorial Redesign (Planned)
+**Date:** 2026-03-23 | **Status:** Planned
+
+**Problem:** The current V2 homepage reads like a structured directory — useful but cold. The target audience (parents/caregivers) responds to warmth, community, and visual storytelling. A grid of event cards doesn't communicate "someone curated this for you."
+
+**Design direction:**
+- Hero: Full-bleed real family lifestyle photo (warm, candid, Northern Virginia settings — parks, farms, festivals). Text overlay: short emotional headline, single CTA. No search widget in the hero — move search lower.
+- Lead with a featured blog post / editorial story (image + headline + lede paragraph) — makes the site feel like a magazine, not a directory.
+- Reduce visual noise: fewer grids, more whitespace, let content breathe.
+- Blog cards must have images (use event images or AI-generated editorial images, not emoji).
+- City strips and category browsing stay — move them lower in the page hierarchy.
+- SEO sections (FreeEventsSection) stay but are integrated more naturally into the editorial flow.
+
+**Decision: Image strategy for blog posts**
+Don't generate a unique AI image for every event — that's expensive and slows the pipeline. Instead:
+- Blog post cards use the hero image from the first event in the post (already generated)
+- If no event image, use a curated stock photo from the seasonal/topic pool
+- Never use emoji or solid-color placeholders for blog cards — they signal low quality
+
+**Inspiration:** Local magazine sites, Airbnb editorial, Patch.com at its best
+
+---
+
 ## Future Design Decisions (TBD)
 
 - [ ] Dark mode strategy (CSS var approach makes this straightforward later)
@@ -132,3 +180,4 @@ Page background is `#FFFBEB` (amber-50) rather than pure white.
 - [ ] Image aspect ratio standard for event hero images (currently 16:9)
 - [ ] Icon library selection
 - [ ] Animation/transition library (Framer Motion vs. CSS transitions)
+- [ ] Hero photo library — curated real NoVa family photos vs. stock (Unsplash NoVa collections)

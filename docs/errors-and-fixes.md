@@ -15,6 +15,60 @@ Format:
 
 ---
 
+## 2026-03-23 — blog_posts ON CONFLICT fails — 42P10 no unique constraint
+**Session:** 18
+**Error:** Content generator Lambda returned `42P10 — there is no unique or exclusion constraint matching the ON CONFLICT specification`
+**Root cause:** `blog_posts` table had a functional unique index using `COALESCE(area, 'nova')`. PostgreSQL `ON CONFLICT` can only target plain unique constraints or plain expression indexes — not functional indexes that call scalar functions.
+**Fix:** Migration `20260323000001_fix_blog_posts_unique_constraint.sql` — dropped functional index, added `ALTER TABLE blog_posts ADD CONSTRAINT blog_posts_type_area_date_key UNIQUE (post_type, area, date_range_start)`. Applied via `supabase db push`.
+**Prevention:** Use plain `UNIQUE` constraints for `ON CONFLICT` targets. Only use functional indexes for read-query optimization, not upserts.
+
+---
+
+## 2026-03-23 — Content generator trigger payload — "Unknown trigger: manual"
+**Session:** 18
+**Error:** Lambda invocation returned `{"error": "Unknown trigger: manual"}`
+**Root cause:** Sent `{"trigger": "manual", "post_type": "week_ahead"}`. The handler validates `trigger` and only accepts `"weekend"` or `"week_ahead"`.
+**Fix:** Changed payload to `{"trigger": "week_ahead"}`.
+**Prevention:** Check handler.py for valid trigger values before invoking manually. Valid values: `weekend`, `week_ahead`.
+
+---
+
+## 2026-03-23 — Deploy Frontend fails — npm ci missing package from lock file
+**Session:** 18
+**Error:** GitHub Actions `npm ci` step failed: `Missing: @novakidlife/content-generator@0.1.0 from lock file`
+**Root cause:** `package.json` workspaces array included the content-generator package after it was added, but `npm install` was never re-run locally. `package-lock.json` didn't have the workspace entry. `npm ci` (used in CI) fails hard on any lock file discrepancy.
+**Fix:** Ran `npm install` locally, committed updated `package-lock.json`.
+**Prevention:** Always run `npm install` and commit `package-lock.json` after adding workspace packages to root `package.json`.
+
+---
+
+## 2026-03-23 — image-gen Lambda exceeds 250MB unzipped limit
+**Session:** 18
+**Error:** Lambda deploy failed: `RequestEntityTooLargeException` (zip >70MB), then on S3 path: unzipped size 262MB+ exceeds Lambda's 250MB hard limit.
+**Root cause:** `google-cloud-aiplatform` is a large dependency. Even with manylinux wheels and source stripping, the unzipped package exceeds Lambda's hard 250MB limit.
+**Fix:** Excluded image-gen from CI/CD matrix entirely. Deploy manually only: `python scripts/deploy-lambdas.py image-gen`.
+**Prevention:** image-gen MUST always be deployed via the manual script, not GitHub Actions. This is documented in `deploy-api.yml` comments and CLAUDE.md.
+
+---
+
+## 2026-03-23 — Terraform workflow "workflow file issue" — 0s failure
+**Session:** 18
+**Error:** Terraform GitHub Actions workflow failed instantly with "This run likely failed because of a workflow file issue" — 0 seconds, no steps ran.
+**Root cause:** `terraform.yml` had an `env:` block with all lines commented out. YAML parsed this as `env: null`, which GitHub Actions rejected at parse time before any steps executed.
+**Fix:** Removed the empty `env:` block entirely. Moved the comment to the relevant step.
+**Prevention:** YAML blocks with no content (only comments) become `null`. Remove empty YAML blocks rather than commenting out all their contents.
+
+---
+
+## 2026-03-23 — GitHub Actions failing: aws-region secret not set
+**Session:** 18
+**Error:** All 3 deploy workflows failed at "Configure AWS credentials" step: `Input required and not supplied: aws-region`
+**Root cause:** Workflows used `aws-region: ${{ secrets.AWS_REGION }}` but `AWS_REGION` was never added to the GitHub repository secrets. The other two AWS secrets were set; this one was missed.
+**Fix:** Hardcoded `aws-region: us-east-1` in all 3 workflows. It's not sensitive config — the region is visible in all resource ARNs.
+**Prevention:** When `AWS_REGION` is constant (not multi-region), hardcode it rather than using a secret.
+
+---
+
 ## 2026-03-13 — bash script failed on Windows (WSL not configured)
 **Session:** 1
 **Error:** `bash apps/web/scritps/download-fonts.sh` → `WSL (10 - Relay) ERROR: CreateProcessCommon:800: execvpe(/bin/bash) failed`

@@ -2,6 +2,95 @@
 
 ---
 
+## Session 18 — 2026-03-23
+**Theme:** CI/CD fully fixed, blog_posts constraint fix, content generator first run, pipeline verified
+
+### CI/CD — All Workflows Fixed
+
+**Problem 1: `Input required and not supplied: aws-region`**
+All 3 deploy workflows referenced `${{ secrets.AWS_REGION }}` but this secret was never set in the repo. `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` were already set; `AWS_REGION` was not.
+
+**Fix:** Hardcoded `aws-region: us-east-1` in all 3 workflows — it's not sensitive config.
+
+**Problem 2: Terraform workflow "workflow file issue" (0s failure)**
+`terraform.yml` had an `env:` block with only commented-out lines. YAML parsed this as `env: null`, which GitHub Actions rejected as a workflow file error at parse time (before any steps ran).
+
+**Fix:** Removed the empty `env:` block entirely. Added a comment on the step instead.
+
+**Problem 3: image-gen package >250MB unzipped (Lambda hard limit)**
+`google-cloud-aiplatform` alone pushes the unzipped Lambda package past the 250MB hard limit. Attempted S3 staging (handles >50MB zip) and manylinux wheels — unzipped size still 262MB+. Lambda rejects it at deploy time.
+
+**Fix:** Excluded image-gen from the CI/CD matrix entirely. Must always be deployed manually:
+```
+python scripts/deploy-lambdas.py image-gen
+```
+Added comment in `deploy-api.yml` matrix documenting why.
+
+**Problem 4: `npm ci` failing — missing `@novakidlife/content-generator@0.1.0` from lock file**
+`package.json` root workspaces included `@novakidlife/content-generator` but `npm install` had never been re-run after adding it. `package-lock.json` was out of sync — `npm ci` (used in CI) fails hard on missing workspace packages.
+
+**Fix:** Ran `npm install` locally, committed updated `package-lock.json`.
+
+**Result:** All 3 GitHub Actions workflows now pass green. Deploy API: api + events-scraper + content-generator (3/3). Deploy Frontend: builds + deploys to S3+CloudFront. Terraform: plan runs clean.
+
+---
+
+### blog_posts Unique Constraint Fix
+
+**Problem:** Content generator first invocation failed with `42P10 — there is no unique or exclusion constraint matching the ON CONFLICT specification`.
+
+**Root cause:** `blog_posts` table had a functional unique index: `CREATE UNIQUE INDEX ... ON blog_posts (post_type, COALESCE(area, 'nova'), date_range_start)`. PostgreSQL `ON CONFLICT` cannot target functional indexes — only plain unique constraints or plain expression indexes.
+
+**Fix:** New migration `supabase/migrations/20260323000001_fix_blog_posts_unique_constraint.sql`:
+```sql
+DROP INDEX IF EXISTS public.blog_posts_type_area_date_idx;
+ALTER TABLE public.blog_posts
+    ADD CONSTRAINT blog_posts_type_area_date_key
+    UNIQUE (post_type, area, date_range_start);
+```
+Applied to cloud Supabase via `supabase db push`.
+
+**Note:** The content-generator always sets `area` explicitly (`'nova'`, `'fairfax'`, etc.) so the functional COALESCE was unnecessary.
+
+---
+
+### Content Generator — First Post Created
+
+After the constraint fix, content generator invoked with `{"trigger": "week_ahead"}`:
+- First post saved: *"Family Events in Northern Virginia This Week — March 30–5, 2026"*
+- `github_trigger.py` fired → triggered `deploy-frontend` workflow → site rebuilt automatically
+- End-to-end confirmed: EventBridge → Lambda → Supabase → GitHub Actions → S3 + CloudFront
+
+**Note on trigger payload:** `trigger` field must be `"weekend"` or `"week_ahead"` — handler validates this. `"manual"` is not a valid value (hit this error during testing).
+
+---
+
+### Pipeline Verification
+
+- Scraper re-triggered: 119 events scraped, 119 published to SQS
+- DB count: 63 events total, 28 with images (44% coverage)
+- Stale events (pre-2026 dates) deleted
+- Lambda cold starts forced via `update-function-configuration --description "key-rotation"` on all 3 Lambdas to pick up rotated OpenAI key
+
+---
+
+### GitHub Secrets Verified
+User confirmed all 9 secrets set: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, plus 7 frontend/infra secrets. This unblocked all CI/CD workflows.
+
+---
+
+### Automation Schedule (current state)
+| Component | Schedule | Status |
+|-----------|----------|--------|
+| Scraper (119+ sources) | Wednesday 6am EST (EventBridge) | ✅ Live |
+| Image generation | After each scraper batch (SQS) | ✅ Live |
+| Blog post — weekend roundup | Thursday 8pm EST (EventBridge) | ✅ Live |
+| Blog post — week ahead | Monday 6am EST (EventBridge) | ✅ Live |
+| Frontend rebuild | After each blog post (GitHub API) | ✅ Live |
+| Social posting | Pending Ayrshare setup | ⚠️ Lambda code exists, not deployed |
+
+---
+
 ## Session 17 — 2026-03-20
 **Theme:** Cost efficiency + full autonomy + CI/CD fix + OpenAI key rotation
 

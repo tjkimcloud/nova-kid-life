@@ -1,4 +1,4 @@
-# Build Progress — NovaKidLife (12 Sessions)
+# Build Progress — NovaKidLife (18 Sessions)
 
 Legend: ✅ Complete | 🔄 In Progress | ⬜ Not Started
 
@@ -496,10 +496,46 @@ Legend: ✅ Complete | 🔄 In Progress | ⬜ Not Started
 ### Autonomy Enabled ✅
 - ✅ `.claude/settings.local.json` — `"dangerouslySkipPermissions": true` — no more approval prompts
 
-### Pending
-- ⬜ Set 9 GitHub secrets (CI/CD will pass once done)
-- ⬜ Force Lambda cold starts after OpenAI key rotation
-- ⬜ Confirm images on event cards (image-gen pipeline)
-- ⬜ Trigger content generator once events confirmed
+### Pending (resolved in Session 18)
+- ✅ Set 9 GitHub secrets (CI/CD now passes)
+- ✅ Force Lambda cold starts after OpenAI key rotation
+- ✅ Confirm images processing on event cards
+- ✅ Trigger content generator
 - ⬜ Google Search Console — submit sitemap, verify ownership
 - ⬜ Ayrshare account setup + social-poster Lambda deployment
+
+---
+
+## Session 18 — 2026-03-23 ✅
+**Theme:** CI/CD fully fixed, blog_posts constraint fix, content generator first run, pipeline verified
+
+### CI/CD — All Workflows Fixed ✅
+- ✅ `deploy-api.yml`, `deploy-frontend.yml`, `terraform.yml` — hardcoded `aws-region: us-east-1` (was referencing non-existent `AWS_REGION` secret)
+- ✅ `terraform.yml` — removed empty `env:` block that caused YAML parse failure ("workflow file issue")
+- ✅ `deploy-api.yml` — added manylinux pip flags for smaller Lambda packages
+- ✅ `deploy-api.yml` — added S3 fallback for packages >50MB
+- ✅ `deploy-api.yml` — excluded image-gen from matrix (`google-cloud-aiplatform` exceeds 250MB Lambda unzipped hard limit)
+- ✅ `package-lock.json` — synced `@novakidlife/content-generator@0.1.0` workspace (was missing, broke `npm ci`)
+- ✅ All 3 workflows now pass: Deploy API (3 Lambdas), Deploy Frontend, Terraform
+
+### blog_posts Constraint Fix ✅
+- ✅ `supabase/migrations/20260323000001_fix_blog_posts_unique_constraint.sql` — dropped COALESCE functional index, added plain `UNIQUE (post_type, area, date_range_start)` constraint
+- ✅ Applied to cloud Supabase via `supabase db push`
+- Root cause: `ON CONFLICT` cannot target functional indexes in PostgreSQL
+
+### Content Generator First Run ✅
+- ✅ Lambda invoked with `{"trigger": "week_ahead"}`
+- ✅ First blog post saved: *"Family Events in Northern Virginia This Week — March 30–5, 2026"*
+- ✅ `github_trigger.py` fired → Deploy Frontend triggered → site rebuilt automatically
+- ✅ End-to-end blog pipeline confirmed: EventBridge → Lambda → Supabase → GitHub API → S3 + CloudFront
+
+### Pipeline Verification ✅
+- ✅ Scraper triggered: 119 events scraped, 119 published to SQS
+- ✅ 63 events in DB, 28 with images (44% coverage)
+- ✅ Stale events deleted
+- ✅ Lambda cold starts forced (all 3 Lambdas) to pick up rotated OpenAI key
+
+### Pending
+- ⬜ Google Search Console — submit `https://novakidlife.com/sitemap.xml` (requires browser)
+- ⬜ Ayrshare account setup + social-poster Lambda deployment
+- ⬜ Homepage UI/UX redesign — reduce "directory" feel, add warmth and personality
