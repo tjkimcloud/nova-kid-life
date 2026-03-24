@@ -13,7 +13,7 @@ import logging
 import os
 from pathlib import Path
 
-from scrapers.publisher import publish, publish_direct
+from scrapers.publisher import publish_direct
 from scrapers.source_cache import SourceCache
 from scrapers.tier2.ai_extractor import AITier2Scraper
 
@@ -53,6 +53,8 @@ _SOURCES_PATH = Path(__file__).parent / "config" / "sources.json"
 with open(_SOURCES_PATH) as f:
     _SOURCES = json.load(f)
 
+# SQS queue no longer used — scraper upserts directly to Supabase
+# _QUEUE_URL kept here in case image enrichment is re-enabled later
 _QUEUE_URL = os.environ.get("EVENTS_QUEUE_URL", "")
 
 
@@ -70,16 +72,15 @@ def handler(event: dict, context) -> dict:
     source_cache.load()
 
     def _publish(events, name, extra=None):
-        """Direct-upsert first (immediate visibility), then SQS for image enrichment."""
+        """Upsert directly to Supabase — no image pipeline, events visible immediately."""
         direct = publish_direct(events)
-        queued = publish(events, _QUEUE_URL) if _QUEUE_URL else 0
         stats["scraped"]   += len(events)
         stats["published"] += direct
-        entry = {"scraped": len(events), "direct": direct, "queued": queued}
+        entry = {"scraped": len(events), "published": direct}
         if extra:
             entry.update(extra)
         stats["sources"][name] = entry
-        logger.info("[%s] scraped=%d direct=%d queued=%d", name, len(events), direct, queued)
+        logger.info("[%s] scraped=%d published=%d", name, len(events), direct)
 
     # ── Tier 1: Structured scrapers ───────────────────────────────────────────
     for source_config in _SOURCES.get("tier1_events", []):
