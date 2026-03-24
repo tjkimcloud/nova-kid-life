@@ -122,13 +122,13 @@ export default async function HomePage() {
           {/* Photo background */}
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('/images/hero-family.jpg')", backgroundColor: '#C4825A' }}
+            style={{ backgroundImage: "url('/images/hero-family.jpg')", backgroundColor: '#3a5a3a', backgroundPosition: 'center 30%' }}
             aria-hidden="true"
           />
-          {/* Warm overlay */}
+          {/* Warm overlay — left-to-right so text stays readable, right side lets photo breathe */}
           <div
             className="absolute inset-0"
-            style={{ background: 'linear-gradient(135deg, rgba(92,40,7,0.88) 0%, rgba(120,53,9,0.72) 50%, rgba(184,65,13,0.35) 100%)' }}
+            style={{ background: 'linear-gradient(105deg, rgba(30,20,10,0.82) 0%, rgba(50,30,10,0.65) 45%, rgba(100,50,15,0.25) 100%)' }}
             aria-hidden="true"
           />
           {/* Bottom fade into page */}
