@@ -36,23 +36,22 @@ export default function EventsPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ITEM_LIST_SCHEMA) }}
       />
-    <main className="min-h-screen bg-primary-50/30">
+    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* Page header */}
       <div className="bg-white border-b border-secondary-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <h1 className="font-heading font-extrabold text-3xl sm:text-4xl text-secondary-900">
-            Family Events in{' '}
-            <span className="text-primary-600">Northern Virginia</span>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+          <h1 className="font-heading font-extrabold text-2xl sm:text-3xl" style={{ color: 'var(--text)' }}>
+            All Family Events —{' '}
+            <span style={{ color: 'var(--orange)' }}>Northern Virginia</span>
           </h1>
-          <p className="mt-2 text-secondary-500 text-base max-w-2xl">
-            Discover things to do with your kids — from storytime and sports to festivals,
-            STEM, and deals. Updated daily from 50+ local sources.
+          <p className="mt-1.5 text-sm max-w-xl" style={{ color: 'var(--text2)' }}>
+            Every event for kids &amp; families across Fairfax, Loudoun, Arlington, and Prince William. Scraped daily from 60+ local sources.
           </p>
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main content — narrower max-width for list readability */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6">
         <Suspense fallback={<EventGridSkeleton count={12} />}>
           <EventsClient />
         </Suspense>

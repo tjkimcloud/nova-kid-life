@@ -1,11 +1,21 @@
 """
-SQS publisher — sends scraped events/deals to the enrichment queue in batches.
+Publisher — two paths for scraped events:
+
+1. publish_direct()  → upsert directly to Supabase (fast, no image).
+   Events appear on the site immediately after the scraper runs.
+
+2. publish()         → send to SQS for image-gen enrichment (background).
+   Image-gen picks up messages, generates images, and updates the DB row.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
+import re
+import urllib.request
+import urllib.error
 from itertools import islice
 
 import boto3
@@ -28,6 +38,88 @@ def _chunks(iterable, size: int):
     it = iter(iterable)
     while chunk := list(islice(it, size)):
         yield chunk
+
+
+def _make_slug(title: str, source_url: str) -> str:
+    """Generate a stable URL-safe slug from title + source_url hash."""
+    base   = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:60]
+    suffix = hashlib.md5(source_url.encode()).hexdigest()[:6]
+    return f"{base}-{suffix}" if base else f"event-{suffix}"
+
+
+def publish_direct(events: list[RawEvent]) -> int:
+    """
+    Upsert events directly to Supabase — events are visible on the site
+    immediately (no SQS, no image pipeline).  Image URLs are left empty;
+    image-gen will fill them in later if SQS publishing is also active.
+
+    Returns the number of successfully upserted rows.
+    """
+    supabase_url = os.getenv("SUPABASE_URL", "")
+    supabase_key = os.getenv("SUPABASE_SERVICE_KEY", "")
+    if not supabase_url or not supabase_key:
+        logger.warning("Supabase credentials missing — skipping direct publish")
+        return 0
+
+    headers_bytes = {
+        "apikey":        supabase_key,
+        "Authorization": f"Bearer {supabase_key}",
+        "Content-Type":  "application/json",
+        "Prefer":        "resolution=merge-duplicates,return=minimal",
+    }
+
+    endpoint = f"{supabase_url.rstrip('/')}/rest/v1/events?on_conflict=source_url"
+    upserted = 0
+
+    for event in events:
+        try:
+            source_url = event.source_url or event.registration_url or ""
+            row = {
+                "slug":             event.slug or _make_slug(event.title, source_url),
+                "title":            event.title,
+                "full_description": event.description,
+                "short_description": "",
+                "start_at":         event.start_at.isoformat(),
+                "end_at":           event.end_at.isoformat() if event.end_at else None,
+                "venue_name":       event.venue_name or event.location_name or "",
+                "address":          event.address or event.location_address or "",
+                "location_text":    event.location_text or "",
+                "lat":              event.lat,
+                "lng":              event.lng,
+                "tags":             event.tags,
+                "event_type":       event.event_type.value,
+                "section":          event.section,
+                "brand":            event.brand or None,
+                "is_free":          event.is_free,
+                "cost_description": event.cost_description or None,
+                "registration_url": event.registration_url or source_url or None,
+                "source_url":       source_url,
+                "status":           "published",
+            }
+            # Strip None so DB uses column defaults
+            row = {k: v for k, v in row.items() if v is not None}
+
+            body = json.dumps(row).encode()
+            req  = urllib.request.Request(
+                endpoint,
+                data=body,
+                headers={**headers_bytes, "Content-Length": str(len(body))},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=12):
+                upserted += 1
+
+        except urllib.error.HTTPError as exc:
+            body_snippet = exc.read(300).decode(errors="replace")
+            logger.warning(
+                "Direct upsert HTTP %s for '%s': %s",
+                exc.code, event.title, body_snippet,
+            )
+        except Exception as exc:
+            logger.error("Direct upsert error for '%s': %s", event.title, exc)
+
+    logger.info("publish_direct: %d/%d events upserted to Supabase", upserted, len(events))
+    return upserted
 
 
 def publish(events: list[RawEvent], queue_url: str) -> int:

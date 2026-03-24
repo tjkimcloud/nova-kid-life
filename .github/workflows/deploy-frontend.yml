@@ -6,8 +6,9 @@ on:
     paths:
       - 'apps/web/**'
   workflow_dispatch:
-  # No daily schedule — content-generator triggers this workflow automatically
-  # after each blog post run (Thu 8pm EST + Mon 6am EST via github_trigger.py)
+  schedule:
+    # Daily rebuild at 12pm EST (17:00 UTC) — picks up events scraped at 6am
+    - cron: '0 17 * * *'
 
 jobs:
   deploy:

@@ -172,9 +172,9 @@ variable "dlq_depth_threshold" {
 # ── EventBridge ───────────────────────────────────────────────────────────────
 
 variable "scraper_schedule" {
-  description = "EventBridge cron for weekly scraper (UTC). Default = Wed 11:00 UTC = Wed 6:00 AM EST"
+  description = "EventBridge cron for daily scraper (UTC). Default = daily 11:00 UTC = 6:00 AM EST"
   type        = string
-  default     = "cron(0 11 ? * WED *)"
+  default     = "cron(0 11 ? * * *)"
 }
 
 variable "content_generator_weekend_schedule" {

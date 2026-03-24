@@ -13,7 +13,7 @@ import logging
 import os
 from pathlib import Path
 
-from scrapers.publisher import publish
+from scrapers.publisher import publish, publish_direct
 from scrapers.source_cache import SourceCache
 from scrapers.tier2.ai_extractor import AITier2Scraper
 
@@ -69,6 +69,18 @@ def handler(event: dict, context) -> dict:
     source_cache = SourceCache()
     source_cache.load()
 
+    def _publish(events, name, extra=None):
+        """Direct-upsert first (immediate visibility), then SQS for image enrichment."""
+        direct = publish_direct(events)
+        queued = publish(events, _QUEUE_URL) if _QUEUE_URL else 0
+        stats["scraped"]   += len(events)
+        stats["published"] += direct
+        entry = {"scraped": len(events), "direct": direct, "queued": queued}
+        if extra:
+            entry.update(extra)
+        stats["sources"][name] = entry
+        logger.info("[%s] scraped=%d direct=%d queued=%d", name, len(events), direct, queued)
+
     # ── Tier 1: Structured scrapers ───────────────────────────────────────────
     for source_config in _SOURCES.get("tier1_events", []):
         if not source_config.get("enabled"):
@@ -80,11 +92,7 @@ def handler(event: dict, context) -> dict:
         try:
             scraper = _load_class(source_config["class"])()
             events = scraper.scrape()
-            published = publish(events, _QUEUE_URL) if _QUEUE_URL else len(events)
-            stats["scraped"] += len(events)
-            stats["published"] += published
-            stats["sources"][name] = {"scraped": len(events), "published": published}
-            logger.info("[%s] scraped=%d published=%d", name, len(events), published)
+            _publish(events, name)
         except Exception as exc:
             logger.exception("[%s] Scraper failed: %s", name, exc)
             stats["errors"] += 1
@@ -106,11 +114,7 @@ def handler(event: dict, context) -> dict:
             )
             scraper._source_cache = source_cache
             events = scraper.scrape()
-            published = publish(events, _QUEUE_URL) if _QUEUE_URL else len(events)
-            stats["scraped"] += len(events)
-            stats["published"] += published
-            stats["sources"][name] = {"scraped": len(events), "published": published}
-            logger.info("[%s] AI scraped=%d published=%d", name, len(events), published)
+            _publish(events, name)
         except Exception as exc:
             logger.exception("[%s] AI scraper failed: %s", name, exc)
             stats["errors"] += 1
@@ -136,11 +140,7 @@ def handler(event: dict, context) -> dict:
                 continue
 
             events = scraper.scrape()
-            published = publish(events, _QUEUE_URL) if _QUEUE_URL else len(events)
-            stats["scraped"] += len(events)
-            stats["published"] += published
-            stats["sources"][name] = {"scraped": len(events), "published": published, "section": "pokemon"}
-            logger.info("[%s] Pokemon scraped=%d published=%d", name, len(events), published)
+            _publish(events, name, extra={"section": "pokemon"})
         except Exception as exc:
             logger.exception("[%s] Pokemon scraper failed: %s", name, exc)
             stats["errors"] += 1
@@ -166,11 +166,7 @@ def handler(event: dict, context) -> dict:
                 continue
 
             events = scraper.scrape()
-            published = publish(events, _QUEUE_URL) if _QUEUE_URL else len(events)
-            stats["scraped"] += len(events)
-            stats["published"] += published
-            stats["sources"][name] = {"scraped": len(events), "published": published}
-            logger.info("[%s] Deal scraped=%d published=%d", name, len(events), published)
+            _publish(events, name)
         except Exception as exc:
             logger.exception("[%s] Deal scraper failed: %s", name, exc)
             stats["errors"] += 1

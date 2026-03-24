@@ -11,7 +11,7 @@
 
 resource "aws_cloudwatch_event_rule" "daily_scraper" {
   name                = "${local.name_prefix}-daily-scraper"
-  description         = "Trigger events-scraper Lambda weekly on Wednesday at 6am EST"
+  description         = "Trigger events-scraper Lambda daily at 6am EST"
   schedule_expression = var.scraper_schedule
   state               = "ENABLED"
 }
