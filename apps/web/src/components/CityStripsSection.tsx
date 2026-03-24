@@ -49,7 +49,9 @@ function formatDateShort(iso: string): string {
 
 function matchesCity(e: ApiEvent, city: string): boolean {
   const loc = `${e.location_name || ''} ${e.location_address || ''}`.toLowerCase()
-  return loc.includes(city.toLowerCase())
+  const c   = city.toLowerCase()
+  // Match on location fields (primary) or title containing city name
+  return loc.includes(c) || (e.title || '').toLowerCase().includes(c)
 }
 
 function CityCard({ strip }: { strip: CityStrip }) {
@@ -109,7 +111,7 @@ export function CityStripsSection() {
   useEffect(() => {
     const now = new Date().toISOString().slice(0, 10)
     const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.novakidlife.com'
-    const url = `${base}/events?start_date=${now}&limit=50&section=main`
+    const url = `${base}/events?start_date=${now}&limit=100&section=main`
 
     const controller = new AbortController()
     fetch(url, { signal: controller.signal })

@@ -164,7 +164,7 @@ export function HeroSearch() {
           <a
             key={href}
             href={href}
-            className="inline-flex items-center px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-white/60 text-secondary-700 text-sm font-semibold hover:bg-white hover:border-primary-300 hover:text-primary-700 transition-all shadow-sm"
+            className="inline-flex items-center px-4 py-2 rounded-full bg-white border border-secondary-200 text-secondary-700 text-sm font-semibold hover:border-primary-300 hover:text-primary-600 transition-all shadow-sm"
           >
             {label}
           </a>
@@ -172,7 +172,7 @@ export function HeroSearch() {
       </div>
 
       {/* ── Weekly calendar strip ── */}
-      <div className="flex gap-1.5 overflow-x-auto">
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
         {weekDays.map((day, i) => {
           const dateStr = toISO(day)
           const isToday = dateStr === todayStr
@@ -186,13 +186,13 @@ export function HeroSearch() {
                 isToday
                   ? 'bg-primary-500 text-white shadow-md scale-105'
                   : isPast
-                  ? 'bg-white/30 text-white/30 cursor-not-allowed'
-                  : 'bg-white/60 backdrop-blur-sm text-white hover:bg-white hover:text-secondary-900 hover:scale-105'
+                  ? 'bg-secondary-50 text-secondary-300 border border-secondary-100 cursor-not-allowed'
+                  : 'bg-white border border-secondary-200 text-secondary-700 hover:border-primary-300 hover:text-primary-600 hover:scale-105 hover:shadow-sm'
               }`}
             >
               <span className="text-[10px] font-bold uppercase tracking-wide">{DAY_LABELS[i]}</span>
               <span className="text-lg font-extrabold font-heading leading-tight">{day.getDate()}</span>
-              <span className={`text-[10px] font-semibold ${isToday ? 'text-white/70' : isPast ? 'opacity-0' : 'text-primary-200'}`}>
+              <span className={`text-[10px] font-semibold ${isToday ? 'text-white/70' : isPast ? 'opacity-0' : 'text-primary-400'}`}>
                 {dayCounts[i] > 0 ? dayCounts[i] : ''}
               </span>
             </button>
@@ -202,11 +202,11 @@ export function HeroSearch() {
 
       {/* ── Social proof ── */}
       <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
-        <span className="text-white/70">🔥 <span className="font-bold text-white">24 events</span> this weekend</span>
-        <span className="hidden sm:block text-white/30">·</span>
-        <span className="text-white/70">⭐ Trusted by <span className="font-bold text-white">4,200+</span> NoVa families</span>
-        <span className="hidden sm:block text-white/30">·</span>
-        <span className="text-white/70">🆓 <span className="font-bold text-white">Always free</span></span>
+        <span style={{ color: 'var(--text2)' }}>🔥 <span className="font-bold" style={{ color: 'var(--text)' }}>24 events</span> this weekend</span>
+        <span className="hidden sm:block text-secondary-200">·</span>
+        <span style={{ color: 'var(--text2)' }}>⭐ Trusted by <span className="font-bold" style={{ color: 'var(--text)' }}>4,200+</span> NoVa families</span>
+        <span className="hidden sm:block text-secondary-200">·</span>
+        <span style={{ color: 'var(--text2)' }}>🆓 <span className="font-bold" style={{ color: 'var(--text)' }}>Always free</span></span>
       </div>
 
     </div>

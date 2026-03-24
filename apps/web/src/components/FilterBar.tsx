@@ -33,24 +33,24 @@ export function getDateRange(preset: Filters['datePreset']): { start_date?: stri
   }
 
   if (preset === 'weekend') {
-    const day     = now.getDay()           // 0=Sun, 6=Sat
-    const toSat   = (6 - day + 7) % 7 || 7
-    const sat     = new Date(now); sat.setDate(now.getDate() + toSat)
-    const sun     = new Date(sat); sun.setDate(sat.getDate() + 1)
+    const day   = now.getDay()           // 0=Sun, 6=Sat
+    const toSat = (6 - day + 7) % 7 || 7
+    const sat   = new Date(now); sat.setDate(now.getDate() + toSat)
+    const sun   = new Date(sat); sun.setDate(sat.getDate() + 1)
     return {
       start_date: sat.toISOString().split('T')[0],
-      end_date:   sun.toISOString().split('T')[0],
+      end_date:   sun.toISOString().split('T')[0] + 'T23:59:59',
     }
   }
 
   if (preset === 'week') {
     const end = new Date(now); end.setDate(now.getDate() + 7)
-    return { start_date: today, end_date: end.toISOString().split('T')[0] }
+    return { start_date: today, end_date: end.toISOString().split('T')[0] + 'T23:59:59' }
   }
 
   if (preset === 'month') {
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-    return { start_date: today, end_date: end.toISOString().split('T')[0] }
+    return { start_date: today, end_date: end.toISOString().split('T')[0] + 'T23:59:59' }
   }
 
   return {}
