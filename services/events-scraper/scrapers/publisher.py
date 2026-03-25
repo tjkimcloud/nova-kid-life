@@ -128,6 +128,11 @@ def publish_direct(events: list[RawEvent]) -> int:
                 upserted += 1
 
         except urllib.error.HTTPError as exc:
+            if exc.code == 409:
+                # Slug conflict — same event already inserted from another source.
+                # The event IS in the DB; count as success and skip.
+                upserted += 1
+                continue
             body_snippet = exc.read(300).decode(errors="replace")
             logger.warning(
                 "Direct upsert HTTP %s for '%s': %s",

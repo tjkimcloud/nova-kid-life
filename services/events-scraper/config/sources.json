@@ -36,17 +36,47 @@
       "enabled": true,
       "schedule": "daily",
       "description": "Eventbrite family/kids events in Northern Virginia"
+    },
+    {
+      "name": "pw-living",
+      "class": "scrapers.tier1.tec_api.PWLivingScraper",
+      "enabled": false,
+      "schedule": "daily",
+      "description": "Prince William Living — TEC REST API returns 403 from Lambda IPs (WAF blocked). Disabled until proxy solution available."
+    },
+    {
+      "name": "dc-moms",
+      "class": "scrapers.tier1.tec_api.DCMomsScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "DC Area Moms — family events, TEC REST API, VA-only geo-filtered"
     }
   ],
 
   "tier2_events": [
     {
-      "name": "dullesmoms",
-      "url": "https://www.dullesmoms.com/events/",
-      "enabled": false,
+      "name": "pw-living-html",
+      "url": "https://princewilliamliving.com/events/list/",
+      "enabled": true,
       "schedule": "daily",
-      "description": "Dulles Moms — local NoVa family events blog (disabled: 403 Forbidden)",
-      "tags": ["local", "community"]
+      "description": "Prince William Living — HTML list page (TEC REST API blocked, using AI extractor on HTML)",
+      "tags": ["prince-william", "community", "nova"]
+    },
+    {
+      "name": "dullesmoms",
+      "url": "https://dullesmoms.com/dmcalendar/list/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Dulles Moms — NoVa family events calendar (The Events Calendar plugin — 20+ events/page)",
+      "tags": ["local", "community", "loudoun", "fairfax"]
+    },
+    {
+      "name": "dullesmoms-p2",
+      "url": "https://dullesmoms.com/dmcalendar/list/page/2/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Dulles Moms — calendar page 2",
+      "tags": ["local", "community", "loudoun", "fairfax"]
     },
     {
       "name": "nova-moms-blog",
