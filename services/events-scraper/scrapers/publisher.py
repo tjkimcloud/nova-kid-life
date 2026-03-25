@@ -40,10 +40,13 @@ def _chunks(iterable, size: int):
         yield chunk
 
 
-def _make_slug(title: str, source_url: str) -> str:
-    """Generate a stable URL-safe slug from title + source_url hash."""
+def _make_slug(title: str, start_at) -> str:
+    """Generate a stable URL-safe slug from title + date.
+    Using date (not source_url) means the same event from different sources
+    collapses to one slug and deduplicates on re-publish."""
     base   = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:60]
-    suffix = hashlib.md5(source_url.encode()).hexdigest()[:6]
+    date_str = start_at.strftime("%Y%m%d") if hasattr(start_at, "strftime") else str(start_at)[:10].replace("-", "")
+    suffix = hashlib.md5(date_str.encode()).hexdigest()[:6]
     return f"{base}-{suffix}" if base else f"event-{suffix}"
 
 
@@ -71,11 +74,26 @@ def publish_direct(events: list[RawEvent]) -> int:
     endpoint = f"{supabase_url.rstrip('/')}/rest/v1/events?on_conflict=source_url"
     upserted = 0
 
+    # Deduplicate within this batch: same title + same date = same event.
+    # Prevents the same regional event listed on multiple Patch/local pages
+    # from creating duplicate rows (keeps first occurrence found).
+    seen_keys: set[tuple] = set()
+    deduped: list[RawEvent] = []
+    for e in events:
+        date_key = e.start_at.strftime("%Y-%m-%d") if hasattr(e.start_at, "strftime") else str(e.start_at)[:10]
+        key = (e.title.lower().strip(), date_key)
+        if key not in seen_keys:
+            seen_keys.add(key)
+            deduped.append(e)
+    if len(deduped) < len(events):
+        logger.info("Deduped %d → %d events (removed %d same-title-date dupes)", len(events), len(deduped), len(events) - len(deduped))
+    events = deduped
+
     for event in events:
         try:
             source_url = event.source_url or event.registration_url or ""
             row = {
-                "slug":             event.slug or _make_slug(event.title, source_url),
+                "slug":             event.slug or _make_slug(event.title, event.start_at),
                 "title":            event.title,
                 "full_description": event.description,
                 "short_description": "",
