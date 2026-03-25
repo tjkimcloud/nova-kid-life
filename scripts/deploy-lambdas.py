@@ -21,6 +21,9 @@ SERVICES = {
     "content-generator": [
         "handler.py", "post_builder.py", "prompts.py", "github_trigger.py", "ssm.py"
     ],
+    "quality-agent": [
+        "handler.py",
+    ],
 }
 
 def add_to_zip(zf, path, arcname=None):

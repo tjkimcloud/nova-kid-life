@@ -1,8 +1,9 @@
 # ── Lambda Functions ──────────────────────────────────────────────────────────
 #
-# Five functions:
+# Six functions:
 #   novakidlife-api            REST API (API Gateway proxy)
 #   novakidlife-events-scraper Daily 3-tier scraper (EventBridge trigger)
+#   novakidlife-quality-agent  Post-scrape quality filter + source scorecard
 #   novakidlife-image-gen      Image pipeline (SQS trigger from events-queue)
 #   novakidlife-social-poster  Buffer API poster (SQS trigger from social-queue)
 #   novakidlife-scheduler      EventBridge stub (reserved for future orchestration)
@@ -57,6 +58,13 @@ data "archive_file" "content_generator" {
   type        = "zip"
   source_dir  = "${local.service_path}/content-generator"
   output_path = "${local.builds_path}/content-generator.zip"
+  excludes    = ["__pycache__", "*.pyc", ".env", "tests", ".pytest_cache"]
+}
+
+data "archive_file" "quality_agent" {
+  type        = "zip"
+  source_dir  = "${local.service_path}/quality-agent"
+  output_path = "${local.builds_path}/quality-agent.zip"
   excludes    = ["__pycache__", "*.pyc", ".env", "tests", ".pytest_cache"]
 }
 
@@ -417,4 +425,63 @@ resource "aws_lambda_permission" "eventbridge_invoke_scraper" {
   function_name = aws_lambda_function.events_scraper.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.daily_scraper.arn
+}
+
+# ── Quality Agent Lambda ──────────────────────────────────────────────────────
+# Post-scrape event filter: removes off-geography events, scores sources,
+# maintains scraper_metrics feedback loop. Runs 15 min after scraper.
+
+resource "aws_iam_role" "quality_agent" {
+  name               = "${local.name_prefix}-quality-agent-role"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "quality_agent_basic_execution" {
+  role       = aws_iam_role.quality_agent.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "quality_agent_ssm" {
+  role       = aws_iam_role.quality_agent.name
+  policy_arn = aws_iam_policy.ssm_read.arn
+}
+
+resource "aws_cloudwatch_log_group" "lambda_quality_agent" {
+  name              = "/aws/lambda/${local.name_prefix}-quality-agent"
+  retention_in_days = 14
+}
+
+resource "aws_lambda_function" "quality_agent" {
+  function_name    = "${local.name_prefix}-quality-agent"
+  description      = "Post-scrape quality filter — removes off-NoVA events, scores sources"
+  role             = aws_iam_role.quality_agent.arn
+  runtime          = var.lambda_runtime
+  handler          = "handler.handler"
+  filename         = data.archive_file.quality_agent.output_path
+  source_code_hash = data.archive_file.quality_agent.output_base64sha256
+  memory_size      = 512
+  timeout          = 300
+
+  environment {
+    variables = {
+      ENVIRONMENT              = var.environment
+      SSM_PREFIX               = "/novakidlife"
+      SUPABASE_URL_PARAM       = "/novakidlife/supabase/url"
+      SUPABASE_KEY_PARAM       = "/novakidlife/supabase/service-key"
+      OPENAI_API_KEY_PARAM     = "/novakidlife/openai/api-key"
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.quality_agent_basic_execution,
+    aws_cloudwatch_log_group.lambda_quality_agent,
+  ]
+}
+
+resource "aws_lambda_permission" "eventbridge_invoke_quality_agent" {
+  statement_id  = "AllowEventBridgeInvokeQualityAgent"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.quality_agent.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.quality_agent.arn
 }

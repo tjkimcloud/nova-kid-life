@@ -23,6 +23,8 @@ jobs:
           # (Lambda hard limit). Deploy manually: python scripts/deploy-lambdas.py image-gen
           - service: content-generator
             function: novakidlife-prod-content-generator
+          - service: quality-agent
+            function: novakidlife-prod-quality-agent
           # social-poster excluded — Lambda not deployed (pending Ayrshare setup)
 
     steps:

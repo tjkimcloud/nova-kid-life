@@ -29,6 +29,29 @@ resource "aws_cloudwatch_event_target" "daily_scraper" {
   })
 }
 
+# ── Quality Agent schedule ─────────────────────────────────────────────────────
+#
+# Runs 15 min after scraper (6:15 AM EST = 11:15 UTC)
+# Filters off-NoVA events and updates source quality scores
+
+resource "aws_cloudwatch_event_rule" "quality_agent" {
+  name                = "${local.name_prefix}-quality-agent"
+  description         = "Trigger quality-agent Lambda daily at 6:15am EST (after scraper)"
+  schedule_expression = "cron(15 11 ? * * *)"
+  state               = "ENABLED"
+}
+
+resource "aws_cloudwatch_event_target" "quality_agent" {
+  rule      = aws_cloudwatch_event_rule.quality_agent.name
+  target_id = "QualityAgentLambda"
+  arn       = aws_lambda_function.quality_agent.arn
+
+  input = jsonencode({
+    mode  = "full"
+    hours = 26
+  })
+}
+
 # ── Content Generator schedules ────────────────────────────────────────────────
 #
 # Weekend roundup: Thursday 8:00 PM EST = Friday 01:00 UTC
