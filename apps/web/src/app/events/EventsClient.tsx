@@ -158,10 +158,28 @@ export function EventsClient() {
       {loading ? (
         <EventGridSkeleton count={PAGE_SIZE} />
       ) : events.length === 0 ? (
-        <EmptyState hasFilters={hasActiveFilters} onClear={handleClearAll} />
+        <EmptyState
+          hasFilters={hasActiveFilters}
+          datePreset={filters.datePreset}
+          onClear={handleClearAll}
+          onWeekView={() => handleFilters({ ...filters, datePreset: 'week' })}
+        />
       ) : (
         <>
           <EventGrid events={events} />
+          {filters.datePreset === 'weekend' && events.length < 4 && (
+            <p className="text-center text-xs pt-2 pb-4" style={{ color: 'var(--text2)' }}>
+              Venues typically post weekend events closer to Thursday–Friday.{' '}
+              <button
+                type="button"
+                className="underline hover:no-underline"
+                style={{ color: 'var(--orange)' }}
+                onClick={() => handleFilters({ ...filters, datePreset: 'week' })}
+              >
+                Browse this week
+              </button>{' '}for more.
+            </p>
+          )}
           <Pagination
             page={page}
             totalPages={totalPages}
