@@ -122,7 +122,7 @@ export default async function HomePage() {
           {/* Photo background */}
           <div
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('/images/hero-family-outdoor.jpg')", backgroundColor: '#3a5a3a', backgroundPosition: 'center 30%' }}
+            style={{ backgroundImage: "url('/images/hero-family-meadow-v2.jpg')", backgroundColor: '#3a5a3a', backgroundPosition: 'center 30%' }}
             aria-hidden="true"
           />
           {/* Warm overlay — left-to-right so text stays readable, right side lets photo breathe */}

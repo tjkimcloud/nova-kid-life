@@ -38,12 +38,18 @@ def list_events(event: dict, ctx) -> dict:
 
     db = get_client()
 
+    from datetime import datetime, timezone
+    # Default: only show upcoming/current events (start_at >= today)
+    # Override by passing start_date explicitly
+    default_start = start_date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
     # Count query (same filters, no pagination)
     count_q = (
         db.table("events")
         .select("id", count="exact")
         .eq("status", "published")
         .eq("section", section)
+        .gte("start_at", default_start)
     )
 
     # Data query
@@ -61,11 +67,12 @@ def list_events(event: dict, ctx) -> dict:
         )
         .eq("status", "published")
         .eq("section", section)
+        .gte("start_at", default_start)
         .order("start_at", desc=False)
         .range(offset, offset + limit - 1)
     )
 
-    # Apply optional filters
+    # Apply optional filters (start_date already applied above as default_start)
     if event_type:
         count_q = count_q.eq("event_type", event_type)
         data_q  = data_q.eq("event_type", event_type)
@@ -77,10 +84,6 @@ def list_events(event: dict, ctx) -> dict:
     if location_id:
         count_q = count_q.eq("location_id", location_id)
         data_q  = data_q.eq("location_id", location_id)
-
-    if start_date:
-        count_q = count_q.gte("start_at", start_date)
-        data_q  = data_q.gte("start_at", start_date)
 
     if end_date:
         count_q = count_q.lte("start_at", end_date)
