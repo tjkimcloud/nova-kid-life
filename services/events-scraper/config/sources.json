@@ -745,6 +745,504 @@
       "schedule": "weekly",
       "description": "The ARC — Fairfax arts center, family programs and community events",
       "tags": ["arts", "community", "fairfax", "family"]
+    },
+
+    {"_comment": "── Additional Macaroni Kid editions ─────────────────────"},
+    {
+      "name": "macaroni-kid-arlington",
+      "url": "https://macaronikid.com/arlington-va",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid Arlington — hyperlocal family events for Arlington County",
+      "tags": ["arlington", "community", "family", "hyperlocal"]
+    },
+    {
+      "name": "macaroni-kid-centreville",
+      "url": "https://macaronikid.com/centreville-chantilly-va",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid Centreville/Chantilly — hyperlocal family events for western Fairfax",
+      "tags": ["centreville", "chantilly", "fairfax", "community", "family", "hyperlocal"]
+    },
+    {
+      "name": "macaroni-kid-woodbridge",
+      "url": "https://macaronikid.com/woodbridge-lake-ridge-va",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid Woodbridge/Lake Ridge — hyperlocal family events for eastern Prince William",
+      "tags": ["woodbridge", "prince-william", "community", "family", "hyperlocal"]
+    },
+    {
+      "name": "macaroni-kid-mclean-vienna",
+      "url": "https://macaronikid.com/mclean-vienna-falls-church",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid McLean/Vienna/Falls Church — hyperlocal family events for inner Fairfax",
+      "tags": ["mclean", "vienna", "falls-church", "fairfax", "community", "family", "hyperlocal"]
+    },
+    {
+      "name": "macaroni-kid-loudoun-sterling",
+      "url": "https://macaronikid.com/loudoun-sterling-va",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Macaroni Kid Loudoun/Sterling — hyperlocal family events for eastern Loudoun County",
+      "tags": ["loudoun", "sterling", "community", "family", "hyperlocal"]
+    },
+
+    {"_comment": "── Tourism / Visit boards ───────────────────────────────"},
+    {
+      "name": "visitfairfax",
+      "url": "https://www.visitfairfax.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Visit Fairfax official tourism events — curated family and community events across Fairfax County",
+      "tags": ["fairfax", "tourism", "curated", "family"]
+    },
+    {
+      "name": "visitloudoun",
+      "url": "https://www.visitloudoun.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Visit Loudoun official tourism events — family events across Loudoun County",
+      "tags": ["loudoun", "tourism", "curated", "family"]
+    },
+    {
+      "name": "visitalexandria",
+      "url": "https://www.visitalexandriava.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Visit Alexandria tourism board — curated family and community events in Alexandria, VA",
+      "tags": ["alexandria", "tourism", "curated", "family"]
+    },
+    {
+      "name": "visitarlington",
+      "url": "https://www.visitarlington.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Visit Arlington tourism board — curated family events in Arlington County",
+      "tags": ["arlington", "tourism", "curated", "family"]
+    },
+
+    {"_comment": "── Additional Patch towns ───────────────────────────────"},
+    {
+      "name": "patch-annandale",
+      "url": "https://patch.com/virginia/annandale/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Annandale community calendar",
+      "tags": ["community", "annandale", "fairfax"]
+    },
+    {
+      "name": "patch-lorton",
+      "url": "https://patch.com/virginia/lorton/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Lorton community calendar",
+      "tags": ["community", "lorton", "fairfax"]
+    },
+    {
+      "name": "patch-dale-city",
+      "url": "https://patch.com/virginia/dale-city/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Dale City community calendar",
+      "tags": ["community", "dale-city", "prince-william"]
+    },
+    {
+      "name": "patch-purcellville",
+      "url": "https://patch.com/virginia/purcellville/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Purcellville community calendar",
+      "tags": ["community", "purcellville", "loudoun"]
+    },
+    {
+      "name": "patch-haymarket",
+      "url": "https://patch.com/virginia/haymarket/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Haymarket community calendar",
+      "tags": ["community", "haymarket", "prince-william"]
+    },
+    {
+      "name": "patch-dumfries",
+      "url": "https://patch.com/virginia/dumfries/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com Dumfries community calendar",
+      "tags": ["community", "dumfries", "prince-william"]
+    },
+    {
+      "name": "patch-south-riding",
+      "url": "https://patch.com/virginia/south-riding/calendar",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Patch.com South Riding community calendar",
+      "tags": ["community", "south-riding", "loudoun"]
+    },
+
+    {"_comment": "── Museums & educational venues ─────────────────────────"},
+    {
+      "name": "childrens-science-center",
+      "url": "https://childsci.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Children's Science Center Lab at Fair Oaks Mall — hands-on STEM exhibits and family programs (Fairfax, VA)",
+      "tags": ["educational", "stem", "museum", "kids", "fairfax", "indoor"]
+    },
+    {
+      "name": "national-zoo",
+      "url": "https://nationalzoo.si.edu/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Smithsonian National Zoo — free family events, seasonal programming (DC, popular with NoVA families)",
+      "tags": ["zoo", "animals", "educational", "free", "smithsonian", "dc", "family"]
+    },
+    {
+      "name": "smithsonian-natural-history",
+      "url": "https://naturalhistory.si.edu/calendar",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Smithsonian National Museum of Natural History — family programs, kids workshops (DC)",
+      "tags": ["museum", "educational", "free", "smithsonian", "dc", "family", "kids"]
+    },
+    {
+      "name": "smithsonian-american-history",
+      "url": "https://americanhistory.si.edu/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Smithsonian National Museum of American History — family programs and exhibits (DC)",
+      "tags": ["museum", "educational", "free", "smithsonian", "dc", "family"]
+    },
+    {
+      "name": "smithsonian-air-space-mall",
+      "url": "https://airandspace.si.edu/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Smithsonian Air & Space Museum (Mall) — family events and STEM programming (DC)",
+      "tags": ["museum", "educational", "free", "smithsonian", "dc", "stem", "aviation"]
+    },
+    {
+      "name": "national-childrens-museum",
+      "url": "https://www.childrensmuseum.org/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "National Children's Museum — family events and exhibits (National Harbor, MD — popular with NoVA families)",
+      "tags": ["museum", "kids", "family", "national-harbor", "educational"]
+    },
+    {
+      "name": "national-museum-marine-corps",
+      "url": "https://www.usmcmuseum.com/calendar.html",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "National Museum of the Marine Corps — free family events and educational programs (Triangle, VA)",
+      "tags": ["museum", "free", "history", "educational", "family", "prince-william"]
+    },
+    {
+      "name": "nps-prince-william-forest",
+      "url": "https://www.nps.gov/prwi/planyourvisit/events.htm",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Prince William Forest Park — NPS ranger programs and family outdoor events (Triangle, VA)",
+      "tags": ["outdoor", "nature", "nps", "hiking", "free", "prince-william"]
+    },
+
+    {"_comment": "── Indoor play & activity centers ──────────────────────"},
+    {
+      "name": "urban-air-ashburn",
+      "url": "https://www.urbanair.com/parks/ashburn-va/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Urban Air Adventure Park Ashburn — indoor trampoline, climbing, go-karts, family events (Ashburn, VA)",
+      "tags": ["indoor", "active", "kids", "trampoline", "ashburn", "loudoun"]
+    },
+    {
+      "name": "urban-air-woodbridge",
+      "url": "https://www.urbanair.com/parks/woodbridge-va/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Urban Air Adventure Park Woodbridge — indoor family events and active play (Woodbridge, VA)",
+      "tags": ["indoor", "active", "kids", "trampoline", "woodbridge", "prince-william"]
+    },
+    {
+      "name": "defy-gravity-sterling",
+      "url": "https://defy.com/locations/sterling-va/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Defy Gravity Sterling — extreme trampoline park, family open jump events (Sterling, VA)",
+      "tags": ["indoor", "active", "kids", "trampoline", "sterling", "loudoun"]
+    },
+    {
+      "name": "sky-zone-chantilly",
+      "url": "https://www.skyzone.com/chantilly",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Sky Zone Chantilly — trampoline park, family events, toddler time (Chantilly, VA)",
+      "tags": ["indoor", "active", "kids", "trampoline", "chantilly", "fairfax"]
+    },
+    {
+      "name": "pump-it-up-chantilly",
+      "url": "https://www.pumpitupparty.com/chantilly/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Pump It Up Chantilly — inflatable bounce arenas, kids open jump events (Chantilly, VA)",
+      "tags": ["indoor", "active", "kids", "bounce", "chantilly", "fairfax"]
+    },
+    {
+      "name": "climbzone-chantilly",
+      "url": "https://climbzone.com/locations/chantilly/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "ClimbZone Chantilly — indoor rock climbing for kids and families (Chantilly, VA)",
+      "tags": ["indoor", "active", "climbing", "kids", "chantilly", "fairfax"]
+    },
+    {
+      "name": "altitude-woodbridge",
+      "url": "https://altitudetrampoline.com/parks/woodbridge-va/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Altitude Trampoline Park Woodbridge — indoor trampoline and family events (Woodbridge, VA)",
+      "tags": ["indoor", "active", "kids", "trampoline", "woodbridge", "prince-william"]
+    },
+
+    {"_comment": "── Performing arts / theater ────────────────────────────"},
+    {
+      "name": "signature-theatre",
+      "url": "https://www.signature-theatre.org/calendar/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Signature Theatre Arlington — Broadway-caliber shows, some family programming (Arlington, VA)",
+      "tags": ["theater", "arts", "performance", "arlington", "family"]
+    },
+    {
+      "name": "1st-stage-theatre",
+      "url": "https://1ststage.org/calendar/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "1st Stage Theatre Tysons — intimate professional theater with family programming (Tysons, VA)",
+      "tags": ["theater", "arts", "performance", "tysons", "mclean", "fairfax", "family"]
+    },
+    {
+      "name": "little-theatre-alexandria",
+      "url": "https://thelittletheatre.com/season/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "The Little Theatre of Alexandria — community theater with family-friendly shows (Alexandria, VA)",
+      "tags": ["theater", "arts", "performance", "community", "alexandria", "family"]
+    },
+    {
+      "name": "nvyo-concerts",
+      "url": "https://www.nvyo.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Northern Virginia Youth Orchestra — concerts and youth music events across NoVA",
+      "tags": ["music", "performance", "kids", "educational", "nova", "family"]
+    },
+    {
+      "name": "nova-ballet",
+      "url": "https://www.novaballet.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Northern Virginia Ballet — family performances and youth dance recitals across NoVA",
+      "tags": ["dance", "performance", "kids", "family", "nova"]
+    },
+
+    {"_comment": "── Ice rinks & winter sports ────────────────────────────"},
+    {
+      "name": "ashburn-ice-house",
+      "url": "https://ashburnicehouse.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Ashburn Ice House — public skating, learn-to-skate programs and family events (Ashburn, VA)",
+      "tags": ["ice-skating", "indoor", "family", "kids", "ashburn", "loudoun", "seasonal"]
+    },
+    {
+      "name": "fairfax-ice-arena",
+      "url": "https://www.fairfaxicearena.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Fairfax Ice Arena — public skating, family skate nights and youth programs (Fairfax, VA)",
+      "tags": ["ice-skating", "indoor", "family", "kids", "fairfax", "seasonal"]
+    },
+    {
+      "name": "medstar-capitals-iceplex",
+      "url": "https://www.nhl.com/capitals/community/iceplex/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "MedStar Capitals Iceplex — public skate, family events at Capitals practice facility (Arlington, VA)",
+      "tags": ["ice-skating", "indoor", "family", "kids", "arlington", "nhl"]
+    },
+
+    {"_comment": "── More farms & orchards ────────────────────────────────"},
+    {
+      "name": "stribling-orchard",
+      "url": "https://www.striblingorchard.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Stribling Orchard — apple picking, seasonal family events (Markham, VA — NoVa day trip)",
+      "tags": ["outdoor", "farm", "seasonal", "pick-your-own", "apples", "day-trip"]
+    },
+    {
+      "name": "crooked-run-orchard",
+      "url": "https://www.crookedrunorchard.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Crooked Run Orchard — pick-your-own and seasonal family events (Purcellville, Loudoun County)",
+      "tags": ["outdoor", "farm", "seasonal", "pick-your-own", "loudoun", "purcellville"]
+    },
+    {
+      "name": "blue-ridge-farm-market",
+      "url": "https://www.blueridgefarmmarket.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Blue Ridge Farm Market — seasonal family events in Loudoun/western NoVA",
+      "tags": ["outdoor", "farm", "seasonal", "loudoun", "family"]
+    },
+
+    {"_comment": "── More parks & nature ──────────────────────────────────"},
+    {
+      "name": "burke-lake-park",
+      "url": "https://www.fairfaxcounty.gov/parks/burke-lake/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Burke Lake Park — fishing, miniature train, family events (Burke, Fairfax, VA)",
+      "tags": ["outdoor", "nature", "family", "fairfax", "burke", "free"]
+    },
+    {
+      "name": "lake-accotink-park",
+      "url": "https://www.fairfaxcounty.gov/parks/lake-accotink/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Lake Accotink Park — carousel, miniature train, family events (Springfield, Fairfax, VA)",
+      "tags": ["outdoor", "nature", "family", "fairfax", "springfield", "free"]
+    },
+    {
+      "name": "mason-neck-state-park",
+      "url": "https://www.dcr.virginia.gov/state-parks/mason-neck",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Mason Neck State Park — eagle watching, kayaking, family nature programs (Lorton, VA)",
+      "tags": ["outdoor", "nature", "state-parks", "wildlife", "fairfax", "educational"]
+    },
+    {
+      "name": "ellanor-c-lawrence-park",
+      "url": "https://www.fairfaxcounty.gov/parks/ellanor-c-lawrence-park/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Ellanor C. Lawrence Park — nature center, family programs, hiking (Chantilly, Fairfax, VA)",
+      "tags": ["outdoor", "nature", "educational", "family", "chantilly", "fairfax", "free"]
+    },
+
+    {"_comment": "── School districts (community event calendars) ─────────"},
+    {
+      "name": "fcps-community-events",
+      "url": "https://www.fcps.edu/news/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Fairfax County Public Schools — community and family events across FCPS schools",
+      "tags": ["schools", "fairfax", "educational", "community", "kids"]
+    },
+    {
+      "name": "lcps-community",
+      "url": "https://www.lcps.org/community",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Loudoun County Public Schools — community events and family programs",
+      "tags": ["schools", "loudoun", "educational", "community", "kids"]
+    },
+    {
+      "name": "aps-community",
+      "url": "https://www.apsva.us/calendar/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Arlington Public Schools community events calendar",
+      "tags": ["schools", "arlington", "educational", "community", "kids"]
+    },
+    {
+      "name": "pwcs-community",
+      "url": "https://www.pwcs.edu/community",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Prince William County Schools — community events and family programming",
+      "tags": ["schools", "prince-william", "educational", "community", "kids"]
+    },
+
+    {"_comment": "── High-traffic NoVA family websites (found via Facebook research) ──"},
+    {
+      "name": "fairfax-family-fun",
+      "url": "https://www.fairfaxfamilyfun.com/calendar-of-events",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Fairfax Family Fun — community-submitted events calendar for Fairfax County and NoVA, accepts public submissions",
+      "tags": ["fairfax", "community", "family", "curated", "calendar"]
+    },
+    {
+      "name": "fun-in-fairfax-va",
+      "url": "https://www.funinfairfaxva.com/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Fun in Fairfax VA (15k+ Facebook following) — monthly event guides, festivals, family activities across NoVA",
+      "tags": ["fairfax", "community", "family", "events", "festivals", "local"]
+    },
+    {
+      "name": "dc-area-moms",
+      "url": "https://dcmoms.com/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "DC Area Mom Collective — family events guide for DC metro including NoVA, monthly roundups",
+      "tags": ["regional", "family", "moms", "events", "dc", "nova"]
+    },
+    {
+      "name": "nova-today-6am",
+      "url": "https://novatoday.6amcity.com/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Nova Today (6AM City) — daily NoVA events newsletter and community guide",
+      "tags": ["nova", "community", "events", "daily", "newsletter"]
+    },
+    {
+      "name": "loudoun-moms",
+      "url": "https://theloudounmoms.com/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "The Loudoun Moms — Loudoun County family events, deals, and community news (2,500+ Facebook following)",
+      "tags": ["loudoun", "moms", "community", "family", "events", "hyperlocal"]
+    },
+
+    {"_comment": "── Northern Virginia Magazine ───────────────────────────"},
+    {
+      "name": "nova-magazine-family",
+      "url": "https://northernvirginiamag.com/family/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Northern Virginia Magazine family section — curated events, activities, things to do with kids",
+      "tags": ["regional", "curated", "family", "magazine", "nova"]
+    },
+
+    {"_comment": "── Specific Smithsonian / DC cultural (NoVA family draws) ──"},
+    {
+      "name": "national-building-museum",
+      "url": "https://nbm.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "National Building Museum — LEGO events, family programs and architecture exhibits (DC)",
+      "tags": ["museum", "educational", "kids", "dc", "free", "stem", "family"]
+    },
+    {
+      "name": "national-geographic-museum",
+      "url": "https://www.nationalgeographic.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "National Geographic Museum — science and exploration exhibits with family programming (DC)",
+      "tags": ["museum", "educational", "science", "kids", "dc", "family"]
+    },
+    {
+      "name": "library-of-congress-events",
+      "url": "https://www.loc.gov/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Library of Congress — family events, book festivals, educational programs (DC)",
+      "tags": ["educational", "free", "reading", "dc", "family", "kids"]
     }
   ],
 
@@ -804,6 +1302,40 @@
         "trampoline park deal virginia",
         "water park deal northern virginia",
         "bounce house deal nova"
+      ]
+    },
+    {
+      "name": "google-news-nova-family-events",
+      "class": "scrapers.tier3.google_news_rss.GoogleNewsRssScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Google News — NoVa family events, weekend roundups, free activities",
+      "queries": [
+        "free family events northern virginia this weekend",
+        "things to do with kids fairfax this weekend",
+        "kids activities loudoun county",
+        "family events arlington virginia",
+        "free kids events nova this week",
+        "things to do with kids alexandria virginia",
+        "northern virginia festival 2026",
+        "nova family fun weekend"
+      ]
+    },
+    {
+      "name": "google-news-nova-seasonal",
+      "class": "scrapers.tier3.google_news_rss.GoogleNewsRssScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Google News — NoVa seasonal and holiday family events",
+      "queries": [
+        "easter egg hunt northern virginia",
+        "halloween events northern virginia",
+        "christmas events northern virginia",
+        "fourth of july fireworks fairfax",
+        "summer camps northern virginia",
+        "fall festival loudoun county",
+        "pumpkin patch northern virginia",
+        "holiday lights northern virginia"
       ]
     }
   ],
