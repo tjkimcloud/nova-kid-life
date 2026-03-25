@@ -1,4 +1,4 @@
-# Build Progress — NovaKidLife (18 Sessions)
+# Build Progress — NovaKidLife (19 Sessions)
 
 Legend: ✅ Complete | 🔄 In Progress | ⬜ Not Started
 
@@ -539,3 +539,36 @@ Legend: ✅ Complete | 🔄 In Progress | ⬜ Not Started
 - ⬜ Google Search Console — submit `https://novakidlife.com/sitemap.xml` (requires browser)
 - ⬜ Ayrshare account setup + social-poster Lambda deployment
 - ⬜ Homepage UI/UX redesign — reduce "directory" feel, add warmth and personality
+
+---
+
+## Session 19 — 2026-03-24 ✅
+**Theme:** Hero image fix, quality agent live, scraper source expansion 85→144, Facebook research
+
+### Hero Image ✅
+- ✅ Replaced volcanic/tropical backdrop with family-in-meadow (Unsplash photo-1542037104857-ffbb0b9155fb)
+- ✅ Family of 5 in flat grassy field with string lights — appropriate for NoVA context
+
+### Quality Agent Live ✅
+- ✅ `services/quality-agent/handler.py` deployed and validated
+- ✅ First real run: 68 events evaluated, 18 removed (Louisville, Florida, Indiana, Chicago)
+- ✅ `scraper_metrics` and `quality_filter_log` tables accumulating data
+- ✅ Auto-flag logic active: sources with nova_score < 0.25 for 3+ runs → flagged
+- ✅ EventBridge cron: `cron(15 11 ? * * *)` = 6:15 AM EST daily
+
+### Scraper Sources 85 → 144 ✅
+- ✅ Added 59 new Tier 2 sources across: Macaroni Kid, tourism boards, museums, indoor play, performing arts, ice rinks, farms/orchards, parks, school districts, local family websites
+- ✅ Added 2 new Google News query groups (NoVA family events + seasonal)
+- ✅ Scraper redeployed via `python scripts/deploy-lambdas.py events-scraper`
+
+### Facebook Research ✅
+- ✅ Identified top NoVA family Facebook pages: Fun in Fairfax VA (15k), 365 Things To Do NoVA (3k), The Loudoun Moms (2.5k), NOVA Mom, NOVA Family First
+- ✅ Added 5 companion websites to sources.json (Fairfax Family Fun, Fun in Fairfax VA, DC Area Moms, Nova Today 6AM, The Loudoun Moms)
+- ✅ Facebook direct scraping not viable (ToS) — path forward: "Submit Your Event" form + companion website scraping
+
+### Pending / Next Session
+- ⬜ Build "Submit Your Event" form on novakidlife.com — community submissions from Facebook group managers
+- ⬜ Phase 2 autonomous components: Site Health Canary, Source Scout Lambda, Weekly Digest Email
+- ⬜ Google Search Console — submit sitemap (requires browser)
+- ⬜ Ayrshare setup + social-poster Lambda
+- ⬜ Blog content quality improvements

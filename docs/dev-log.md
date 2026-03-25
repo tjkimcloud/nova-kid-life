@@ -2,6 +2,52 @@
 
 ---
 
+## Session 19 — 2026-03-24
+**Theme:** Hero image fix, quality agent live, scraper sources 85→144, NoVA Facebook page research
+
+### Hero Image Replaced
+Replaced tropical/volcanic backdrop photo with family-in-meadow photo (photo-1542037104857-ffbb0b9155fb). Family of 5 walking through flat grassy field with string lights — no mountains, no palms. Committed as `fix: replace hero image — family meadow photo`.
+
+### Quality Agent — Live & Validated
+`services/quality-agent/handler.py` deployed and confirmed working:
+- Runs daily at 6:15 AM EST (EventBridge cron, 15 min after scraper)
+- Fetched 68 events on first real run, removed 18 (Louisville KY, Florida, Indiana, Chicago — all non-NoVA)
+- Tables live: `scraper_metrics`, `quality_filter_log`
+- Auto-flags sources with nova_score < 0.25 for 3+ consecutive runs
+- Uses GPT-4o-mini, keyword fast-path first (skips AI for obvious NoVA events)
+
+### Scraper Sources: 85 → 144 Tier 2 Sources
+Major source expansion in `services/events-scraper/config/sources.json`:
+- +5 Macaroni Kid editions (Arlington, Centreville, Woodbridge, McLean/Vienna, Loudoun/Sterling)
+- +4 tourism boards (VisitFairfax, VisitLoudoun, VisitAlexandria, VisitArlington)
+- +7 Patch towns (Annandale, Lorton, Dale City, Purcellville, Haymarket, Dumfries, South Riding)
+- +8 museums (Children's Science Center Fairfax, National Zoo, NMNH, NMAH, NASM-Mall, National Children's Museum, USMC Museum, NPS Prince William Forest)
+- +7 indoor play centers (Urban Air x2, Defy Sterling, Sky Zone Chantilly, Pump It Up, ClimbZone, Altitude Woodbridge)
+- +5 performing arts (Signature Theatre Arlington, 1st Stage Tysons, Little Theatre Alexandria, NVYO, NoVA Ballet)
+- +3 ice rinks (Ashburn Ice House, Fairfax Ice Arena, MedStar Capitals Iceplex)
+- +3 farms/orchards (Stribling, Crooked Run, Blue Ridge)
+- +4 parks (Burke Lake, Lake Accotink, Mason Neck, Ellanor C. Lawrence)
+- +4 school districts (FCPS, LCPS, APS, PWCS community calendars)
+- +5 high-traffic family websites found via Facebook research (Fairfax Family Fun, Fun in Fairfax VA, DC Area Moms, Nova Today 6AM, The Loudoun Moms)
+- +2 Google News query sets (NoVA family events + seasonal events)
+- Scraper redeployed: `python scripts/deploy-lambdas.py events-scraper`
+
+### Facebook Page Research
+Researched active local NoVA Facebook pages. Key findings:
+- **Fun in Fairfax VA** (facebook.com/funinfairfax) — 15k+ likes, biggest local family page
+- **ARLnow, FFXnow, NOVA Parks, Wolf Trap** — large following, already scraping their websites
+- **365 Things To Do In NoVA** (facebook.com/365NoVa) — 2,987 likes
+- **The Loudoun Moms** (facebook.com/TheLoudounMoms) — 2,498 likes
+- **NOVA Mom** (facebook.com/Novamom), **NOVA Family First** (facebook.com/NOVAfamilyfirst) — community pages
+- Facebook scraping blocked by ToS + API restrictions — best path is scraping companion websites + building "Submit Your Event" form
+- Added 5 companion websites of Facebook communities to sources.json
+
+### Autonomous Mode Confirmed
+`"defaultMode": "bypassPermissions"` already set in `.claude/settings.local.json` (line 260).
+No permission prompts in any session for this project. Just open Claude Code and go.
+
+---
+
 ## Session 18 — 2026-03-23
 **Theme:** CI/CD fully fixed, blog_posts constraint fix, content generator first run, pipeline verified
 
