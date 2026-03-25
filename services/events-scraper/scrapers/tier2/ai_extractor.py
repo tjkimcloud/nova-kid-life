@@ -19,17 +19,22 @@ logger = logging.getLogger(__name__)
 
 _client: OpenAI | None = None
 
-_SYSTEM_PROMPT = """You are a family events data extractor for NovaKidLife,
-a Northern Virginia family events platform. Extract ALL family-relevant events
-from the provided page content. Focus on events for children and families.
+def _build_system_prompt() -> str:
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return f"""You are a family events data extractor for NovaKidLife,
+a Northern Virginia family events platform. Today's date is {today}.
 
-Respond ONLY with a JSON array of event objects. If no family events are found,
-respond with an empty array [].
+Extract ONLY upcoming family-relevant events (start_at >= {today}) from the
+provided page content. Do NOT extract events that have already passed.
+Focus on events for children and families in Northern Virginia.
+
+Respond ONLY with a JSON array of event objects. If no upcoming family events
+are found, respond with an empty array [].
 
 Each event object must have these fields:
-{
+{{
   "title": "event title (string)",
-  "start_at": "ISO 8601 datetime (YYYY-MM-DDTHH:MM:SS) — estimate year if not shown",
+  "start_at": "ISO 8601 datetime (YYYY-MM-DDTHH:MM:SS) — if year not shown, use {today[:4]}",
   "end_at": "ISO 8601 datetime or null",
   "description": "event description (string)",
   "location_text": "city/venue, VA (string)",
@@ -40,7 +45,7 @@ Each event object must have these fields:
   "tags": ["array", "of", "relevant", "tags"],
   "registration_url": "URL string or null",
   "image_url": "URL string or null"
-}"""
+}}"""
 
 
 def _get_client() -> OpenAI:
@@ -97,7 +102,7 @@ class AIEventExtractor(BaseScraper):
                 model="gpt-4o-mini",
                 response_format={"type": "json_object"},
                 messages=[
-                    {"role": "system", "content": _SYSTEM_PROMPT},
+                    {"role": "system", "content": _build_system_prompt()},
                     {"role": "user", "content": user_message},
                 ],
                 max_tokens=4000,

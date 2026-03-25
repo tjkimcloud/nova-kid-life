@@ -43,22 +43,22 @@
     {
       "name": "dullesmoms",
       "url": "https://www.dullesmoms.com/events/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Dulles Moms — local NoVa family events blog",
+      "description": "Dulles Moms — local NoVa family events blog (disabled: 403 Forbidden)",
       "tags": ["local", "community"]
     },
     {
       "name": "nova-moms-blog",
       "url": "https://novamomsblog.com/events/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "NoVa Moms Blog events listing",
+      "description": "NoVa Moms Blog events listing (disabled: connection errors)",
       "tags": ["local", "community"]
     },
     {
       "name": "patch-fairfax",
-      "url": "https://patch.com/virginia/fairfax/calendar",
+      "url": "https://patch.com/virginia/fairfax-va/calendar",
       "enabled": true,
       "schedule": "daily",
       "description": "Patch.com Fairfax community calendar",
@@ -107,17 +107,17 @@
     {
       "name": "reston-association",
       "url": "https://www.reston.org/programs-events/events/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Reston Association community events",
+      "description": "Reston Association community events (disabled: 404 Not Found)",
       "tags": ["reston", "community"]
     },
     {
       "name": "fairfax-parks",
       "url": "https://www.fairfaxcounty.gov/parks/events",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Fairfax County Park Authority events",
+      "description": "Fairfax County Park Authority events (disabled: 404 — use nova-parks instead)",
       "tags": ["parks", "outdoor", "fairfax"]
     },
     {
@@ -131,9 +131,9 @@
     {
       "name": "nova-kids-activities",
       "url": "https://kidsactivitiesblog.com/local/virginia/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Kids Activities Blog — Virginia",
+      "description": "Kids Activities Blog — Virginia (disabled: 404 Not Found)",
       "tags": ["activities", "kids"]
     },
 
@@ -197,17 +197,17 @@
     {
       "name": "patch-falls-church",
       "url": "https://patch.com/virginia/falls-church/calendar",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Patch.com Falls Church community calendar",
+      "description": "Patch.com Falls Church community calendar (disabled: 404 — Falls Church not on Patch)",
       "tags": ["community", "falls-church"]
     },
     {
       "name": "patch-alexandria",
       "url": "https://patch.com/virginia/alexandria/calendar",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Patch.com Alexandria community calendar",
+      "description": "Patch.com Alexandria community calendar (disabled: 404 — use alexandria-city-events instead)",
       "tags": ["community", "alexandria"]
     },
     {
@@ -220,7 +220,7 @@
     },
     {
       "name": "patch-sterling",
-      "url": "https://patch.com/virginia/sterling/calendar",
+      "url": "https://patch.com/virginia/sterling-va/calendar",
       "enabled": true,
       "schedule": "daily",
       "description": "Patch.com Sterling community calendar",
@@ -238,7 +238,7 @@
     },
     {
       "name": "arlnow",
-      "url": "https://www.arlnow.com/category/things-to-do/",
+      "url": "https://www.arlnow.com/",
       "enabled": true,
       "schedule": "daily",
       "description": "ARLnow — Arlington local news with events",
@@ -246,7 +246,7 @@
     },
     {
       "name": "ffxnow",
-      "url": "https://www.ffxnow.com/category/things-to-do/",
+      "url": "https://www.ffxnow.com/",
       "enabled": true,
       "schedule": "daily",
       "description": "FFXnow — Fairfax local news with events",
@@ -279,9 +279,9 @@
     {
       "name": "dcist-events",
       "url": "https://dcist.com/events/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "DCist — DC metro events calendar (AI filters NoVa-relevant results)",
+      "description": "DCist — DC metro events calendar (disabled: 404 Not Found)",
       "tags": ["regional", "community"]
     },
 
@@ -289,9 +289,9 @@
     {
       "name": "prince-william-parks",
       "url": "https://www.pwcgov.org/government/dept/park/Pages/events.aspx",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Prince William County Park Authority events",
+      "description": "Prince William County Park Authority events (disabled: 403 Forbidden)",
       "tags": ["parks", "prince-william", "outdoor"]
     },
     {

@@ -33,12 +33,17 @@ export function getDateRange(preset: Filters['datePreset']): { start_date?: stri
   }
 
   if (preset === 'weekend') {
-    const day   = now.getDay()           // 0=Sun, 6=Sat
-    const toSat = (6 - day + 7) % 7 || 7
-    const sat   = new Date(now); sat.setDate(now.getDate() + toSat)
-    const sun   = new Date(sat); sun.setDate(sat.getDate() + 1)
+    const day    = now.getDay()           // 0=Sun, 1=Mon ... 5=Fri, 6=Sat
+    // Weekend = Friday through Sunday
+    // If today is Sat or Sun, start from today; otherwise next Friday
+    let toFri: number
+    if (day === 6) toFri = 0        // already Saturday, start today
+    else if (day === 0) toFri = 0   // already Sunday, start today
+    else toFri = (5 - day + 7) % 7  // days until next Friday
+    const fri = new Date(now); fri.setDate(now.getDate() + toFri)
+    const sun = new Date(fri); sun.setDate(fri.getDate() + (day === 0 ? 0 : day === 6 ? 1 : 2))
     return {
-      start_date: sat.toISOString().split('T')[0],
+      start_date: fri.toISOString().split('T')[0],
       end_date:   sun.toISOString().split('T')[0] + 'T23:59:59',
     }
   }
