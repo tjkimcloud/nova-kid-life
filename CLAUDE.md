@@ -14,6 +14,11 @@
 
 The user may be away (sleeping, working). Assume full authorization for all work within this project.
 
+### Hard stops — the only 3 things that require explicit approval before proceeding:
+1. `terraform apply` — always run `terraform plan` first and show the plan summary. Never apply blindly.
+2. Dropping or truncating a database table in production Supabase
+3. Deleting an S3 bucket or CloudFront distribution
+
 ---
 
 ## Project Overview
