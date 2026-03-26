@@ -21,6 +21,8 @@ logger = logging.getLogger(__name__)
 # LibCal iCal feed — plain text, server-rendered, works without JavaScript
 # api_events.php?out=ical returns iCal format even when JSON format is empty
 _ICAL_URL = "https://arlingtonva.libcal.com/api_events.php?cal_id=0&limit=100&out=ical"
+# LibCal API v1.1 — newer semi-public endpoint that may still work
+_LIBCAL_API_V11 = "https://arlingtonva.libcal.com/api/1.1/events?limit=100&cal_id=0"
 _LIBCAL_API = "https://arlingtonva.libcal.com/api_events.php?limit=100&cal_id=0"
 _LIBCAL_CALENDAR_URL = "https://arlingtonva.libcal.com/calendar"
 _BASE_URL = "https://library.arlingtonva.us/events/"
@@ -41,7 +43,16 @@ class ArlingtonLibraryScraper(BaseScraper):
         except Exception as exc:
             logger.warning("[%s] iCal strategy failed: %s", self.source_name, exc)
 
-        # Strategy 2: LibCal JSON API (legacy, usually empty)
+        # Strategy 2: LibCal API v1.1 (newer semi-public endpoint)
+        try:
+            events = self._scrape_libcal_v11()
+            if events:
+                logger.info("[%s] LibCal v1.1 API returned %d events", self.source_name, len(events))
+                return events
+        except Exception as exc:
+            logger.warning("[%s] LibCal v1.1 strategy failed: %s", self.source_name, exc)
+
+        # Strategy 3: LibCal JSON API (legacy, usually empty)
         try:
             events = self._scrape_libcal()
             if events:
@@ -131,6 +142,37 @@ class ArlingtonLibraryScraper(BaseScraper):
             event_type=EventType.EVENT,
             tags=["library", "arlington"],
         )
+
+    def _scrape_libcal_v11(self) -> list[RawEvent]:
+        """Try the LibCal API v1.1 endpoint — newer, may still work without auth."""
+        data = self._fetch_json(_LIBCAL_API_V11)
+        events_list = data if isinstance(data, list) else data.get("events", [])
+        events = []
+        for item in events_list:
+            try:
+                start_str = item.get("start") or item.get("start_dt", "")
+                end_str = item.get("end") or item.get("end_dt", "")
+                start_at = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+                end_at = datetime.fromisoformat(end_str.replace("Z", "+00:00")) if end_str else None
+                location = item.get("location", {})
+                venue = location.get("name", "") if isinstance(location, dict) else str(location)
+                events.append(RawEvent(
+                    title=item.get("title", "").strip(),
+                    source_url=item.get("url", _BASE_URL),
+                    source_name=self.source_name,
+                    start_at=start_at,
+                    end_at=end_at,
+                    description=item.get("description", ""),
+                    venue_name=venue,
+                    location_text=f"{venue}, Arlington, VA".strip(", "),
+                    is_free=True,
+                    event_type=EventType.EVENT,
+                    tags=["library", "arlington"],
+                    age_range=item.get("audience", ""),
+                ))
+            except Exception as exc:
+                logger.debug("Skipping v1.1 event: %s", exc)
+        return events
 
     def _scrape_libcal(self) -> list[RawEvent]:
         data = self._fetch_json(_LIBCAL_API)
