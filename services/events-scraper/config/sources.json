@@ -50,6 +50,13 @@
       "enabled": true,
       "schedule": "daily",
       "description": "DC Area Moms — family events, TEC REST API, VA-only geo-filtered"
+    },
+    {
+      "name": "dullesmoms-direct",
+      "class": "scrapers.tier1.dullesmoms.DullesMomsScraper",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "DullesMoms — direct Schema.org JSON-LD parser, 6 pages × 20 events = up to 120 events, no AI filtering"
     }
   ],
 
@@ -65,17 +72,17 @@
     {
       "name": "dullesmoms",
       "url": "https://dullesmoms.com/dmcalendar/list/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Dulles Moms — NoVa family events calendar (The Events Calendar plugin — 20+ events/page)",
+      "description": "Dulles Moms — REPLACED by dullesmoms-direct (Tier 1 Schema.org parser). AI extractor was filtering out events.",
       "tags": ["local", "community", "loudoun", "fairfax"]
     },
     {
       "name": "dullesmoms-p2",
       "url": "https://dullesmoms.com/dmcalendar/list/page/2/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Dulles Moms — calendar page 2",
+      "description": "Dulles Moms page 2 — REPLACED by dullesmoms-direct (handles all pages via pagination).",
       "tags": ["local", "community", "loudoun", "fairfax"]
     },
     {
