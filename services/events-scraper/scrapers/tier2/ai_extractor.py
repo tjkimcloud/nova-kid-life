@@ -5,9 +5,11 @@ structured events. Works even when HTML structure changes or is irregular.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 from openai import OpenAI
@@ -43,7 +45,8 @@ Each event object must have these fields:
   "cost_description": "e.g. '$5/person' or 'Free' (string)",
   "age_range": "e.g. '3-8 years' or 'All ages' (string)",
   "tags": ["array", "of", "relevant", "tags"],
-  "registration_url": "URL string or null",
+  "source_url": "URL of THIS specific event's detail page (from href links in HTML), or null",
+  "registration_url": "external ticket/registration URL (Eventbrite, etc.), or null",
   "image_url": "URL string or null"
 }}"""
 
@@ -139,9 +142,23 @@ class AIEventExtractor(BaseScraper):
                 end_str += "-05:00"
             end_at = datetime.fromisoformat(end_str)
 
+        title = item.get("title", "").strip()
+
+        # Build a unique source_url for this event:
+        # 1. Use the individual event page URL if available
+        # 2. Fall back to registration URL (external link)
+        # 3. Synthesize a unique URL from page URL + title+date fingerprint
+        #    so multiple events from the same page each get a distinct source_url
+        event_url = item.get("source_url") or item.get("registration_url") or ""
+        if not event_url:
+            fingerprint = hashlib.md5(
+                f"{title}{start_at.date()}".encode()
+            ).hexdigest()[:8]
+            event_url = f"{source_url}#{fingerprint}"
+
         return RawEvent(
-            title=item.get("title", "").strip(),
-            source_url=item.get("registration_url") or source_url,
+            title=title,
+            source_url=event_url,
             source_name=self.source_name,
             start_at=start_at,
             end_at=end_at,

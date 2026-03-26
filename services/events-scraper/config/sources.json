@@ -57,9 +57,9 @@
     {
       "name": "pw-living-html",
       "url": "https://princewilliamliving.com/events/list/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Prince William Living — HTML list page (TEC REST API blocked, using AI extractor on HTML)",
+      "description": "Prince William Living — 403 on both REST API and HTML from Lambda IPs (WAF blocked). Disabled.",
       "tags": ["prince-william", "community", "nova"]
     },
     {
@@ -681,17 +681,17 @@
     {
       "name": "barnes-noble-nova-events",
       "url": "https://stores.barnesandnoble.com/events?q=northern+virginia",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Barnes & Noble NoVa locations — weekly story times, author events, kids programming (free, no registration)",
+      "description": "Barnes & Noble NoVa locations — weekly story times, author events, kids programming (free, no registration) (disabled: timeout)",
       "tags": ["storytime", "free", "kids", "reading", "educational"]
     },
     {
       "name": "lego-store-nova-events",
       "url": "https://www.lego.com/en-us/stores/events",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "LEGO Store events at Tysons and Reston — build events, mini-figure giveaways, set launches",
+      "description": "LEGO Store events at Tysons and Reston — build events, mini-figure giveaways, set launches (disabled: 404 Not Found)",
       "tags": ["lego", "kids", "free", "stem", "tysons", "reston"]
     },
 
@@ -771,9 +771,9 @@
     {
       "name": "the-arc-va",
       "url": "https://www.thearcva.org/events",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "The ARC — Fairfax arts center, family programs and community events",
+      "description": "The ARC — Fairfax arts center, family programs and community events (disabled: network error)",
       "tags": ["arts", "community", "fairfax", "family"]
     },
 
@@ -781,41 +781,41 @@
     {
       "name": "macaroni-kid-arlington",
       "url": "https://macaronikid.com/arlington-va",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Macaroni Kid Arlington — hyperlocal family events for Arlington County",
+      "description": "Macaroni Kid Arlington — hyperlocal family events for Arlington County (disabled: 404 Not Found)",
       "tags": ["arlington", "community", "family", "hyperlocal"]
     },
     {
       "name": "macaroni-kid-centreville",
       "url": "https://macaronikid.com/centreville-chantilly-va",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Macaroni Kid Centreville/Chantilly — hyperlocal family events for western Fairfax",
+      "description": "Macaroni Kid Centreville/Chantilly — hyperlocal family events for western Fairfax (disabled: 404 Not Found)",
       "tags": ["centreville", "chantilly", "fairfax", "community", "family", "hyperlocal"]
     },
     {
       "name": "macaroni-kid-woodbridge",
       "url": "https://macaronikid.com/woodbridge-lake-ridge-va",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Macaroni Kid Woodbridge/Lake Ridge — hyperlocal family events for eastern Prince William",
+      "description": "Macaroni Kid Woodbridge/Lake Ridge — hyperlocal family events for eastern Prince William (disabled: 404 Not Found)",
       "tags": ["woodbridge", "prince-william", "community", "family", "hyperlocal"]
     },
     {
       "name": "macaroni-kid-mclean-vienna",
       "url": "https://macaronikid.com/mclean-vienna-falls-church",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Macaroni Kid McLean/Vienna/Falls Church — hyperlocal family events for inner Fairfax",
+      "description": "Macaroni Kid McLean/Vienna/Falls Church — hyperlocal family events for inner Fairfax (disabled: 404 Not Found)",
       "tags": ["mclean", "vienna", "falls-church", "fairfax", "community", "family", "hyperlocal"]
     },
     {
       "name": "macaroni-kid-loudoun-sterling",
       "url": "https://macaronikid.com/loudoun-sterling-va",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Macaroni Kid Loudoun/Sterling — hyperlocal family events for eastern Loudoun County",
+      "description": "Macaroni Kid Loudoun/Sterling — hyperlocal family events for eastern Loudoun County (disabled: 404 Not Found)",
       "tags": ["loudoun", "sterling", "community", "family", "hyperlocal"]
     },
 
@@ -873,41 +873,41 @@
     {
       "name": "patch-dale-city",
       "url": "https://patch.com/virginia/dale-city/calendar",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Patch.com Dale City community calendar",
+      "description": "Patch.com Dale City community calendar (disabled: 404 Not Found)",
       "tags": ["community", "dale-city", "prince-william"]
     },
     {
       "name": "patch-purcellville",
       "url": "https://patch.com/virginia/purcellville/calendar",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Patch.com Purcellville community calendar",
+      "description": "Patch.com Purcellville community calendar (disabled: 404 Not Found)",
       "tags": ["community", "purcellville", "loudoun"]
     },
     {
       "name": "patch-haymarket",
       "url": "https://patch.com/virginia/haymarket/calendar",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Patch.com Haymarket community calendar",
+      "description": "Patch.com Haymarket community calendar (disabled: 404 Not Found)",
       "tags": ["community", "haymarket", "prince-william"]
     },
     {
       "name": "patch-dumfries",
       "url": "https://patch.com/virginia/dumfries/calendar",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Patch.com Dumfries community calendar",
+      "description": "Patch.com Dumfries community calendar (disabled: 404 Not Found)",
       "tags": ["community", "dumfries", "prince-william"]
     },
     {
       "name": "patch-south-riding",
       "url": "https://patch.com/virginia/south-riding/calendar",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Patch.com South Riding community calendar",
+      "description": "Patch.com South Riding community calendar (disabled: 404 Not Found)",
       "tags": ["community", "south-riding", "loudoun"]
     },
 
@@ -923,25 +923,25 @@
     {
       "name": "national-zoo",
       "url": "https://nationalzoo.si.edu/events",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Smithsonian National Zoo — free family events, seasonal programming (DC, popular with NoVA families)",
+      "description": "Smithsonian National Zoo — free family events, seasonal programming (DC, popular with NoVA families) (disabled: 403 Forbidden)",
       "tags": ["zoo", "animals", "educational", "free", "smithsonian", "dc", "family"]
     },
     {
       "name": "smithsonian-natural-history",
       "url": "https://naturalhistory.si.edu/calendar",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Smithsonian National Museum of Natural History — family programs, kids workshops (DC)",
+      "description": "Smithsonian National Museum of Natural History — family programs, kids workshops (DC) (disabled: 403 Forbidden)",
       "tags": ["museum", "educational", "free", "smithsonian", "dc", "family", "kids"]
     },
     {
       "name": "smithsonian-american-history",
       "url": "https://americanhistory.si.edu/events",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Smithsonian National Museum of American History — family programs and exhibits (DC)",
+      "description": "Smithsonian National Museum of American History — family programs and exhibits (DC) (disabled: 403 Forbidden)",
       "tags": ["museum", "educational", "free", "smithsonian", "dc", "family"]
     },
     {
@@ -955,9 +955,9 @@
     {
       "name": "national-childrens-museum",
       "url": "https://www.childrensmuseum.org/events",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "National Children's Museum — family events and exhibits (National Harbor, MD — popular with NoVA families)",
+      "description": "National Children's Museum — family events and exhibits (National Harbor, MD — popular with NoVA families) (disabled: SSL error)",
       "tags": ["museum", "kids", "family", "national-harbor", "educational"]
     },
     {
@@ -971,9 +971,9 @@
     {
       "name": "nps-prince-william-forest",
       "url": "https://www.nps.gov/prwi/planyourvisit/events.htm",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Prince William Forest Park — NPS ranger programs and family outdoor events (Triangle, VA)",
+      "description": "Prince William Forest Park — NPS ranger programs and family outdoor events (Triangle, VA) (disabled: 404 Not Found)",
       "tags": ["outdoor", "nature", "nps", "hiking", "free", "prince-william"]
     },
 
@@ -981,9 +981,9 @@
     {
       "name": "urban-air-ashburn",
       "url": "https://www.urbanair.com/parks/ashburn-va/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Urban Air Adventure Park Ashburn — indoor trampoline, climbing, go-karts, family events (Ashburn, VA)",
+      "description": "Urban Air Adventure Park Ashburn — indoor trampoline, climbing, go-karts, family events (Ashburn, VA) (disabled: 404 Not Found)",
       "tags": ["indoor", "active", "kids", "trampoline", "ashburn", "loudoun"]
     },
     {
@@ -1055,17 +1055,17 @@
     {
       "name": "little-theatre-alexandria",
       "url": "https://thelittletheatre.com/season/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "The Little Theatre of Alexandria — community theater with family-friendly shows (Alexandria, VA)",
+      "description": "The Little Theatre of Alexandria — community theater with family-friendly shows (Alexandria, VA) (disabled: 404 Not Found)",
       "tags": ["theater", "arts", "performance", "community", "alexandria", "family"]
     },
     {
       "name": "nvyo-concerts",
       "url": "https://www.nvyo.org/events/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Northern Virginia Youth Orchestra — concerts and youth music events across NoVA",
+      "description": "Northern Virginia Youth Orchestra — concerts and youth music events across NoVA (disabled: 404 Not Found)",
       "tags": ["music", "performance", "kids", "educational", "nova", "family"]
     },
     {
@@ -1123,9 +1123,9 @@
     {
       "name": "blue-ridge-farm-market",
       "url": "https://www.blueridgefarmmarket.com/events/",
-      "enabled": true,
+      "enabled": false,
       "schedule": "weekly",
-      "description": "Blue Ridge Farm Market — seasonal family events in Loudoun/western NoVA",
+      "description": "Blue Ridge Farm Market — seasonal family events in Loudoun/western NoVA (disabled: network error)",
       "tags": ["outdoor", "farm", "seasonal", "loudoun", "family"]
     },
 
