@@ -112,6 +112,7 @@ def publish_direct(events: list[RawEvent]) -> int:
                 "cost_description": event.cost_description or None,
                 "registration_url": event.registration_url or source_url or None,
                 "source_url":       source_url,
+                "source_name":      event.source_name or None,
                 "status":           "published",
             }
             # Strip None so DB uses column defaults
