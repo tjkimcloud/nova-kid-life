@@ -7,8 +7,10 @@ on:
       - 'apps/web/**'
   workflow_dispatch:
   schedule:
-    # Daily rebuild at 12pm EST (17:00 UTC) — picks up events scraped at 6am
-    - cron: '0 17 * * *'
+    # Rebuild at 7:30am EST (12:30 UTC) — 90 min after scraper runs at 6am
+    - cron: '30 12 * * *'
+    # Second rebuild at 3pm EST (20:00 UTC) — catches afternoon submissions
+    - cron: '0 20 * * *'
 
 jobs:
   deploy:
