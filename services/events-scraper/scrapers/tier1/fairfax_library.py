@@ -13,12 +13,11 @@ from ..models import EventType, RawEvent
 
 logger = logging.getLogger(__name__)
 
-# Fairfax County Library event calendar URLs
-_BASE_URL = "https://www.fairfaxcounty.gov/library/events"
-
-# LibCal API endpoint (Springshare — used by many US library systems)
-# If Fairfax uses LibCal, this endpoint returns structured JSON
-_LIBCAL_API = "https://fairfaxcounty.libcal.com/api_events.php"
+# Fairfax County Library uses Springshare LibCal at a custom domain.
+# fairfaxcounty.libcal.com redirects → librarycalendar.fairfaxcounty.gov
+# api_events.php (legacy) returns empty; HTML calendar used for AI fallback.
+_BASE_URL = "https://librarycalendar.fairfaxcounty.gov/"
+_LIBCAL_API = "https://librarycalendar.fairfaxcounty.gov/api_events.php"
 
 
 class FairfaxLibraryScraper(BaseScraper):

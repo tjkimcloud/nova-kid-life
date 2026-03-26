@@ -11,7 +11,10 @@ from ..models import EventType, RawEvent
 
 logger = logging.getLogger(__name__)
 
-_BASE_URL = "https://library.loudoun.gov/events"
+# library.loudoun.gov/events is 404; library moved to /calendar or LibCal
+# loudounlibrary.libcal.com is WAF-blocked from Lambda ([Errno 16])
+# Using main library homepage — AI will find events from the page
+_BASE_URL = "https://library.loudoun.gov/calendar"
 _LIBCAL_API = "https://loudounlibrary.libcal.com/api_events.php"
 
 

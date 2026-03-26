@@ -187,6 +187,17 @@ class DCMomsScraper(TECApiScraper):
     _tags = ["community", "nova", "family"]
 
 
+class FairfaxFamilyFunScraper(TECApiScraper):
+    """
+    Fairfax Family Fun — community-submitted events for Fairfax County and NoVa.
+    HTML calendar page is WAF-blocked from Lambda IPs; REST API endpoint may bypass WAF.
+    """
+    source_name = "fairfax-family-fun-api"
+    _api_url = "https://www.fairfaxfamilyfun.com/wp-json/tribe/events/v1/events"
+    _state_filter = "VA"
+    _tags = ["fairfax", "community", "family", "curated", "calendar"]
+
+
 # ── Generic TEC HTML scraper ───────────────────────────────────────────────────
 
 class TECHtmlScraper(BaseScraper):

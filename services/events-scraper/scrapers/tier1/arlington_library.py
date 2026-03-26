@@ -11,6 +11,8 @@ from ..models import EventType, RawEvent
 
 logger = logging.getLogger(__name__)
 
+# arlingtonva.libcal.com/events is 404; use library website for AI fallback
+# api_events.php (legacy) returns empty
 _BASE_URL = "https://library.arlingtonva.us/events/"
 _LIBCAL_API = "https://arlingtonva.libcal.com/api_events.php"
 

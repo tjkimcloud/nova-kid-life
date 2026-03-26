@@ -19,9 +19,9 @@
     {
       "name": "loudoun-library",
       "class": "scrapers.tier1.loudoun_library.LoudounLibraryScraper",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Loudoun County Public Library events calendar"
+      "description": "Loudoun County Public Library — Tier 1 disabled: loudounlibrary.libcal.com WAF-blocked + library.loudoun.gov URL structure changed. Covered by loudoun-library-web in tier2."
     },
     {
       "name": "arlington-library",
@@ -57,6 +57,13 @@
       "enabled": true,
       "schedule": "daily",
       "description": "DullesMoms — direct Schema.org JSON-LD parser, 6 pages × 20 events = up to 120 events, no AI filtering"
+    },
+    {
+      "name": "fairfax-family-fun-api",
+      "class": "scrapers.tier1.tec_api.FairfaxFamilyFunScraper",
+      "enabled": false,
+      "schedule": "daily",
+      "description": "Fairfax Family Fun — TEC REST API (disabled: [Errno 16] EBUSY on both HTML and REST API — Lambda IPs blocked at network level, same as PW Living)"
     }
   ],
 
@@ -573,6 +580,14 @@
     },
 
     {"_comment": "── Libraries not yet covered ────────────────────────────"},
+    {
+      "name": "loudoun-library-web",
+      "url": "https://library.loudoun.gov/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Loudoun County Public Library — storytimes, family programs (Tier 1 LibCal WAF-blocked; using public library website via AI extraction)",
+      "tags": ["library", "loudoun", "storytime", "educational", "free"]
+    },
     {
       "name": "prince-william-library",
       "url": "https://www.pwcva.gov/library/events",
@@ -1199,12 +1214,12 @@
     {"_comment": "── High-traffic NoVA family websites (found via Facebook research) ──"},
     {
       "name": "fairfax-family-fun",
-      "url": "https://www.fairfaxfamilyfun.com/calendar-of-events/",
+      "url": "https://www.fairfaxfamilyfun.com/calendar-of-events/list/",
       "parser": "tec_html",
       "max_pages": 6,
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "Fairfax Family Fun — community-submitted TEC calendar for Fairfax County and NoVA (direct JSON-LD parser)",
+      "description": "Fairfax Family Fun — TEC list-view calendar (disabled: [Errno 16] EBUSY — Lambda IPs blocked by WAF/CDN, same as princewilliamliving.com)",
       "tags": ["fairfax", "community", "family", "curated", "calendar"]
     },
     {
@@ -1217,13 +1232,13 @@
     },
     {
       "name": "dc-area-moms",
-      "url": "https://dcmoms.com/events/",
+      "url": "https://dcmoms.com/events/list/",
       "parser": "tec_html",
       "max_pages": 6,
       "state_filter": "VA",
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "DC Area Mom Collective — TEC calendar, VA-geo-filtered (direct JSON-LD parser, complements dc-moms REST API)",
+      "description": "DC Area Mom Collective — TEC HTML (disabled: /events/list/ returns 404; REST API via dc-moms Tier 1 scraper already covers this site)",
       "tags": ["regional", "family", "moms", "events", "nova"]
     },
     {
@@ -1236,22 +1251,20 @@
     },
     {
       "name": "loudoun-moms",
-      "url": "https://theloudounmoms.com/events/",
-      "parser": "tec_html",
-      "max_pages": 6,
+      "url": "https://theloudounmoms.com/",
       "enabled": true,
-      "schedule": "daily",
-      "description": "The Loudoun Moms — Loudoun County family events TEC calendar (direct JSON-LD parser)",
+      "schedule": "weekly",
+      "description": "The Loudoun Moms — Loudoun County family events blog (AI extraction; not a TEC calendar site — /events/list/ fetched OK but 0 JSON-LD events)",
       "tags": ["loudoun", "moms", "community", "family", "events", "hyperlocal"]
     },
     {
       "name": "nova-moms-blog",
-      "url": "https://novamomsblog.com/events/",
+      "url": "https://novamomsblog.com/events/list/",
       "parser": "tec_html",
       "max_pages": 6,
-      "enabled": true,
+      "enabled": false,
       "schedule": "daily",
-      "description": "NoVA Moms Blog — TEC calendar for Northern Virginia family events (direct JSON-LD parser; was disabled due to connection errors, re-enabled with TEC parser)",
+      "description": "NoVA Moms Blog — TEC HTML (disabled: [Errno 16] EBUSY — Lambda IPs blocked by WAF/CDN)",
       "tags": ["nova", "moms", "community", "family", "events", "local"]
     },
     {
