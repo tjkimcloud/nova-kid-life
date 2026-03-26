@@ -86,14 +86,6 @@
       "tags": ["local", "community", "loudoun", "fairfax"]
     },
     {
-      "name": "nova-moms-blog",
-      "url": "https://novamomsblog.com/events/",
-      "enabled": false,
-      "schedule": "daily",
-      "description": "NoVa Moms Blog events listing (disabled: connection errors)",
-      "tags": ["local", "community"]
-    },
-    {
       "name": "patch-fairfax",
       "url": "https://patch.com/virginia/fairfax-va/calendar",
       "enabled": true,
@@ -1207,10 +1199,12 @@
     {"_comment": "── High-traffic NoVA family websites (found via Facebook research) ──"},
     {
       "name": "fairfax-family-fun",
-      "url": "https://www.fairfaxfamilyfun.com/calendar-of-events",
+      "url": "https://www.fairfaxfamilyfun.com/calendar-of-events/",
+      "parser": "tec_html",
+      "max_pages": 6,
       "enabled": true,
       "schedule": "daily",
-      "description": "Fairfax Family Fun — community-submitted events calendar for Fairfax County and NoVA, accepts public submissions",
+      "description": "Fairfax Family Fun — community-submitted TEC calendar for Fairfax County and NoVA (direct JSON-LD parser)",
       "tags": ["fairfax", "community", "family", "curated", "calendar"]
     },
     {
@@ -1224,10 +1218,13 @@
     {
       "name": "dc-area-moms",
       "url": "https://dcmoms.com/events/",
+      "parser": "tec_html",
+      "max_pages": 6,
+      "state_filter": "VA",
       "enabled": true,
-      "schedule": "weekly",
-      "description": "DC Area Mom Collective — family events guide for DC metro including NoVA, monthly roundups",
-      "tags": ["regional", "family", "moms", "events", "dc", "nova"]
+      "schedule": "daily",
+      "description": "DC Area Mom Collective — TEC calendar, VA-geo-filtered (direct JSON-LD parser, complements dc-moms REST API)",
+      "tags": ["regional", "family", "moms", "events", "nova"]
     },
     {
       "name": "nova-today-6am",
@@ -1239,11 +1236,34 @@
     },
     {
       "name": "loudoun-moms",
-      "url": "https://theloudounmoms.com/",
+      "url": "https://theloudounmoms.com/events/",
+      "parser": "tec_html",
+      "max_pages": 6,
       "enabled": true,
-      "schedule": "weekly",
-      "description": "The Loudoun Moms — Loudoun County family events, deals, and community news (2,500+ Facebook following)",
+      "schedule": "daily",
+      "description": "The Loudoun Moms — Loudoun County family events TEC calendar (direct JSON-LD parser)",
       "tags": ["loudoun", "moms", "community", "family", "events", "hyperlocal"]
+    },
+    {
+      "name": "nova-moms-blog",
+      "url": "https://novamomsblog.com/events/",
+      "parser": "tec_html",
+      "max_pages": 6,
+      "enabled": true,
+      "schedule": "daily",
+      "description": "NoVA Moms Blog — TEC calendar for Northern Virginia family events (direct JSON-LD parser; was disabled due to connection errors, re-enabled with TEC parser)",
+      "tags": ["nova", "moms", "community", "family", "events", "local"]
+    },
+    {
+      "name": "pw-living-tec",
+      "url": "https://princewilliamliving.com/events/list/",
+      "parser": "tec_html",
+      "max_pages": 8,
+      "state_filter": "VA",
+      "enabled": false,
+      "schedule": "daily",
+      "description": "Prince William Living — TEC HTML calendar (WAF blocks Lambda; same restriction as REST API). Enable if proxy available.",
+      "tags": ["prince-william", "community", "nova"]
     },
 
     {"_comment": "── Northern Virginia Magazine ───────────────────────────"},

@@ -15,6 +15,7 @@ from pathlib import Path
 
 from scrapers.publisher import publish_direct
 from scrapers.source_cache import SourceCache
+from scrapers.tier1.tec_api import TECHtmlScraper
 from scrapers.tier2.ai_extractor import AITier2Scraper
 
 logger = logging.getLogger(__name__)
@@ -99,7 +100,7 @@ def handler(event: dict, context) -> dict:
             stats["errors"] += 1
             stats["sources"][name] = {"error": str(exc)}
 
-    # ── Tier 2: AI-extracted sources ──────────────────────────────────────────
+    # ── Tier 2: AI-extracted or TEC HTML sources ──────────────────────────────
     for source_config in _SOURCES.get("tier2_events", []):
         if not source_config.get("enabled"):
             continue
@@ -107,17 +108,30 @@ def handler(event: dict, context) -> dict:
         if not run_all and name not in targets:
             continue
 
+        parser = source_config.get("parser", "ai")
+
         try:
-            scraper = AITier2Scraper(
-                source_name=name,
-                url=source_config["url"],
-                tags=source_config.get("tags", []),
-            )
-            scraper._source_cache = source_cache
-            events = scraper.scrape()
+            if parser == "tec_html":
+                # Direct Schema.org JSON-LD parsing — no GPT, no filtering
+                scraper = TECHtmlScraper(
+                    source_name=name,
+                    url=source_config["url"],
+                    tags=source_config.get("tags", []),
+                    max_pages=source_config.get("max_pages", 6),
+                    state_filter=source_config.get("state_filter"),
+                )
+                events = scraper.scrape()
+            else:
+                scraper = AITier2Scraper(
+                    source_name=name,
+                    url=source_config["url"],
+                    tags=source_config.get("tags", []),
+                )
+                scraper._source_cache = source_cache
+                events = scraper.scrape()
             _publish(events, name)
         except Exception as exc:
-            logger.exception("[%s] AI scraper failed: %s", name, exc)
+            logger.exception("[%s] Tier2 scraper failed: %s", name, exc)
             stats["errors"] += 1
             stats["sources"][name] = {"error": str(exc)}
 
