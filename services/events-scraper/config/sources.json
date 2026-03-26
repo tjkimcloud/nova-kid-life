@@ -581,11 +581,19 @@
 
     {"_comment": "── Libraries not yet covered ────────────────────────────"},
     {
+      "name": "arlington-library-web",
+      "url": "https://library.arlingtonva.us/",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Arlington Public Library — homepage (Tier 1 LibCal API dead; LibCal calendar UI is JS-rendered; library homepage may have server-rendered event teasers)",
+      "tags": ["library", "arlington", "storytime", "kids", "educational", "free"]
+    },
+    {
       "name": "loudoun-library-web",
       "url": "https://library.loudoun.gov/",
       "enabled": true,
       "schedule": "daily",
-      "description": "Loudoun County Public Library — storytimes, family programs (Tier 1 LibCal WAF-blocked; using public library website via AI extraction)",
+      "description": "Loudoun County Public Library — homepage (Tier 1 LibCal WAF-blocked; /calendar page is JS-rendered; homepage may have featured event listings)",
       "tags": ["library", "loudoun", "storytime", "educational", "free"]
     },
     {
@@ -1313,6 +1321,86 @@
       "schedule": "weekly",
       "description": "Library of Congress — family events, book festivals, educational programs (DC)",
       "tags": ["educational", "free", "reading", "dc", "family", "kids"]
+    },
+
+    {"_comment": "── Major NoVA historic sites & landmarks ─────────────────"},
+    {
+      "name": "mount-vernon",
+      "url": "https://www.mountvernon.org/plan-your-visit/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "George Washington's Mount Vernon — costumed history events, seasonal festivals, family programming (Alexandria/Mount Vernon, VA)",
+      "tags": ["history", "outdoor", "educational", "family", "alexandria", "seasonal", "mount-vernon"]
+    },
+    {
+      "name": "claude-moore-colonial-farm",
+      "url": "https://1774.org/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Claude Moore Colonial Farm — free living-history farm with market fairs and family programs (McLean, VA)",
+      "tags": ["history", "outdoor", "free", "educational", "family", "mclean", "fairfax"]
+    },
+    {
+      "name": "sully-historic-site",
+      "url": "https://www.fairfaxcounty.gov/parks/sully-historic-site/events",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Sully Historic Site — living history events, colonial-era family programming (Chantilly, VA)",
+      "tags": ["history", "outdoor", "educational", "family", "chantilly", "fairfax", "free"]
+    },
+    {
+      "name": "gunston-hall",
+      "url": "https://gunstonhall.org/events/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Gunston Hall — George Mason's plantation, living history and family events (Mason Neck, VA)",
+      "tags": ["history", "outdoor", "educational", "family", "lorton", "fairfax"]
+    },
+
+    {"_comment": "── Arts, music & performing arts additions ───────────────"},
+    {
+      "name": "fairfax-symphony",
+      "url": "https://www.fairfaxsymphony.org/",
+      "enabled": true,
+      "schedule": "weekly",
+      "description": "Fairfax Symphony Orchestra — family concerts, youth programs, symphony events across Fairfax County",
+      "tags": ["music", "performance", "arts", "family", "fairfax", "kids"]
+    },
+    {
+      "name": "arlington-arts",
+      "url": "https://www.arlingtonva.us/Government/Programs/Arts/Calendar",
+      "enabled": false,
+      "schedule": "weekly",
+      "description": "Arlington Cultural Affairs — disabled: arlingtonva.us returns 403 Forbidden from Lambda IPs",
+      "tags": ["arts", "performance", "community", "arlington", "family", "free"]
+    },
+    {
+      "name": "mclean-project-arts",
+      "url": "https://mpaart.org/events/",
+      "enabled": false,
+      "schedule": "weekly",
+      "description": "McLean Project for the Arts — disabled: SSL certificate mismatch on mpaart.org (cert not valid for this hostname)",
+      "tags": ["arts", "workshops", "family", "educational", "mclean", "fairfax"]
+    },
+
+    {"_comment": "── TEC calendar sites (not yet verified accessible) ──────"},
+    {
+      "name": "nova-magazine-events",
+      "url": "https://northernvirginiamag.com/events/list/",
+      "parser": "tec_html",
+      "max_pages": 6,
+      "enabled": false,
+      "schedule": "weekly",
+      "description": "Northern Virginia Magazine — disabled: /events/list/ returns 404 (not a TEC calendar site at this path)",
+      "tags": ["regional", "curated", "family", "magazine", "nova"]
+    },
+    {
+      "name": "nova-moms-events-web",
+      "url": "https://novamomsblog.com/",
+      "enabled": false,
+      "schedule": "weekly",
+      "description": "NoVA Moms Blog — family events blog (disabled: entire domain WAF-blocks Lambda IPs — [Errno 16] EBUSY)",
+      "tags": ["nova", "moms", "community", "family", "events", "local"]
     }
   ],
 
