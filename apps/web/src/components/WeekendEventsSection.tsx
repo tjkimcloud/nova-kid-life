@@ -175,13 +175,22 @@ function CardSkeleton() {
 }
 
 export function WeekendEventsSection() {
-  const [days]              = useState<DayTab[]>(() => getNext7Days())
-  const [activeDay, setActiveDay] = useState<string>(() => getNext7Days()[0].dateStr)
+  const [days,      setDays]      = useState<DayTab[]>([])
+  const [activeDay, setActiveDay] = useState<string>('')
   const [saved,     setSaved]     = useState<Set<string>>(new Set())
   const [eventsByDay, setEventsByDay] = useState<Record<string, EventStub[]>>({})
   const [loading,   setLoading]   = useState(true)
 
+  // Compute days client-side so dates are always fresh (never baked into static HTML at build time)
   useEffect(() => {
+    const freshDays = getNext7Days()
+    setDays(freshDays)
+    setActiveDay(freshDays[0].dateStr)
+  }, [])
+
+  useEffect(() => {
+    if (days.length === 0) return
+
     const todayStr = days[0].dateStr
     const lastStr  = days[days.length - 1].dateStr
     const endStr   = `${lastStr}T23:59:59`
