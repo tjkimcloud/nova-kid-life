@@ -228,7 +228,7 @@ async function checkStaticPages() {
     ['/pokemon',        ''],
     ['/privacy-policy', ''],
     ['/sitemap.xml',    '<urlset'],
-    ['/robots.txt',     'User-agent'],
+    ['/robots.txt',     'User-Agent'],
   ]
   await Promise.all(pages.map(async ([path, needle]) => {
     try {
