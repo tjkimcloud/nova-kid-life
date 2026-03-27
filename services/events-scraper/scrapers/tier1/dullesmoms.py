@@ -127,8 +127,6 @@ class DullesMomsScraper(BaseScraper):
         # Categories from URL path (e.g. dullesmoms.com/event-category/free-events/)
         url = item.get("url") or _BASE_URL
         tags = ["community", "nova"]
-        # Extract categories from article class names if available
-        # (not present in JSON-LD — handled by extracting from the URL/offers)
 
         # Offers block sometimes has price info
         offers = item.get("offers") or {}
@@ -138,6 +136,9 @@ class DullesMomsScraper(BaseScraper):
             price = offers.get("price")
             if price in (0, "0", "", "Free", "free"):
                 is_free = True
+
+        # Try to extract the organizer's external event URL from the event page
+        registration_url = self._get_external_event_url(url) if url and "dullesmoms.com" in url else None
 
         return RawEvent(
             title=title[:120],
@@ -152,7 +153,52 @@ class DullesMomsScraper(BaseScraper):
             is_free=is_free,
             event_type=EventType.EVENT,
             tags=tags,
+            registration_url=registration_url or "",
         )
+
+    def _get_external_event_url(self, event_page_url: str) -> str | None:
+        """
+        Fetch the individual dullesmoms event page and extract the external
+        event website link (the organizer's own URL, not dullesmoms itself).
+        Returns None if no external link is found or the fetch fails.
+        """
+        try:
+            html = self._fetch(event_page_url)
+        except Exception:
+            return None
+
+        soup = BeautifulSoup(html, "html.parser")
+
+        # TEC renders an "Event Website" link with class tribe-event-url
+        # or an <a> with rel="noopener" pointing off-site in the event meta.
+        # Try several selectors in priority order.
+        selectors = [
+            "a.tribe-event-url",                # TEC "Event Website" anchor
+            ".tribe-events-event-meta a[href]",  # any meta link
+            ".tribe-venue-url a[href]",          # venue website
+        ]
+        for sel in selectors:
+            el = soup.select_one(sel)
+            if el:
+                href = el.get("href", "")
+                if href and "dullesmoms.com" not in href and href.startswith("http"):
+                    return href
+
+        # Fallback: any <a> in the event content that links off-site
+        content = soup.select_one(".tribe-events-single, .tribe-events-content, article")
+        if content:
+            for a in content.find_all("a", href=True):
+                href = a["href"]
+                if (
+                    href.startswith("http")
+                    and "dullesmoms.com" not in href
+                    and "facebook.com" not in href
+                    and "google.com" not in href
+                    and "instagram.com" not in href
+                ):
+                    return href
+
+        return None
 
     def _next_url(self, html: str) -> str | None:
         """

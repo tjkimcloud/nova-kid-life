@@ -27,16 +27,25 @@ type ApiEvent = {
   tags?:            string[]
 }
 
-function getWeekendDates(): { satStr: string; sunStr: string } {
+type DayTab = {
+  dateStr:  string   // YYYY-MM-DD
+  label:    string   // "Today", "Tomorrow", "Fri", etc.
+  fullLabel: string  // "Friday, Mar 28"
+}
+
+function getNext7Days(): DayTab[] {
+  const days: DayTab[] = []
+  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   const now = new Date()
-  const day = now.getDay() // 0=Sun, 6=Sat
-  const daysToSat = day === 0 ? 6 : day === 6 ? 0 : 6 - day
-  const sat = new Date(now)
-  sat.setDate(now.getDate() + daysToSat)
-  const sun = new Date(sat)
-  sun.setDate(sat.getDate() + 1)
-  const toYMD = (d: Date) => d.toISOString().slice(0, 10)
-  return { satStr: toYMD(sat), sunStr: toYMD(sun) }
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i)
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : DAY_NAMES[d.getDay()]
+    const fullLabel = `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`
+    days.push({ dateStr, label, fullLabel })
+  }
+  return days
 }
 
 function formatTime(iso: string): string {
@@ -166,41 +175,41 @@ function CardSkeleton() {
 }
 
 export function WeekendEventsSection() {
-  const [activeDay, setActiveDay] = useState<'sat' | 'sun'>('sat')
+  const [days]              = useState<DayTab[]>(() => getNext7Days())
+  const [activeDay, setActiveDay] = useState<string>(() => getNext7Days()[0].dateStr)
   const [saved,     setSaved]     = useState<Set<string>>(new Set())
-  const [satEvents, setSatEvents] = useState<EventStub[]>([])
-  const [sunEvents, setSunEvents] = useState<EventStub[]>([])
+  const [eventsByDay, setEventsByDay] = useState<Record<string, EventStub[]>>({})
   const [loading,   setLoading]   = useState(true)
 
   useEffect(() => {
-    const { satStr, sunStr } = getWeekendDates()
-    const endStr = `${sunStr}T23:59:59`
+    const todayStr = days[0].dateStr
+    const lastStr  = days[days.length - 1].dateStr
+    const endStr   = `${lastStr}T23:59:59`
     const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.novakidlife.com'
-    const url = `${base}/events?start_date=${satStr}&end_date=${endStr}&limit=12&section=main`
+    const url = `${base}/events?start_date=${todayStr}&end_date=${endStr}&limit=50&section=main`
 
     const controller = new AbortController()
     fetch(url, { signal: controller.signal })
       .then(r => r.json())
       .then((data: { items?: ApiEvent[] }) => {
         const items = data.items || []
-        const sats = items
-          .filter(e => e.start_at?.startsWith(satStr))
-          .slice(0, 3)
-          .map(e => apiToStub(e, 'Saturday'))
-        const suns = items
-          .filter(e => e.start_at?.startsWith(sunStr))
-          .slice(0, 3)
-          .map(e => apiToStub(e, 'Sunday'))
-        setSatEvents(sats)
-        setSunEvents(suns)
+        const grouped: Record<string, EventStub[]> = {}
+        for (const day of days) {
+          const dayItems = items
+            .filter(e => e.start_at?.startsWith(day.dateStr))
+            .slice(0, 3)
+            .map(e => apiToStub(e, day.fullLabel))
+          grouped[day.dateStr] = dayItems
+        }
+        setEventsByDay(grouped)
         setLoading(false)
       })
       .catch(() => setLoading(false))
 
     return () => controller.abort()
-  }, [])
+  }, [days])
 
-  const events = activeDay === 'sat' ? satEvents : sunEvents
+  const activeEvents = eventsByDay[activeDay] || []
 
   function toggleSave(id: string) {
     setSaved(prev => {
@@ -214,26 +223,36 @@ export function WeekendEventsSection() {
     <section className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <h2 className="font-heading font-bold text-2xl text-secondary-900">
-            This Weekend in Northern Virginia
+            Upcoming Events This Week
           </h2>
+        </div>
 
-          <div className="flex rounded-xl border border-secondary-200 overflow-hidden self-start sm:self-auto">
-            {(['sat', 'sun'] as const).map((day) => (
+        {/* Day tabs — horizontally scrollable on mobile */}
+        <div className="flex gap-1 overflow-x-auto pb-2 mb-6 scrollbar-none">
+          {days.map((day) => {
+            const count = eventsByDay[day.dateStr]?.length ?? 0
+            const isActive = activeDay === day.dateStr
+            return (
               <button
-                key={day}
-                onClick={() => setActiveDay(day)}
-                className={`px-5 py-2 text-sm font-semibold transition-colors ${
-                  activeDay === day
+                key={day.dateStr}
+                onClick={() => setActiveDay(day.dateStr)}
+                className={`flex-none flex flex-col items-center px-4 py-2 rounded-xl text-sm font-semibold transition-colors whitespace-nowrap ${
+                  isActive
                     ? 'bg-primary-500 text-white'
-                    : 'bg-white text-secondary-600 hover:bg-secondary-50'
+                    : 'bg-secondary-50 text-secondary-600 hover:bg-secondary-100'
                 }`}
               >
-                {day === 'sat' ? 'Saturday' : 'Sunday'}
+                <span>{day.label}</span>
+                {!loading && count > 0 && (
+                  <span className={`text-[10px] font-bold mt-0.5 ${isActive ? 'text-primary-100' : 'text-primary-500'}`}>
+                    {count} event{count !== 1 ? 's' : ''}
+                  </span>
+                )}
               </button>
-            ))}
-          </div>
+            )
+          })}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -243,8 +262,8 @@ export function WeekendEventsSection() {
               <CardSkeleton />
               <CardSkeleton />
             </>
-          ) : events.length > 0 ? (
-            events.map(event => (
+          ) : activeEvents.length > 0 ? (
+            activeEvents.map(event => (
               <EventStubCard
                 key={event.id}
                 event={event}
@@ -254,17 +273,17 @@ export function WeekendEventsSection() {
             ))
           ) : (
             <p className="col-span-3 text-center text-secondary-400 py-8 text-sm">
-              Check back soon — events are being added for this weekend.
+              No events found for this day — check another day or browse all events.
             </p>
           )}
         </div>
 
         <div className="mt-8 text-center">
           <Link
-            href="/events?date=weekend"
+            href="/events"
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-secondary-200 text-sm font-semibold text-secondary-700 hover:border-primary-300 hover:text-primary-700 transition-colors"
           >
-            See all weekend events
+            See all upcoming events
             <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.29a.75.75 0 111.04-1.08l5.5 5.25a.75.75 0 010 1.08l-5.5 5.25a.75.75 0 11-1.04-1.08l4.158-3.96H3.75A.75.75 0 013 10z" clipRule="evenodd" />
             </svg>

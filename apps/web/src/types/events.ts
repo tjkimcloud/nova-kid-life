@@ -18,6 +18,8 @@ export interface Event {
   is_free: boolean
   cost_description: string | null
   registration_url: string | null
+  source_url: string | null
+  source_name: string | null
   image_url: string | null
   image_url_md: string | null
   image_url_sm: string | null

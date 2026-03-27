@@ -45,8 +45,8 @@ Each event object must have these fields:
   "cost_description": "e.g. '$5/person' or 'Free' (string)",
   "age_range": "e.g. '3-8 years' or 'All ages' (string)",
   "tags": ["array", "of", "relevant", "tags"],
-  "source_url": "URL of THIS specific event's detail page (from href links in HTML), or null",
-  "registration_url": "external ticket/registration URL (Eventbrite, etc.), or null",
+  "source_url": "URL of THIS specific event's own detail page on the SOURCE SITE (the href pointing to this individual event), or null. Do NOT use the page URL you are currently scraping as source_url.",
+  "registration_url": "The ORGANIZER'S own website or registration page — must be the venue/organizer's actual website (e.g. eventbrite.com, the museum's site, the park's site). Do NOT use the aggregator/calendar site URL (patch.com, dullesmoms.com, macaronikid.com, mommypoppins.com, etc.) as registration_url. If no organizer URL is visible, return null.",
   "image_url": "URL string or null"
 }}"""
 

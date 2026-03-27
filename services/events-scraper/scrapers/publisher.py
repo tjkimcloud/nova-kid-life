@@ -19,12 +19,45 @@ import urllib.error
 from itertools import islice
 
 import boto3
+from urllib.parse import urlparse
 
 from .models import RawEvent
 
 logger = logging.getLogger(__name__)
 
 _sqs = None
+
+# Sites that aggregate events from other sources — their URLs are NOT
+# the organizer's own website and should not be stored as registration_url.
+_AGGREGATOR_DOMAINS = {
+    # Calendar aggregators
+    "dullesmoms.com", "patch.com", "macaronikid.com",
+    "mommypoppins.com", "dc.kidsoutandabout.com", "kidsoutandabout.com",
+    "kidfriendlydc.com", "thingstodoindc.com", "bringthekids.com",
+    # Local news / blogs
+    "restonow.com", "arlnow.com", "ffxnow.com", "loudounnow.com",
+    "insidenova.com", "alxnow.com", "tysonsreporter.com",
+    "princewilliamtimes.com", "potomaclocal.com", "novatoday.6amcity.com",
+    # Parenting sites / magazines
+    "theloudounmoms.com", "northernvirginiamag.com", "funinfairfaxva.com",
+    "novamomsblog.com", "fairfaxfamilyfun.com",
+    # Tourism boards (they aggregate from venues)
+    "visitfairfax.org", "visitloudoun.org", "visitalexandriava.com", "visitarlington.com",
+}
+
+
+def _is_aggregator(url: str | None) -> bool:
+    """Return True if this URL belongs to a known event aggregator site."""
+    if not url:
+        return False
+    try:
+        host = urlparse(url).hostname or ""
+        host = host.lower().removeprefix("www.")
+        return host in _AGGREGATOR_DOMAINS or any(
+            host.endswith("." + d) for d in _AGGREGATOR_DOMAINS
+        )
+    except Exception:
+        return False
 
 
 def _get_sqs():
@@ -92,6 +125,19 @@ def publish_direct(events: list[RawEvent]) -> int:
     for event in events:
         try:
             source_url = event.source_url or event.registration_url or ""
+
+            # Only store a registration_url that points to the organizer's own
+            # site, not to an aggregator page (dullesmoms, patch, etc.).
+            # Prefer event.registration_url, then fall back to source_url only
+            # when neither is an aggregator URL.
+            raw_reg = event.registration_url or ""
+            if raw_reg and not _is_aggregator(raw_reg):
+                registration_url = raw_reg
+            elif source_url and not _is_aggregator(source_url):
+                registration_url = source_url
+            else:
+                registration_url = None
+
             row = {
                 "slug":             event.slug or _make_slug(event.title, event.start_at),
                 "title":            event.title,
@@ -110,7 +156,7 @@ def publish_direct(events: list[RawEvent]) -> int:
                 "brand":            event.brand or None,
                 "is_free":          event.is_free,
                 "cost_description": event.cost_description or None,
-                "registration_url": event.registration_url or source_url or None,
+                "registration_url": registration_url,
                 "source_url":       source_url,
                 "source_name":      event.source_name or None,
                 "status":           "published",
