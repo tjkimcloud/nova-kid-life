@@ -28,9 +28,10 @@ type ApiEvent = {
 }
 
 type DayTab = {
-  dateStr:  string   // YYYY-MM-DD
-  label:    string   // "Today", "Tomorrow", "Fri", etc.
-  fullLabel: string  // "Friday, Mar 28"
+  dateStr:   string   // YYYY-MM-DD
+  label:     string   // "Today", "Tomorrow", "Fri", etc.
+  dateNum:   string   // "27", "28" — shown under label so Mon 30 ≠ past Mon
+  fullLabel: string   // "Friday, Mar 28"
 }
 
 function getNext7Days(): DayTab[] {
@@ -41,9 +42,10 @@ function getNext7Days(): DayTab[] {
   for (let i = 0; i < 7; i++) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i)
     const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-    const label = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : DAY_NAMES[d.getDay()]
+    const label = i === 0 ? 'Today' : i === 1 ? 'Tmrw' : DAY_NAMES[d.getDay()]
+    const dateNum = `${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`
     const fullLabel = `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`
-    days.push({ dateStr, label, fullLabel })
+    days.push({ dateStr, label, dateNum, fullLabel })
   }
   return days
 }
@@ -253,7 +255,8 @@ export function WeekendEventsSection() {
                     : 'bg-secondary-50 text-secondary-600 hover:bg-secondary-100'
                 }`}
               >
-                <span>{day.label}</span>
+                <span className="font-bold">{day.label}</span>
+                <span className={`text-[10px] mt-0.5 ${isActive ? 'text-primary-100' : 'text-secondary-400'}`}>{day.dateNum}</span>
                 {!loading && count > 0 && (
                   <span className={`text-[10px] font-bold mt-0.5 ${isActive ? 'text-primary-100' : 'text-primary-500'}`}>
                     {count} event{count !== 1 ? 's' : ''}

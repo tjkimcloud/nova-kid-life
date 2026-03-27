@@ -9,7 +9,10 @@
     "dev": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspace=apps/web",
     "type-check": "npm run type-check --workspace=apps/web",
-    "lint": "npm run lint --workspace=apps/web"
+    "lint": "npm run lint --workspace=apps/web",
+    "qa": "node scripts/qa-site.js",
+    "qa:fast": "node scripts/qa-site.js --fast",
+    "qa:full": "node scripts/qa-site.js --sample 50"
   },
   "engines": {
     "node": ">=20"
