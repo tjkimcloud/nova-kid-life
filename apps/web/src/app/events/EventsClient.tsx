@@ -39,7 +39,8 @@ export function EventsClient() {
   const [total,      setTotal]      = useState(0)
   const [categories, setCategories] = useState<Category[]>([])
 
-  const abortRef = useRef<AbortController | null>(null)
+  const abortRef    = useRef<AbortController | null>(null)
+  const hasMounted  = useRef(false)
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
@@ -108,7 +109,14 @@ export function EventsClient() {
 
   // ── Re-fetch whenever query/filters/page change ───────────────────────────────
   useEffect(() => {
-    pushUrl(query, filters, page)
+    // On initial mount the URL is already correct (navigated here via Link or direct URL).
+    // Calling router.replace on mount in Next.js 15 triggers a useSearchParams re-render
+    // that can abort the in-flight fetch before events arrive.  Skip pushUrl on mount.
+    if (hasMounted.current) {
+      pushUrl(query, filters, page)
+    } else {
+      hasMounted.current = true
+    }
     fetchEvents(query, filters, page)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, filters, page])

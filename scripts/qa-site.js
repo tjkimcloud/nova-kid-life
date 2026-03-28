@@ -99,6 +99,31 @@ async function checkEventsPage() {
   }
 }
 
+async function checkApiEventRendering() {
+  // The events page is client-rendered — the HTML only has a loading skeleton.
+  // Verify that the API actually serves data that would populate the page.
+  section('API → Events Page Rendering Check')
+  const tests = [
+    { label: 'Browse all events (/events)',         url: `${API}/events?section=main&limit=12&offset=0` },
+    { label: 'Free this weekend (/events?free=true)', url: `${API}/events?section=main&is_free=true&limit=12&offset=0` },
+    { label: 'Today filter (/events?date=today)',   url: (() => {
+        const today = new Date().toISOString().split('T')[0]
+        return `${API}/events?section=main&start_date=${today}&end_date=${today}&limit=12&offset=0`
+      })() },
+  ]
+  for (const { label, url } of tests) {
+    try {
+      const { status, body } = await fetch(url)
+      if (status !== 200) { bad(`${label} — API HTTP ${status}`); continue }
+      const data = JSON.parse(body)
+      if (data.total > 0) ok(`${label} — ${data.total} events available`)
+      else warning(`${label} — 0 events (page would show empty state)`)
+    } catch (e) {
+      bad(`${label} — ${e.message}`)
+    }
+  }
+}
+
 async function checkApi() {
   section('API Health')
   try {
@@ -251,6 +276,7 @@ async function main() {
 
   await checkHomepage()
   await checkEventsPage()
+  await checkApiEventRendering()
   const slugs = await checkApi()
   await checkStaticPages()
   if (!FAST && slugs.length > 0) await checkEventSlugs(slugs)
