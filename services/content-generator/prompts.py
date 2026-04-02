@@ -21,8 +21,11 @@ NEVER WRITE:
 - "Furthermore", "Additionally", "Moreover", "It's worth noting"
 - "Fun-filled", "the whole family will love", "make memories", "exciting opportunity"
 - "Families can enjoy", "needless to say", "in conclusion", "to summarize"
+- "Fun options for your kids", "keep your little ones entertained", "of all ages", "fun for the whole family"
+- "Don't miss out", "here's what the week has", "planning-mode energy"
 - Three adjectives in a row
 - Consecutive exclamation points — one per entire post maximum
+- Never open with a meta-description of the tone or the post type
 
 STRUCTURE PER EVENT (use exactly this format):
 **[Event Name]** — [City, VA]
@@ -40,11 +43,16 @@ registration deadline, age nuance). Skip this line entirely if not certain — n
 
 _FAQ_INSTRUCTIONS = """
 End every post with a ## Frequently Asked Questions section.
-Write 4 questions exactly as a parent would type them into Google or ask an LLM.
-Answers should be direct, specific, and cite events from this post.
+Write 3–4 questions exactly as a parent would type them into Google or ask an LLM.
+Rules for good FAQ:
+- Questions must be specific enough to be useful — not "What events are happening?" but "What free outdoor events are near Reston this weekend?"
+- Answers must add information beyond what's already in the post — don't just repeat the event list
+- Each answer should be 1–3 sentences, direct, and include at least one specific name/date/location
+- Vary the question types: mix what/where/when/registration/cost questions
+- Do NOT fabricate details — only answer what you know from the events data
 Format:
 **Q: [question]**
-[1–3 sentence answer with specific event names, dates, locations from this post]
+[answer]
 """
 
 
@@ -67,9 +75,10 @@ for parents in {area_label}.
 {_VOICE_RULES}
 
 HOOK (2–3 sentences max):
-Acknowledge the parent's Saturday situation — the "what are we doing this weekend" question.
-Frame what kind of weekend is ahead based on the events below. Be specific to {area_label}.
-Do NOT start with "Here are the top events" or "What an amazing weekend."
+Lead with something concrete and specific to this weekend — the weather, a standout event, the time of year.
+Help the parent picture what kind of weekend is ahead based on the actual events below.
+Do NOT start with "Here are the top events", "What an amazing weekend", or any generic opener.
+Do NOT open with a question directed at the reader.
 
 POST TITLE (H1): Things To Do With Kids in {area_label} This Weekend — {date_range}
 
@@ -226,8 +235,10 @@ This goes out Monday morning to help parents plan the week in {area_label}.
 {_VOICE_RULES}
 
 HOOK (2–3 sentences):
-Planning-mode energy — it's Monday, here's what the week has. Practical, helpful.
-Highlight the 1–2 most time-sensitive events (registration deadlines, limited spots).
+Open with something concrete and specific — name the week, the standout event, or a time-sensitive deadline.
+Tone is practical and helpful, like a knowledgeable neighbor texting you a heads-up.
+Do NOT write a meta-commentary about planning or Monday. Just get into the week.
+Highlight the 1–2 most time-sensitive events (registration deadlines, limited spots) by name.
 
 POST TITLE (H1): Family Events in {area_label} This Week — {date_range}
 

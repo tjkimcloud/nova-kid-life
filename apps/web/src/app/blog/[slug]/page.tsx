@@ -173,12 +173,13 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
           <article
             className="prose prose-secondary max-w-none
               prose-headings:font-heading prose-headings:font-bold prose-headings:text-secondary-800
-              prose-h2:text-xl prose-h2:mt-10 prose-h2:mb-4 prose-h2:border-b prose-h2:border-secondary-100 prose-h2:pb-2
+              prose-h2:text-xl prose-h2:mt-12 prose-h2:mb-5 prose-h2:border-b prose-h2:border-secondary-100 prose-h2:pb-2
               prose-h3:text-base prose-h3:text-secondary-700 prose-h3:mt-6 prose-h3:mb-2
-              prose-p:text-secondary-700 prose-p:leading-relaxed
+              prose-p:text-secondary-700 prose-p:leading-relaxed prose-p:my-3
               prose-a:text-primary-600 prose-a:no-underline hover:prose-a:underline
-              prose-strong:text-secondary-800
-              prose-ul:my-3 prose-li:my-1"
+              prose-strong:text-secondary-800 prose-strong:text-[1.0125rem]
+              prose-ul:my-3 prose-li:my-1
+              prose-hr:my-10"
             dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
           />
 
@@ -239,32 +240,63 @@ function formatDateRange(start: string, end: string): string {
 }
 
 /**
- * Minimal markdown → HTML converter.
- * Handles the subset GPT generates: headings, bold, links, paragraphs, lists, emoji lines.
- * For production, swap in a proper library (marked, remark) if needed.
+ * Block-based markdown → HTML converter.
+ * Splits on blank lines first, then classifies each block.
+ * This avoids the bug of wrapping block-level tags (h2, hr) in <p> tags.
  */
 function renderMarkdown(md: string): string {
-  return md
-    // H2/H3
-    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-    // Bold
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Links
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-    // Emoji logistics lines (📅 📍 💰) → styled spans
-    .replace(/^(📅|📍|💰) (.+)$/gm, '<p class="text-sm text-secondary-500 my-0.5">$1 $2</p>')
-    // Unordered lists
-    .replace(/^\- (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>(\n|$))+/g, '<ul>$&</ul>')
-    // Horizontal rules
-    .replace(/^---$/gm, '<hr class="my-6 border-secondary-100" />')
-    // Paragraphs (double newline)
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/^(?!<[hup]|<li|<hr)(.+)$/gm, '<p>$1</p>')
-    // Clean up empty paragraphs
-    .replace(/<p>\s*<\/p>/g, '')
+  const inline = (s: string) =>
+    s
+      // Arrow detail links → styled anchor
+      .replace(
+        /\[(→[^\]]*)\]\(([^)]+)\)/g,
+        '<a href="$2" class="inline-block text-sm font-semibold text-primary-600 hover:text-primary-700 hover:underline">$1</a>',
+      )
+      // Bold
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      // Generic links
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+
+  const blocks = md.trim().split(/\n{2,}/)
+
+  const rendered = blocks.map(block => {
+    const lines = block.split('\n')
+    const out: string[] = []
+    const listBuf: string[] = []
+
+    const flushList = () => {
+      if (listBuf.length) {
+        out.push(`<ul>${listBuf.join('')}</ul>`)
+        listBuf.length = 0
+      }
+    }
+
+    for (const raw of lines) {
+      const line = raw.trimEnd()
+      if (!line) continue
+
+      if (/^### /.test(line)) { flushList(); out.push(`<h3>${inline(line.slice(4))}</h3>`); continue }
+      if (/^## /.test(line))  { flushList(); out.push(`<h2>${inline(line.slice(3))}</h2>`); continue }
+      if (/^# /.test(line))   { flushList(); out.push(`<h1>${inline(line.slice(2))}</h1>`); continue }
+      if (line === '---')     { flushList(); out.push('<hr class="my-8 border-secondary-100" />'); continue }
+
+      if (/^(📅|📍|💰)/.test(line)) {
+        flushList()
+        out.push(`<p class="text-sm text-secondary-500 my-0.5 leading-snug">${inline(line)}</p>`)
+        continue
+      }
+
+      if (/^[-*] /.test(line)) { listBuf.push(`<li>${inline(line.slice(2))}</li>`); continue }
+
+      flushList()
+      out.push(`<p>${inline(line)}</p>`)
+    }
+
+    flushList()
+    return out.join('\n')
+  })
+
+  return rendered.join('\n').replace(/<p>\s*<\/p>/g, '')
 }
 
 /**
