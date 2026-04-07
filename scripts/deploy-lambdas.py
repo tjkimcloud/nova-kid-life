@@ -24,6 +24,9 @@ SERVICES = {
     "quality-agent": [
         "handler.py",
     ],
+    "orchestrator": [
+        "handler.py",
+    ],
 }
 
 def add_to_zip(zf, path, arcname=None):

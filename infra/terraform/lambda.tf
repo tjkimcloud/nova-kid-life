@@ -97,6 +97,26 @@ resource "aws_iam_policy" "ssm_read" {
   policy      = data.aws_iam_policy_document.ssm_read.json
 }
 
+# Orchestrator-only: also needs PutParameter to save weekly metric snapshots
+data "aws_iam_policy_document" "ssm_write_metrics" {
+  statement {
+    effect    = "Allow"
+    actions   = ["ssm:PutParameter"]
+    resources = ["arn:aws:ssm:${var.aws_region}:*:parameter/novakidlife/metrics-snapshot/*"]
+  }
+}
+
+resource "aws_iam_policy" "ssm_write_metrics" {
+  name        = "${local.name_prefix}-ssm-write-metrics"
+  description = "Allow orchestrator to write weekly metric snapshots to SSM"
+  policy      = data.aws_iam_policy_document.ssm_write_metrics.json
+}
+
+resource "aws_iam_role_policy_attachment" "orchestrator_ssm_write" {
+  role       = aws_iam_role.orchestrator.name
+  policy_arn = aws_iam_policy.ssm_write_metrics.arn
+}
+
 # ── API Lambda ────────────────────────────────────────────────────────────────
 
 resource "aws_iam_role" "api" {
@@ -484,4 +504,65 @@ resource "aws_lambda_permission" "eventbridge_invoke_quality_agent" {
   function_name = aws_lambda_function.quality_agent.function_name
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.quality_agent.arn
+}
+
+# ── Nova Orchestrator ──────────────────────────────────────────────────────────
+
+data "archive_file" "orchestrator" {
+  type        = "zip"
+  source_dir  = "${local.service_path}/orchestrator"
+  output_path = "${local.builds_path}/orchestrator.zip"
+  excludes    = ["__pycache__", "*.pyc", ".env", "tests", ".pytest_cache"]
+}
+
+resource "aws_iam_role" "orchestrator" {
+  name               = "${local.name_prefix}-orchestrator-role"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "orchestrator_basic_execution" {
+  role       = aws_iam_role.orchestrator.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy_attachment" "orchestrator_ssm" {
+  role       = aws_iam_role.orchestrator.name
+  policy_arn = aws_iam_policy.ssm_read.arn
+}
+
+resource "aws_cloudwatch_log_group" "lambda_orchestrator" {
+  name              = "/aws/lambda/${local.name_prefix}-orchestrator"
+  retention_in_days = 30
+}
+
+resource "aws_lambda_function" "orchestrator" {
+  function_name    = "${local.name_prefix}-orchestrator"
+  description      = "Weekly autoresearch loop — metrics, source health, content recommendations"
+  role             = aws_iam_role.orchestrator.arn
+  runtime          = var.lambda_runtime
+  handler          = "handler.handler"
+  filename         = data.archive_file.orchestrator.output_path
+  source_code_hash = data.archive_file.orchestrator.output_base64sha256
+  memory_size      = 512
+  timeout          = 300
+
+  environment {
+    variables = {
+      ENVIRONMENT = var.environment
+      SSM_PREFIX  = "/novakidlife"
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.orchestrator_basic_execution,
+    aws_cloudwatch_log_group.lambda_orchestrator,
+  ]
+}
+
+resource "aws_lambda_permission" "eventbridge_invoke_orchestrator" {
+  statement_id  = "AllowEventBridgeInvokeOrchestrator"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.orchestrator.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.orchestrator.arn
 }

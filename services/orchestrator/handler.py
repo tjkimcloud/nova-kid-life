@@ -58,11 +58,11 @@ def _load_secrets() -> None:
             logger.warning("SSM get %s failed: %s", name, e)
             return ""
 
-    _SUPABASE_URL  = get("/novakidlife/supabase-url")
-    _SUPABASE_KEY  = get("/novakidlife/supabase-service-key", decrypt=True)
-    _GITHUB_TOKEN  = get("/novakidlife/github-token", decrypt=True)
-    _GA4_PROPERTY  = get("/novakidlife/ga4-property-id")
-    _GSC_PROPERTY  = get("/novakidlife/gsc-property")
+    _SUPABASE_URL  = get("/novakidlife/supabase/url",          decrypt=True)
+    _SUPABASE_KEY  = get("/novakidlife/supabase/service-key",  decrypt=True)
+    _GITHUB_TOKEN  = get("/novakidlife/github-token",          decrypt=True)
+    _GA4_PROPERTY  = get("/novakidlife/ga4-property-id",       decrypt=True)
+    _GSC_PROPERTY  = get("/novakidlife/gsc-property",          decrypt=True)
     _GOOGLE_SA     = json.loads(get("/novakidlife/google-service-account", decrypt=True) or "{}")
 
 
@@ -70,7 +70,7 @@ _load_secrets()
 
 # ── Supabase helpers ───────────────────────────────────────────────────────────
 
-def _sb(method: str, path: str, **kwargs) -> Any:
+def _sb(method: str, path: str, extra_headers: dict | None = None, **kwargs) -> Any:
     url = f"{_SUPABASE_URL}/rest/v1/{path}"
     headers = {
         "apikey": _SUPABASE_KEY,
@@ -78,6 +78,8 @@ def _sb(method: str, path: str, **kwargs) -> Any:
         "Content-Type": "application/json",
         "Prefer": "return=representation",
     }
+    if extra_headers:
+        headers.update(extra_headers)
     r = httpx.request(method, url, headers=headers, timeout=20, **kwargs)
     r.raise_for_status()
     return r.json()
@@ -98,7 +100,7 @@ def collect_supabase_metrics() -> dict:
     metrics = {}
 
     # Total published events
-    r = _sb("GET", "events?select=id&status=eq.published", headers={"Range": "0-0", "Prefer": "count=exact"})
+    r = _sb("GET", "events?select=id&status=eq.published", extra_headers={"Range": "0-0"})
     # Use HEAD for count
     url = f"{_SUPABASE_URL}/rest/v1/events"
     headers = {
