@@ -1,0 +1,140 @@
+name: Scheduled QA Audit
+
+on:
+  schedule:
+    # Daily at 9:00 AM EST (14:00 UTC) — after scraper (6am) and rebuild (7:30am) have run
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'QA mode: fast or full'
+        required: false
+        default: 'full'
+
+# GAP 3 mitigation: only one QA run at a time — new run waits, does not cancel
+concurrency:
+  group: qa-orchestrator
+  cancel-in-progress: false
+
+jobs:
+  qa-audit:
+    name: Live Site QA Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run QA audit
+        id: qa
+        run: |
+          MODE="${{ github.event.inputs.mode || 'full' }}"
+          if [ "$MODE" = "fast" ]; then
+            node scripts/qa-site.js --fast 2>&1 | tee qa-output.txt
+          else
+            node scripts/qa-site.js --sample 30 2>&1 | tee qa-output.txt
+          fi
+          echo "exit_code=${PIPESTATUS[0]}" >> $GITHUB_OUTPUT
+        continue-on-error: true
+
+      - name: Parse failure count
+        id: parse
+        if: always()
+        run: |
+          FAILURES=$(grep -c "^  ❌" qa-output.txt || true)
+          WARNINGS=$(grep -c "^  ⚠️" qa-output.txt || true)
+          echo "failures=$FAILURES" >> $GITHUB_OUTPUT
+          echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          tail -20 qa-output.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Upload QA report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-report-${{ github.run_id }}
+          path: qa-output.txt
+          retention-days: 14
+
+      - name: Write job summary
+        if: always()
+        run: |
+          echo "## QA Audit — $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat qa-output.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      # GAP 12 mitigation: open a GH issue on failure so human is notified
+      - name: Open GitHub issue on failure
+        if: steps.qa.outputs.exit_code != '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failures = ${{ steps.parse.outputs.failures || 0 }};
+            const warnings = ${{ steps.parse.outputs.warnings || 0 }};
+            const summary = `${{ steps.parse.outputs.summary }}`;
+            const runUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            // Check if an open QA issue already exists (avoid duplicates)
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'qa-failure',
+              state: 'open',
+            });
+
+            if (issues.length > 0) {
+              // Update existing issue with latest run info
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issues[0].number,
+                body: `## QA re-run — still failing (${new Date().toISOString()})\n\n❌ ${failures} failures | ⚠️ ${warnings} warnings\n\n[View full report](${runUrl})\n\n\`\`\`\n${summary}\n\`\`\``,
+              });
+              console.log(`Updated existing issue #${issues[0].number}`);
+            } else {
+              // Open a new issue
+              const { data: issue } = await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `QA Failure — ${failures} checks failed (${new Date().toISOString().split('T')[0]})`,
+                labels: ['qa-failure'],
+                body: `## Automated QA detected ${failures} failure(s)\n\n⚠️ ${warnings} warnings\n\n[View full report](${runUrl})\n\n### Summary\n\`\`\`\n${summary}\n\`\`\`\n\n### Next steps\n- [ ] Review the failures in the report link above\n- [ ] Fix root cause\n- [ ] Close this issue once QA passes clean`,
+              });
+              console.log(`Opened issue #${issue.number}`);
+            }
+
+      - name: Close QA issue if all passing
+        if: steps.qa.outputs.exit_code == '0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'qa-failure',
+              state: 'open',
+            });
+            for (const issue of issues) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `✅ QA passed clean on ${new Date().toISOString()} — closing.`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+              });
+            }
+
+      - name: Fail job if QA failed
+        if: steps.qa.outputs.exit_code != '0'
+        run: exit 1

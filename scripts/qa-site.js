@@ -42,11 +42,20 @@ function fetch(url, timeout = 12000) {
 
 let pass = 0, fail = 0, warn = 0
 const failures = []
+const timings  = {}
 
 function ok(msg)      { pass++; console.log(`  ✅ ${msg}`) }
 function bad(msg)     { fail++; failures.push(msg); console.log(`  ❌ ${msg}`) }
 function warning(msg) { warn++; console.log(`  ⚠️  ${msg}`) }
 function section(title) { console.log(`\n── ${title} ${'─'.repeat(Math.max(0, 60 - title.length))}`) }
+
+// Timed fetch — records ms for latency checks
+async function timedFetch(url, timeout = 12000) {
+  const t0 = Date.now()
+  const result = await fetch(url, timeout)
+  timings[url] = Date.now() - t0
+  return result
+}
 
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -267,6 +276,174 @@ async function checkStaticPages() {
   }))
 }
 
+// ── Description quality (GAP 1) ───────────────────────────────────────────────
+// Checks API description fields for known HTML artifacts that render as
+// visible broken text (e.g. literal <p> tags, double-escaped entities).
+
+// Artifacts checked in raw API string fields (descriptions are now rendered as HTML,
+// so <p> tags are valid there — only flag things that break even in HTML rendering)
+const API_ARTIFACTS = [
+  { pattern: /&lt;p&gt;/,   label: 'double-escaped <p> — would show as literal text in HTML' },
+  { pattern: /&lt;\/p&gt;/, label: 'double-escaped </p> — would show as literal text in HTML' },
+  { pattern: /&amp;lt;/,    label: 'triple-escaped entity' },
+]
+
+// Artifacts checked in rendered static HTML source (server-rendered pages)
+// These indicate a renderer bug where block elements got wrapped in <p> tags
+const RENDER_ARTIFACTS = [
+  { pattern: /<p>\s*<h[23]/i,  label: 'heading wrapped in <p> (renderer bug)' },
+  { pattern: /<p>\s*<hr/i,     label: '<hr> wrapped in <p> (renderer bug)' },
+  { pattern: /&lt;p&gt;/,      label: 'double-escaped <p> visible in page source' },
+  { pattern: /&lt;\/p&gt;/,    label: 'double-escaped </p> visible in page source' },
+]
+
+async function checkDescriptionQuality() {
+  section('Description HTML Quality (GAP 1)')
+  try {
+    const { status, body } = await timedFetch(`${API}/events?section=main&limit=20&offset=0`)
+    if (status !== 200) { bad(`API /events HTTP ${status} — skipping description check`); return }
+    const data = JSON.parse(body)
+    const items = data.items ?? []
+    if (items.length === 0) { warning('No events returned — skipping description check'); return }
+
+    let clean = 0, dirty = 0
+    for (const ev of items) {
+      const desc = ev.description ?? ''
+      if (!desc) continue
+      const hits = API_ARTIFACTS.filter(({ pattern }) => pattern.test(desc))
+      if (hits.length) {
+        dirty++
+        bad(`"${ev.title?.slice(0, 40)}" — description contains ${hits.map(h => h.label).join(', ')}`)
+      } else {
+        clean++
+      }
+    }
+    if (dirty === 0) ok(`All ${clean} sampled descriptions are artifact-free`)
+  } catch (e) {
+    bad(`Description quality check failed: ${e.message}`)
+  }
+}
+
+// ── Blog pages (GAP 2) ────────────────────────────────────────────────────────
+
+async function checkBlogPages() {
+  section('Blog Pages (GAP 2)')
+  try {
+    const { status, body } = await timedFetch(`${SITE}/blog`)
+    if (status !== 200) return bad(`/blog HTTP ${status}`)
+    ok(`/blog HTTP 200`)
+    const visible = stripScripts(body)
+    if (visible.includes('Page not found')) bad('/blog shows "Page not found"')
+    else ok('/blog has no "Page not found"')
+  } catch (e) {
+    bad(`/blog fetch failed: ${e.message}`)
+    return
+  }
+
+  // Get a few blog slugs from the API
+  try {
+    const { status, body } = await timedFetch(`${API}/blog?limit=3`)
+    if (status !== 200) { warning(`Blog API HTTP ${status} — skipping slug check`); return }
+    const data = JSON.parse(body)
+    const slugs = (data.items ?? []).map(p => p.slug).filter(Boolean)
+    if (slugs.length === 0) { warning('No blog slugs returned from API'); return }
+
+    await Promise.all(slugs.map(async (slug) => {
+      try {
+        const { status: s, body: b } = await timedFetch(`${SITE}/blog/${slug}`, 15000)
+        if (s !== 200) { bad(`/blog/${slug} HTTP ${s}`); return }
+        const visible = stripScripts(b)
+        if (visible.includes('Page not found')) { bad(`/blog/${slug} shows "Page not found"`); return }
+        // Check for renderer artifacts — block elements wrapped in <p>, double-escaped HTML
+        const hits = RENDER_ARTIFACTS.filter(({ pattern }) => pattern.test(b))
+        if (hits.length) bad(`/blog/${slug} — ${hits.map(h => h.label).join(', ')}`)
+        else ok(`/blog/${slug} — clean`)
+      } catch (e) {
+        bad(`/blog/${slug} fetch failed: ${e.message}`)
+      }
+    }))
+  } catch (e) {
+    warning(`Blog slug check failed: ${e.message}`)
+  }
+}
+
+// ── SEO metadata (GAP 9) ──────────────────────────────────────────────────────
+
+async function checkSeoMetadata() {
+  section('SEO Metadata (GAP 9)')
+  const checks = [
+    { url: SITE,            label: 'Homepage' },
+    { url: `${SITE}/events`, label: 'Events page' },
+  ]
+
+  for (const { url, label } of checks) {
+    try {
+      const { status, body } = await timedFetch(url)
+      if (status !== 200) { bad(`${label} HTTP ${status}`); continue }
+
+      const seoChecks = [
+        ['og:title',       /property="og:title"/],
+        ['og:image',       /property="og:image"/],
+        ['canonical',      /rel="canonical"/],
+        ['meta description', /name="description"/],
+      ]
+      for (const [name, pattern] of seoChecks) {
+        if (pattern.test(body)) ok(`${label} — ${name} present`)
+        else bad(`${label} — missing ${name}`)
+      }
+    } catch (e) {
+      bad(`${label} SEO check failed: ${e.message}`)
+    }
+  }
+}
+
+// ── Scraper freshness (GAP 7) ─────────────────────────────────────────────────
+
+async function checkScraperFreshness() {
+  section('Scraper Freshness (GAP 7)')
+  try {
+    // Use upcoming events sorted by start_at ascending — newest scraped should be in the future
+    const { status, body } = await timedFetch(`${API}/events?section=main&limit=50&offset=0`)
+    if (status !== 200) { bad(`API /events HTTP ${status}`); return }
+    const data = JSON.parse(body)
+    const items = data.items ?? []
+    if (items.length === 0) { bad('No events in feed — scraper may be down'); return }
+
+    // Find the most recently starting event
+    const now = Date.now()
+    const futureEvents = items.filter(ev => new Date(ev.start_at).getTime() > now)
+    if (futureEvents.length === 0) {
+      bad('No future events in top 50 — all events are in the past, scraper may be stale')
+      return
+    }
+
+    // Check: is there at least 1 event starting within the next 14 days?
+    const twoWeeks = now + 14 * 24 * 60 * 60 * 1000
+    const upcoming = futureEvents.filter(ev => new Date(ev.start_at).getTime() < twoWeeks)
+    if (upcoming.length > 0) ok(`${upcoming.length} events in the next 14 days — scraper active`)
+    else warning('No events found in next 14 days — scraper may be producing stale data')
+  } catch (e) {
+    bad(`Scraper freshness check failed: ${e.message}`)
+  }
+}
+
+// ── API latency (GAP 10) ──────────────────────────────────────────────────────
+
+function checkApiLatency() {
+  section('API Latency (GAP 10)')
+  const WARN_MS  = 3000
+  const FAIL_MS  = 6000
+  let checked = 0, slow = 0
+  for (const [url, ms] of Object.entries(timings)) {
+    if (!url.startsWith(API)) continue
+    checked++
+    if (ms > FAIL_MS)      { slow++; bad(`Slow API response ${ms}ms: ${url.replace(API, '')}`) }
+    else if (ms > WARN_MS) { slow++; warning(`Elevated API latency ${ms}ms: ${url.replace(API, '')}`) }
+  }
+  if (checked === 0) warning('No API timings recorded')
+  else if (slow === 0)     ok(`All ${checked} timed API calls within latency thresholds`)
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -279,7 +456,12 @@ async function main() {
   await checkApiEventRendering()
   const slugs = await checkApi()
   await checkStaticPages()
+  await checkDescriptionQuality()
+  await checkScraperFreshness()
+  await checkSeoMetadata()
   if (!FAST && slugs.length > 0) await checkEventSlugs(slugs)
+  await checkBlogPages()
+  checkApiLatency()   // reads timings collected above — must be last
 
   const elapsed = ((Date.now() - start) / 1000).toFixed(1)
   console.log(`\n${'═'.repeat(64)}`)

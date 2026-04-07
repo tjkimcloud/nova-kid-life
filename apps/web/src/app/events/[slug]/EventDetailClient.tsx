@@ -179,9 +179,10 @@ export function EventDetailClient({ slug }: { slug: string }) {
             >
               About This Event
             </h2>
-            <div className="prose prose-secondary max-w-none text-secondary-700 leading-relaxed whitespace-pre-line">
-              {event.description}
-            </div>
+            <div
+              className="prose prose-secondary max-w-none text-secondary-700 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: event.description ?? '' }}
+            />
 
             {event.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-4">

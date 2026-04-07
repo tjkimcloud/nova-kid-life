@@ -16,9 +16,16 @@ export const metadata: Metadata = {
     siteName: 'NovaKidLife',
     locale:   'en_US',
     type:     'website',
+    images: [{
+      url:    '/images/hero-family-meadow-v2.jpg',
+      width:  1200,
+      height: 630,
+      alt:    'Family enjoying outdoor activities in Northern Virginia',
+    }],
   },
   twitter: {
-    card: 'summary_large_image',
+    card:   'summary_large_image',
+    images: ['/images/hero-family-meadow-v2.jpg'],
   },
   robots: {
     index:  true,
