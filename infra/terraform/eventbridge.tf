@@ -93,3 +93,26 @@ resource "aws_cloudwatch_event_target" "content_generator_week_ahead" {
     trigger = "week_ahead"
   })
 }
+
+# ── Nova Orchestrator schedule ─────────────────────────────────────────────────
+#
+# Runs Monday 8:00 AM EST = Monday 13:00 UTC
+# After the content-generator week-ahead (Mon 6am) and quality-agent (6:15am)
+# so it has fresh data to analyze.
+
+resource "aws_cloudwatch_event_rule" "orchestrator" {
+  name                = "${local.name_prefix}-orchestrator"
+  description         = "Nova Orchestrator weekly autoresearch loop (Mon 8am EST)"
+  schedule_expression = "cron(0 13 ? * MON *)"
+  state               = "ENABLED"
+}
+
+resource "aws_cloudwatch_event_target" "orchestrator" {
+  rule      = aws_cloudwatch_event_rule.orchestrator.name
+  target_id = "OrchestratorLambda"
+  arn       = aws_lambda_function.orchestrator.arn
+
+  input = jsonencode({
+    mode = "full"
+  })
+}
