@@ -16,42 +16,42 @@ import { EmptyState }         from '@/components/EmptyState'
 const PAGE_SIZE = 12
 
 export function EventsClient() {
-  const router     = useRouter()
-  const pathname   = usePathname()
+  const router       = useRouter()
+  const pathname     = usePathname()
   const searchParams = useSearchParams()
 
-  // ── Read initial state from URL ──────────────────────────────────────────────
-  const initialFilters: Filters = {
+  // ── Derive filter state directly from URL (source of truth) ──────────────────
+  // Using useState caused a bug: in Next.js 15 static export, useSearchParams()
+  // returns empty during the hydration pass so useState captured stale initial
+  // values. Deriving from searchParams directly means the fetch effect re-runs
+  // automatically whenever the URL changes (Link navigation, browser back/forward).
+  const filters: Filters = {
     datePreset: (searchParams.get('date') as Filters['datePreset']) || '',
     category:   searchParams.get('category') || '',
     isFree:     searchParams.get('free') === 'true',
   }
-  const initialQuery  = searchParams.get('q') || ''
-  const initialPage   = Number(searchParams.get('page') || 1)
+  const query = searchParams.get('q') || ''
+  const page  = Number(searchParams.get('page') || 1)
 
-  // ── State ────────────────────────────────────────────────────────────────────
-  const [filters,    setFilters]    = useState<Filters>(initialFilters)
-  const [query,      setQuery]      = useState(initialQuery)
-  const [page,       setPage]       = useState(initialPage)
+  // ── UI-only state ─────────────────────────────────────────────────────────────
   const [loading,    setLoading]    = useState(true)
   const [searching,  setSearching]  = useState(false)
   const [events,     setEvents]     = useState<Event[]>([])
   const [total,      setTotal]      = useState(0)
   const [categories, setCategories] = useState<Category[]>([])
 
-  const abortRef    = useRef<AbortController | null>(null)
-  const hasMounted  = useRef(false)
+  const abortRef = useRef<AbortController | null>(null)
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
-  // ── Sync state → URL ─────────────────────────────────────────────────────────
+  // ── Sync URL ──────────────────────────────────────────────────────────────────
   function pushUrl(q: string, f: Filters, p: number) {
     const params = new URLSearchParams()
-    if (q)             params.set('q', q)
-    if (f.datePreset)  params.set('date', f.datePreset)
-    if (f.category)    params.set('category', f.category)
-    if (f.isFree)      params.set('free', 'true')
-    if (p > 1)         params.set('page', String(p))
+    if (q)            params.set('q', q)
+    if (f.datePreset) params.set('date', f.datePreset)
+    if (f.category)   params.set('category', f.category)
+    if (f.isFree)     params.set('free', 'true')
+    if (p > 1)        params.set('page', String(p))
     const qs = params.toString()
     router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
   }
@@ -61,14 +61,12 @@ export function EventsClient() {
     if (abortRef.current) abortRef.current.abort()
 
     if (q.trim()) {
-      // Semantic search path
       setSearching(true)
       setLoading(true)
       try {
         const results = await searchEvents(q.trim())
         setEvents(results)
         setTotal(results.length)
-        setPage(1)
       } catch {
         setEvents([])
         setTotal(0)
@@ -79,7 +77,6 @@ export function EventsClient() {
       return
     }
 
-    // Filter path
     setLoading(true)
     const dateRange = getDateRange(f.datePreset)
     try {
@@ -107,39 +104,29 @@ export function EventsClient() {
     getCategories().then(setCategories).catch(() => setCategories([]))
   }, [])
 
-  // ── Re-fetch whenever query/filters/page change ───────────────────────────────
+  // ── Re-fetch whenever URL changes ─────────────────────────────────────────────
+  // searchParams is the single source of truth — this fires on Link navigation,
+  // browser back/forward, and user filter interactions (which call pushUrl).
   useEffect(() => {
-    // On initial mount the URL is already correct (navigated here via Link or direct URL).
-    // Calling router.replace on mount in Next.js 15 triggers a useSearchParams re-render
-    // that can abort the in-flight fetch before events arrive.  Skip pushUrl on mount.
-    if (hasMounted.current) {
-      pushUrl(query, filters, page)
-    } else {
-      hasMounted.current = true
-    }
     fetchEvents(query, filters, page)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, filters, page])
+  }, [searchParams])
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // ── Handlers (update URL → triggers re-fetch via searchParams effect) ─────────
   function handleSearch(q: string) {
-    setQuery(q)
-    setPage(1)
+    pushUrl(q, filters, 1)
   }
 
   function handleFilters(f: Filters) {
-    setFilters(f)
-    setPage(1)
+    pushUrl(query, f, 1)
   }
 
   function handleClearAll() {
-    setQuery('')
-    setFilters({ datePreset: '', category: '', isFree: false })
-    setPage(1)
+    pushUrl('', { datePreset: '', category: '', isFree: false }, 1)
   }
 
   function handlePage(p: number) {
-    setPage(p)
+    pushUrl(query, filters, p)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
