@@ -78,3 +78,27 @@ jobs:
           echo "- **Bucket:** ${{ secrets.WEB_BUCKET_NAME }}" >> $GITHUB_STEP_SUMMARY
           echo "- **URL:** ${{ secrets.NEXT_PUBLIC_SITE_URL }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+
+      # P0-B: Run fast QA immediately after deploy to catch regressions within minutes
+      # CloudFront invalidation takes ~30s to propagate — wait before checking
+      - name: Wait for CloudFront propagation
+        run: sleep 45
+
+      - name: Post-deploy QA check
+        id: post_deploy_qa
+        run: node scripts/qa-site.js --fast 2>&1 | tee post-deploy-qa.txt
+        continue-on-error: true
+
+      - name: QA summary
+        if: always()
+        run: |
+          echo "### Post-Deploy QA" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          tail -10 post-deploy-qa.txt >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail if post-deploy QA failed
+        if: steps.post_deploy_qa.outcome == 'failure'
+        run: |
+          echo "❌ Post-deploy QA failed — site may be broken. Check the QA output above."
+          exit 1
