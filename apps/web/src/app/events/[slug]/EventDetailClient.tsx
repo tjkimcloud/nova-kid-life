@@ -296,6 +296,11 @@ export function EventDetailClient({ slug }: { slug: string }) {
                     href={regUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => window.gtag?.('event', 'event_cta_click', {
+                      event_slug: event.slug,
+                      event_title: event.title,
+                      cta_type: 'register',
+                    })}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-500 text-white font-semibold text-base hover:bg-primary-600 transition-colors shadow-sm"
                   >
                     Register Now
@@ -315,6 +320,11 @@ export function EventDetailClient({ slug }: { slug: string }) {
                     href={srcUrl}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => window.gtag?.('event', 'event_cta_click', {
+                      event_slug: event.slug,
+                      event_title: event.title,
+                      cta_type: 'view_details',
+                    })}
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary-500 text-white font-semibold text-base hover:bg-primary-600 transition-colors shadow-sm"
                   >
                     View Event Details

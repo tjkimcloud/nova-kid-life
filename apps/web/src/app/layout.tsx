@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { GoogleAnalytics } from '@next/third-parties/google'
 import { nunito, plusJakarta, dmSans } from '@/lib/fonts'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
@@ -50,6 +51,7 @@ export default function RootLayout({
         </div>
         <Footer />
       </body>
+      <GoogleAnalytics gaId="G-4S80ZKSG0C" />
     </html>
   )
 }

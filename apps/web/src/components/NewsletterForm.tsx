@@ -21,6 +21,7 @@ export function NewsletterForm() {
       setStatus('success')
       setMessage("You're in! Check your inbox for the first roundup.")
       setEmail('')
+      window.gtag?.('event', 'newsletter_signup', { method: 'inline_form' })
     } catch {
       setStatus('error')
       setMessage('Something went wrong — please try again.')
