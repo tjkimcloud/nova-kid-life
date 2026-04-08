@@ -30,28 +30,38 @@ export function EventsClient() {
     category:   searchParams.get('category') || '',
     isFree:     searchParams.get('free') === 'true',
   }
-  const query = searchParams.get('q') || ''
-  const page  = Number(searchParams.get('page') || 1)
+  const query    = searchParams.get('q') || ''
+  const location = searchParams.get('location') || ''
+  const page     = Number(searchParams.get('page') || 1)
 
   // ── UI-only state ─────────────────────────────────────────────────────────────
   const [loading,    setLoading]    = useState(true)
   const [searching,  setSearching]  = useState(false)
-  const [events,     setEvents]     = useState<Event[]>([])
+  const [allEvents,  setAllEvents]  = useState<Event[]>([])
   const [total,      setTotal]      = useState(0)
   const [categories, setCategories] = useState<Category[]>([])
+
+  // Apply location filter client-side (API has no city-name filter param)
+  const events = location
+    ? allEvents.filter(ev => {
+        const haystack = `${ev.location_name ?? ''} ${ev.location_address ?? ''}`.toLowerCase()
+        return haystack.includes(location.toLowerCase())
+      })
+    : allEvents
 
   const abortRef = useRef<AbortController | null>(null)
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   // ── Sync URL ──────────────────────────────────────────────────────────────────
-  function pushUrl(q: string, f: Filters, p: number) {
+  function pushUrl(q: string, f: Filters, p: number, loc?: string) {
     const params = new URLSearchParams()
-    if (q)            params.set('q', q)
-    if (f.datePreset) params.set('date', f.datePreset)
-    if (f.category)   params.set('category', f.category)
-    if (f.isFree)     params.set('free', 'true')
-    if (p > 1)        params.set('page', String(p))
+    if (q)                        params.set('q', q)
+    if (f.datePreset)             params.set('date', f.datePreset)
+    if (f.category)               params.set('category', f.category)
+    if (f.isFree)                 params.set('free', 'true')
+    if (loc ?? location)          params.set('location', loc ?? location)
+    if (p > 1)                    params.set('page', String(p))
     const qs = params.toString()
     router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
   }
@@ -65,10 +75,10 @@ export function EventsClient() {
       setLoading(true)
       try {
         const results = await searchEvents(q.trim())
-        setEvents(results)
+        setAllEvents(results)
         setTotal(results.length)
       } catch {
-        setEvents([])
+        setAllEvents([])
         setTotal(0)
       } finally {
         setLoading(false)
@@ -79,6 +89,9 @@ export function EventsClient() {
 
     setLoading(true)
     const dateRange = getDateRange(f.datePreset)
+    // When filtering by location fetch a larger batch — filter client-side
+    // since the API has no city-name filter param.
+    const hasLocation = !!searchParams.get('location')
     try {
       const resp: EventsResponse = await getEvents({
         section:    'main',
@@ -86,13 +99,13 @@ export function EventsClient() {
         is_free:    f.isFree    || undefined,
         start_date: dateRange.start_date,
         end_date:   dateRange.end_date,
-        limit:      PAGE_SIZE,
-        offset:     (p - 1) * PAGE_SIZE,
+        limit:      hasLocation ? 200 : PAGE_SIZE,
+        offset:     hasLocation ? 0 : (p - 1) * PAGE_SIZE,
       })
-      setEvents(resp.items)
+      setAllEvents(resp.items)
       setTotal(resp.total)
     } catch {
-      setEvents([])
+      setAllEvents([])
       setTotal(0)
     } finally {
       setLoading(false)

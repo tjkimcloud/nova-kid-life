@@ -80,7 +80,8 @@ export function HeroSearch() {
     const ageOpt = AGE_OPTIONS.find(a => a.value === ageVal)
     if (ageOpt?.ageMin) p.set('age_min', ageOpt.ageMin)
     if (ageOpt?.ageMax) p.set('age_max', ageOpt.ageMax)
-    if (loc && loc !== 'Northern Virginia') p.set('q', loc)
+    // Pass location as a dedicated param — NOT q, which triggers semantic search
+    if (loc && loc !== 'Northern Virginia') p.set('location', loc)
     router.push(`/events${p.size ? `?${p}` : ''}`)
   }
 
