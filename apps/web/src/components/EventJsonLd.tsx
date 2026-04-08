@@ -6,18 +6,27 @@ interface Props {
   event: Event
 }
 
+/** Strip HTML tags for use in JSON-LD fields (Google rejects raw HTML in structured data) */
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
+const FALLBACK_IMAGE = 'https://novakidlife.com/images/hero-family-meadow-v2.jpg'
+
 function buildEventSchema(event: Event) {
   const startDate = new Date(event.start_at).toISOString()
-  const endDate   = event.end_at ? new Date(event.end_at).toISOString() : undefined
+  const endDate   = event.end_at ? new Date(event.end_at).toISOString() : null
   const pageUrl   = `${BASE_URL}/${event.section === 'pokemon' ? 'pokemon/events' : 'events'}/${event.slug}`
+  const images    = [event.og_image_url, event.image_url].filter(Boolean) as string[]
+  if (images.length === 0) images.push(FALLBACK_IMAGE)
 
   return {
     '@context': 'https://schema.org',
     '@type':    'Event',
     name:        event.title,
-    description: event.description.slice(0, 500),
+    description: stripHtml(event.description ?? '').slice(0, 500),
     startDate,
-    ...(endDate && { endDate }),
+    endDate:     endDate ?? startDate,   // GSC requires endDate — fall back to startDate
     eventStatus:          'https://schema.org/EventScheduled',
     eventAttendanceMode:  'https://schema.org/OfflineEventAttendanceMode',
     location: {
@@ -33,11 +42,15 @@ function buildEventSchema(event: Event) {
           }
         : undefined,
     },
-    image: [event.og_image_url, event.image_url].filter(Boolean),
+    image: images,
     organizer: {
       '@type': 'Organization',
-      name:    'NovaKidLife',
-      url:     BASE_URL,
+      name:    event.location_name ?? 'NovaKidLife',
+      url:     event.source_url ?? BASE_URL,
+    },
+    performer: {
+      '@type': 'Organization',
+      name:    event.location_name ?? 'NovaKidLife',
     },
     isAccessibleForFree: event.is_free,
     offers: {

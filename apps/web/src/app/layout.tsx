@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     locale:   'en_US',
     type:     'website',
     images: [{
-      url:    '/images/hero-family-meadow-v2.jpg',
+      url:    'https://novakidlife.com/images/hero-family-meadow-v2.jpg',
       width:  1200,
       height: 630,
       alt:    'Family enjoying outdoor activities in Northern Virginia',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card:   'summary_large_image',
-    images: ['/images/hero-family-meadow-v2.jpg'],
+    images: ['https://novakidlife.com/images/hero-family-meadow-v2.jpg'],
   },
   robots: {
     index:  true,

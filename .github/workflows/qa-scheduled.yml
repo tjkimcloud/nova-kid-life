@@ -20,6 +20,9 @@ jobs:
   qa-audit:
     name: Live Site QA Audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write   # needed to open/close qa-failure issues
 
     steps:
       - uses: actions/checkout@v4
