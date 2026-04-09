@@ -38,6 +38,12 @@ export async function generateMetadata(
         type:        'article',
         url:         `${SITE_URL}/blog/${post.slug}`,
         publishedTime: post.published_at,
+        images: [{
+          url:    post.hero_image_url ?? 'https://novakidlife.com/images/hero-family-meadow-v2.jpg',
+          width:  1200,
+          height: 630,
+          alt:    post.title,
+        }],
       },
       alternates: {
         canonical: `${SITE_URL}/blog/${post.slug}`,

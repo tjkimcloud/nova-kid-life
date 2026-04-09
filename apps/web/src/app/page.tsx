@@ -26,6 +26,12 @@ export const metadata: Metadata = {
     description: 'The most complete family events calendar for Northern Virginia. Updated weekly from 100+ local sources.',
     type:        'website',
     url:         'https://novakidlife.com',
+    images: [{
+      url:    'https://novakidlife.com/images/hero-family-meadow-v2.jpg',
+      width:  1200,
+      height: 630,
+      alt:    'Family enjoying outdoor activities in Northern Virginia',
+    }],
   },
 }
 

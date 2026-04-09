@@ -15,6 +15,12 @@ export const metadata: Metadata = {
     description: 'Weekly weekend roundups for NoVa parents. Free events, indoor activities, and the best things to do with kids this weekend.',
     type:        'website',
     url:         `${SITE_URL}/blog`,
+    images: [{
+      url:    'https://novakidlife.com/images/hero-family-meadow-v2.jpg',
+      width:  1200,
+      height: 630,
+      alt:    'Family enjoying outdoor activities in Northern Virginia',
+    }],
   },
   alternates: {
     canonical: `${SITE_URL}/blog`,

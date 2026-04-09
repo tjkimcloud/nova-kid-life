@@ -23,6 +23,12 @@ export const metadata: Metadata = {
     title:       'Family Events in Northern Virginia | NovaKidLife',
     description: 'Find the best family events, kids activities, and things to do in Northern Virginia this week.',
     type:        'website',
+    images: [{
+      url:    'https://novakidlife.com/images/hero-family-meadow-v2.jpg',
+      width:  1200,
+      height: 630,
+      alt:    'Family enjoying outdoor activities in Northern Virginia',
+    }],
   },
   alternates: {
     canonical: 'https://novakidlife.com/events',

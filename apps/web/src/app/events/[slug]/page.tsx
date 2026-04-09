@@ -77,14 +77,12 @@ export async function generateMetadata(
         title:       `${title} | NovaKidLife`,
         description,
         type:        'article',
-        ...(event.og_image_url && {
-          images: [{
-            url:    event.og_image_url,
-            width:  1200,
-            height: 630,
-            alt:    event.image_alt ?? event.title,
-          }],
-        }),
+        images: [{
+          url:    event.og_image_url ?? 'https://novakidlife.com/images/hero-family-meadow-v2.jpg',
+          width:  1200,
+          height: 630,
+          alt:    event.image_alt ?? event.title,
+        }],
       },
       twitter: { card: 'summary_large_image' },
     }
