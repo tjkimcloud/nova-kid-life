@@ -45,12 +45,12 @@ function buildEventSchema(event: Event) {
     image: images,
     organizer: {
       '@type': 'Organization',
-      name:    event.location_name ?? 'NovaKidLife',
+      name:    event.location_name || 'NovaKidLife',
       url:     event.source_url ?? BASE_URL,
     },
     performer: {
       '@type': 'Organization',
-      name:    event.location_name ?? 'NovaKidLife',
+      name:    event.location_name || 'NovaKidLife',
     },
     isAccessibleForFree: event.is_free,
     offers: {
