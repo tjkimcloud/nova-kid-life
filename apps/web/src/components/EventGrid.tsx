@@ -39,7 +39,7 @@ function formatTime(iso: string): string {
 function tagClass(tag: string): string {
   const t = tag.toLowerCase()
   if (t.includes('free') || t.includes('outdoor') || t.includes('nature'))
-    return 'bg-green-50 text-green-700'
+    return 'bg-orange-50 text-orange-600'
   if (t.includes('stem') || t.includes('science') || t.includes('tech'))
     return 'bg-blue-50 text-blue-700'
   if (t.includes('art') || t.includes('craft') || t.includes('music'))
@@ -100,9 +100,9 @@ function EventRow({ event }: { event: Event }) {
         {/* Price + chevron */}
         <div className="shrink-0 flex items-center gap-1.5">
           <span className={`text-[11px] font-bold font-body whitespace-nowrap ${
-            event.is_free ? 'text-green-600' : 'text-secondary-500'
-          }`}>
-            {event.is_free ? '🆓' : price}
+            event.is_free ? '' : 'text-secondary-500'
+          }`} style={event.is_free ? { color: 'var(--orange)' } : {}}>
+            {event.is_free ? '🆓 Free' : price}
           </span>
           <svg
             className="w-3.5 h-3.5 text-secondary-300 group-hover:text-primary-400 transition-colors shrink-0"

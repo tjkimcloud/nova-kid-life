@@ -80,7 +80,7 @@ function CityCard({ strip }: { strip: CityStrip }) {
                 </p>
                 <p className="text-xs text-secondary-400 mt-0.5">{event.date}</p>
               </div>
-              <span className={`text-xs font-bold shrink-0 ml-3 ${event.cost === 'Free' ? 'text-green-600' : 'text-secondary-500'}`}>
+              <span className={`text-xs font-bold shrink-0 ml-3 ${event.cost === 'Free' ? '' : 'text-secondary-500'}`} style={event.cost === 'Free' ? { color: 'var(--orange)' } : {}}>
                 {event.cost === 'Free' ? '🆓 Free' : event.cost}
               </span>
             </Link>

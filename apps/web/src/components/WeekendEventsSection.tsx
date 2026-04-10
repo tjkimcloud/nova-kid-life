@@ -144,7 +144,7 @@ function EventStubCard({ event, saved, onSave }: { event: EventStub; saved: bool
         </dl>
 
         <div className="mt-3 flex items-center justify-between">
-          <span className={`text-xs font-bold ${isFree ? 'text-green-600' : 'text-secondary-700'}`}>
+          <span className={`text-xs font-bold ${isFree ? '' : 'text-secondary-700'}`} style={isFree ? { color: 'var(--orange)' } : {}}>
             {isFree ? '🆓 Free' : event.cost}
           </span>
           <Link

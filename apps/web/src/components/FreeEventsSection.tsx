@@ -70,16 +70,17 @@ export function FreeEventsSection() {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wide mb-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide mb-3" style={{ background: 'var(--orange-pale)', color: 'var(--orange)' }}>
               🆓 Zero Cost
             </span>
-            <h2 className="font-heading font-bold text-2xl text-secondary-900">
+            <h2 className="font-heading font-bold text-2xl" style={{ color: 'var(--text)' }}>
               Free Things To Do With Kids in Northern Virginia This Weekend
             </h2>
           </div>
           <Link
             href="/events?free=true"
-            className="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-green-700 hover:text-green-800 transition-colors whitespace-nowrap"
+            className="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold transition-colors whitespace-nowrap"
+            style={{ color: 'var(--orange)' }}
           >
             See all free events
             <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -91,8 +92,8 @@ export function FreeEventsSection() {
         {loading ? (
           <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[0, 1, 2, 3].map(i => (
-              <li key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-green-100 animate-pulse">
-                <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-green-100" />
+              <li key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-secondary-100 animate-pulse">
+                <div className="flex-shrink-0 w-10 h-10 rounded-xl" style={{ background: 'var(--orange-pale)' }} />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 w-3/4 rounded bg-secondary-100" />
                   <div className="h-3 w-1/2 rounded bg-secondary-100" />
@@ -106,9 +107,10 @@ export function FreeEventsSection() {
               <li key={event.title}>
                 <Link
                   href={event.href}
-                  className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-green-100 hover:border-green-300 hover:shadow-sm transition-all group"
+                  className="flex items-start gap-4 p-4 rounded-2xl bg-white border border-secondary-100 hover:shadow-sm transition-all group"
+                  style={{ borderColor: 'var(--border)' }}
                 >
-                  <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--orange-pale)' }}>
                     <span className="text-lg" aria-hidden="true">🆓</span>
                   </div>
                   <div className="flex-1 min-w-0">

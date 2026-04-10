@@ -170,41 +170,6 @@ export function HeroSearch() {
         ))}
       </div>
 
-      {/* ── Rolling 7-day calendar strip — always starts from today ── */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1">
-        {weekDays.map((day, i) => {
-          const dateStr = toISO(day)
-          const isToday = i === 0
-          return (
-            <button
-              key={dateStr}
-              onClick={() => goDay(day)}
-              className={`flex-1 min-w-[48px] flex flex-col items-center py-2.5 rounded-xl text-center transition-all ${
-                isToday
-                  ? 'bg-primary-500 text-white shadow-md scale-105'
-                  : 'bg-white border border-secondary-200 text-secondary-700 hover:border-primary-300 hover:text-primary-600 hover:scale-105 hover:shadow-sm'
-              }`}
-            >
-              <span className="text-[10px] font-bold uppercase tracking-wide">
-                {isToday ? 'Today' : DAY_LABELS[day.getDay()]}
-              </span>
-              <span className="text-lg font-extrabold font-heading leading-tight">{day.getDate()}</span>
-              <span className={`text-[10px] font-semibold ${isToday ? 'text-white/70' : 'text-primary-400'}`}>
-                {dayCounts[i] > 0 ? dayCounts[i] : ''}
-              </span>
-            </button>
-          )
-        })}
-      </div>
-
-      {/* ── Social proof ── */}
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
-        <span style={{ color: 'var(--text2)' }}>🔥 <span className="font-bold" style={{ color: 'var(--text)' }}>24 events</span> this weekend</span>
-        <span className="hidden sm:block text-secondary-200">·</span>
-        <span style={{ color: 'var(--text2)' }}>⭐ Trusted by <span className="font-bold" style={{ color: 'var(--text)' }}>4,200+</span> NoVa families</span>
-        <span className="hidden sm:block text-secondary-200">·</span>
-        <span style={{ color: 'var(--text2)' }}>🆓 <span className="font-bold" style={{ color: 'var(--text)' }}>Always free</span></span>
-      </div>
 
     </div>
   )

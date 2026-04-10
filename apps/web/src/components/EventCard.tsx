@@ -113,7 +113,7 @@ export function EventCard({ event, priority = false }: EventCardProps) {
         className="flex items-center justify-between px-4 py-[11px] border-t border-secondary-200"
         style={{ background: 'var(--bg)' }}
       >
-        <span className="font-body text-[12px] font-semibold" style={{ color: event.is_free ? 'var(--green)' : 'var(--text2)' }}>
+        <span className="font-body text-[12px] font-semibold" style={{ color: event.is_free ? 'var(--orange)' : 'var(--text2)' }}>
           {event.is_free ? 'FREE' : (event.cost_description || 'See details')}
         </span>
         <Link
