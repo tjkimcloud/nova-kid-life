@@ -9,10 +9,11 @@ export interface Filters {
 }
 
 interface FilterBarProps {
-  filters:    Filters
-  categories: Category[]
-  totalCount: number
-  onChange:   (filters: Filters) => void
+  filters:         Filters
+  categories:      Category[]
+  totalCount:      number
+  onChange:        (filters: Filters) => void
+  hideDatePresets?: boolean
 }
 
 const DATE_PRESETS: { key: Filters['datePreset']; label: string }[] = [
@@ -61,7 +62,7 @@ export function getDateRange(preset: Filters['datePreset']): { start_date?: stri
   return {}
 }
 
-export function FilterBar({ filters, categories, totalCount, onChange }: FilterBarProps) {
+export function FilterBar({ filters, categories, totalCount, onChange, hideDatePresets = false }: FilterBarProps) {
   const hasActiveFilters = filters.datePreset !== '' || filters.category !== '' || filters.isFree
 
   function setPreset(preset: Filters['datePreset']) {
@@ -83,8 +84,8 @@ export function FilterBar({ filters, categories, totalCount, onChange }: FilterB
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        {/* Date presets */}
-        {DATE_PRESETS.map(({ key, label }) => (
+        {/* Date presets — hidden on tabs where date filtering is irrelevant */}
+        {!hideDatePresets && DATE_PRESETS.map(({ key, label }) => (
           <button
             key={key}
             type="button"

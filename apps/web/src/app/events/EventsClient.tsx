@@ -15,16 +15,36 @@ import { EmptyState }         from '@/components/EmptyState'
 
 const PAGE_SIZE = 12
 
+// Event types that belong in each tab
+const TAB_EVENT_TYPES = {
+  events: 'event,amusement,seasonal',
+  deals:  'deal,birthday_freebie,product_drop',
+} as const
+
+type Tab = keyof typeof TAB_EVENT_TYPES
+
+const TABS: { key: Tab; label: string; description: string }[] = [
+  {
+    key:         'events',
+    label:       'Local Events',
+    description: 'Storytime, STEM, outdoor adventures, classes, and community events',
+  },
+  {
+    key:         'deals',
+    label:       'Deals & Freebies',
+    description: 'Restaurant promos, birthday freebies, and family discounts',
+  },
+]
+
 export function EventsClient() {
   const router       = useRouter()
   const pathname     = usePathname()
   const searchParams = useSearchParams()
 
-  // ── Derive filter state directly from URL (source of truth) ──────────────────
-  // Using useState caused a bug: in Next.js 15 static export, useSearchParams()
-  // returns empty during the hydration pass so useState captured stale initial
-  // values. Deriving from searchParams directly means the fetch effect re-runs
-  // automatically whenever the URL changes (Link navigation, browser back/forward).
+  // ── Derive all state directly from URL (source of truth) ─────────────────────
+  const rawTab   = searchParams.get('tab')
+  const tab: Tab = rawTab !== null && rawTab in TAB_EVENT_TYPES ? (rawTab as Tab) : 'events'
+
   const filters: Filters = {
     datePreset: (searchParams.get('date') as Filters['datePreset']) || '',
     category:   searchParams.get('category') || '',
@@ -54,20 +74,30 @@ export function EventsClient() {
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
   // ── Sync URL ──────────────────────────────────────────────────────────────────
-  function pushUrl(q: string, f: Filters, p: number, loc?: string) {
+  function pushUrl(q: string, f: Filters, p: number, loc?: string, nextTab?: Tab) {
     const params = new URLSearchParams()
-    if (q)                        params.set('q', q)
-    if (f.datePreset)             params.set('date', f.datePreset)
-    if (f.category)               params.set('category', f.category)
-    if (f.isFree)                 params.set('free', 'true')
-    if (loc ?? location)          params.set('location', loc ?? location)
-    if (p > 1)                    params.set('page', String(p))
+    const activeTab = nextTab ?? tab
+    if (activeTab !== 'events') params.set('tab', activeTab)
+    if (q)                      params.set('q', q)
+    if (f.datePreset)           params.set('date', f.datePreset)
+    if (f.category)             params.set('category', f.category)
+    if (f.isFree)               params.set('free', 'true')
+    if (loc ?? location)        params.set('location', loc ?? location)
+    if (p > 1)                  params.set('page', String(p))
+    const qs = params.toString()
+    router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
+  }
+
+  function handleTabChange(newTab: Tab) {
+    // Reset all filters when switching tabs
+    const params = new URLSearchParams()
+    if (newTab !== 'events') params.set('tab', newTab)
     const qs = params.toString()
     router.replace(`${pathname}${qs ? `?${qs}` : ''}`, { scroll: false })
   }
 
   // ── Fetch events ──────────────────────────────────────────────────────────────
-  const fetchEvents = useCallback(async (q: string, f: Filters, p: number) => {
+  const fetchEvents = useCallback(async (q: string, f: Filters, p: number, activeTab: Tab) => {
     if (abortRef.current) abortRef.current.abort()
 
     if (q.trim()) {
@@ -75,7 +105,9 @@ export function EventsClient() {
       setLoading(true)
       try {
         const results = await searchEvents(q.trim())
-        setAllEvents(results)
+        // Filter search results to the active tab's event types
+        const typeSet = new Set(TAB_EVENT_TYPES[activeTab].split(','))
+        setAllEvents(results.filter(e => typeSet.has(e.event_type)))
         setTotal(results.length)
       } catch {
         setAllEvents([])
@@ -89,12 +121,11 @@ export function EventsClient() {
 
     setLoading(true)
     const dateRange = getDateRange(f.datePreset)
-    // When filtering by location fetch a larger batch — filter client-side
-    // since the API has no city-name filter param.
     const hasLocation = !!searchParams.get('location')
     try {
       const resp: EventsResponse = await getEvents({
         section:    'main',
+        event_type: TAB_EVENT_TYPES[activeTab],
         category:   f.category  || undefined,
         is_free:    f.isFree    || undefined,
         start_date: dateRange.start_date,
@@ -118,35 +149,59 @@ export function EventsClient() {
   }, [])
 
   // ── Re-fetch whenever URL changes ─────────────────────────────────────────────
-  // searchParams is the single source of truth — this fires on Link navigation,
-  // browser back/forward, and user filter interactions (which call pushUrl).
   useEffect(() => {
-    fetchEvents(query, filters, page)
+    fetchEvents(query, filters, page, tab)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
-  // ── Handlers (update URL → triggers re-fetch via searchParams effect) ─────────
-  function handleSearch(q: string) {
-    pushUrl(q, filters, 1)
-  }
-
-  function handleFilters(f: Filters) {
-    pushUrl(query, f, 1)
-  }
-
-  function handleClearAll() {
-    pushUrl('', { datePreset: '', category: '', isFree: false }, 1)
-  }
-
+  // ── Handlers ──────────────────────────────────────────────────────────────────
+  function handleSearch(q: string)   { pushUrl(q, filters, 1) }
+  function handleFilters(f: Filters) { pushUrl(query, f, 1) }
+  function handleClearAll()          { pushUrl('', { datePreset: '', category: '', isFree: false }, 1) }
   function handlePage(p: number) {
     pushUrl(query, filters, p)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const hasActiveFilters = query !== '' || filters.datePreset !== '' || filters.category !== '' || filters.isFree
+  const activeTabMeta    = TABS.find(t => t.key === tab)!
 
   return (
     <div className="flex flex-col gap-6">
+
+      {/* ── Tab bar ──────────────────────────────────────────────────── */}
+      <div
+        className="flex rounded-xl p-1 gap-1"
+        style={{ background: 'var(--bg2)', border: '1px solid var(--border)' }}
+        role="tablist"
+        aria-label="Event categories"
+      >
+        {TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
+            onClick={() => handleTabChange(key)}
+            className="flex-1 px-4 py-2.5 rounded-lg font-body font-semibold text-sm transition-all"
+            style={tab === key ? {
+              background:  'var(--white)',
+              color:       'var(--text)',
+              boxShadow:   'var(--shadow-sm)',
+            } : {
+              color:       'var(--text2)',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab description */}
+      <p className="text-[13px] -mt-2" style={{ color: 'var(--text3)' }}>
+        {activeTabMeta.description}
+      </p>
+
       {/* Search */}
       <SearchBar
         value={query}
@@ -154,12 +209,13 @@ export function EventsClient() {
         isSearching={searching}
       />
 
-      {/* Filters */}
+      {/* Filters — hide date presets on Deals tab since deals are ongoing */}
       <FilterBar
         filters={filters}
         categories={categories}
         totalCount={total}
         onChange={handleFilters}
+        hideDatePresets={tab === 'deals'}
       />
 
       {/* Results */}

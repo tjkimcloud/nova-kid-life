@@ -41,7 +41,9 @@ def list_events(event: dict, ctx) -> dict:
     from datetime import datetime, timezone
     # Default: only show upcoming/current events (start_at >= today)
     # Override by passing start_date explicitly
-    default_start = start_date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    now_utc       = datetime.now(timezone.utc)
+    default_start = start_date or now_utc.strftime("%Y-%m-%d")
+    now_iso       = now_utc.isoformat()
 
     # Count query (same filters, no pagination)
     count_q = (
@@ -50,6 +52,8 @@ def list_events(event: dict, ctx) -> dict:
         .eq("status", "published")
         .eq("section", section)
         .gte("start_at", default_start)
+        # Exclude events whose end_at has already passed
+        .or_(f"end_at.is.null,end_at.gte.{now_iso}")
     )
 
     # Data query
@@ -68,18 +72,28 @@ def list_events(event: dict, ctx) -> dict:
         .eq("status", "published")
         .eq("section", section)
         .gte("start_at", default_start)
+        # Exclude events whose end_at has already passed
+        .or_(f"end_at.is.null,end_at.gte.{now_iso}")
         .order("start_at", desc=False)
         .range(offset, offset + limit - 1)
     )
 
     # Apply optional filters (start_date already applied above as default_start)
     if event_type:
-        count_q = count_q.eq("event_type", event_type)
-        data_q  = data_q.eq("event_type", event_type)
+        # Support comma-separated list e.g. "event,amusement,seasonal"
+        type_list = [t.strip() for t in event_type.split(",") if t.strip()]
+        if len(type_list) == 1:
+            count_q = count_q.eq("event_type", type_list[0])
+            data_q  = data_q.eq("event_type", type_list[0])
+        elif len(type_list) > 1:
+            count_q = count_q.in_("event_type", type_list)
+            data_q  = data_q.in_("event_type", type_list)
 
     if category:
-        count_q = count_q.eq("categories.slug", category)
-        data_q  = data_q.eq("categories.slug", category)
+        # Events are tagged but category_id is not yet populated by the scraper.
+        # Filter by tags contains [category_slug] which matches the tag vocabulary.
+        count_q = count_q.contains("tags", [category])
+        data_q  = data_q.contains("tags", [category])
 
     if location_id:
         count_q = count_q.eq("location_id", location_id)

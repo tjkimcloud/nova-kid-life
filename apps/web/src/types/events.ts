@@ -74,6 +74,7 @@ export interface EventsParams {
   start_date?: string
   end_date?: string
   tags?: string
+  /** Single type or comma-separated list e.g. "event,amusement,seasonal" */
   event_type?: string
   is_free?: boolean
 }

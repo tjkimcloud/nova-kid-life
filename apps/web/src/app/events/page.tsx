@@ -47,11 +47,11 @@ export default function EventsPage() {
       <div className="bg-white border-b border-secondary-100">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
           <h1 className="font-heading font-extrabold text-2xl sm:text-3xl" style={{ color: 'var(--text)' }}>
-            All Family Events —{' '}
+            Family Events &amp; Deals —{' '}
             <span style={{ color: 'var(--orange)' }}>Northern Virginia</span>
           </h1>
           <p className="mt-1.5 text-sm max-w-xl" style={{ color: 'var(--text2)' }}>
-            Every event for kids &amp; families across Fairfax, Loudoun, Arlington, and Prince William. Scraped daily from 60+ local sources.
+            Local events for kids and families across Fairfax, Loudoun, Arlington, and Prince William — plus birthday freebies and family deals.
           </p>
         </div>
       </div>

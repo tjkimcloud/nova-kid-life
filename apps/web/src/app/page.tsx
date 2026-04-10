@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { NewsletterForm }       from '@/components/NewsletterForm'
 import { HeroSearch }           from '@/components/HeroSearch'
+import { HeroVideo }            from '@/components/HeroVideo'
 import { WeekendEventsSection } from '@/components/WeekendEventsSection'
 import { FreeEventsSection }    from '@/components/FreeEventsSection'
 import { CityStripsSection }    from '@/components/CityStripsSection'
@@ -68,19 +69,18 @@ const LOCAL_BUSINESS_SCHEMA = {
 // ── Static data ───────────────────────────────────────────────────────────────
 
 const INTEREST_LINKS = [
-  { label: 'Free Events',    href: '/events?free=true'                 },
-  { label: 'This Weekend',   href: '/events?date=weekend'              },
-  { label: 'Storytime',      href: '/events?category=storytime'        },
-  { label: 'STEM & Science', href: '/events?category=stem'             },
-  { label: 'Outdoors',       href: '/events?category=outdoor'          },
-  { label: 'Birthday Deals', href: '/events?category=birthday_freebie' },
-  { label: 'Pokémon TCG',    href: '/pokemon'                          },
+  { label: 'Free Events',    href: '/events?free=true'           },
+  { label: 'This Weekend',   href: '/events?date=weekend'        },
+  { label: 'Storytime',      href: '/events?category=storytime'  },
+  { label: 'STEM & Science', href: '/events?category=stem'       },
+  { label: 'Outdoors',       href: '/events?category=outdoor'    },
+  { label: 'Birthday Deals', href: '/events?tab=deals'           },
+  { label: 'Pokémon TCG',    href: '/pokemon'                    },
 ]
 
 const STATS = [
-  { value: '100+',   label: 'Local sources'  },
-  { value: 'Weekly', label: 'Updated'        },
-  { value: '4',      label: 'NoVa counties'  },
+  { value: '100+', label: 'Events weekly'  },
+  { value: '4',    label: 'NoVa counties'  },
 ]
 
 const POST_TYPE_LABELS: Record<string, string> = {
@@ -122,29 +122,28 @@ export default async function HomePage() {
 
         {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section
-          className="relative overflow-hidden min-h-[500px] sm:min-h-[560px] flex flex-col justify-end"
+          className="relative overflow-hidden min-h-[500px] sm:min-h-[560px] flex flex-col justify-end -mt-[60px] sm:mt-0"
           style={{ background: 'var(--bg)' }}
         >
-          {/* Photo background */}
-          <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('/images/hero-family-meadow-v2.jpg')", backgroundColor: '#3a5a3a', backgroundPosition: 'center 30%' }}
-            aria-hidden="true"
+          {/* Video background (desktop) / static image (mobile) */}
+          <HeroVideo
+            src="/videos/legofamily-compressed.mp4"
+            poster="/images/hero-family-meadow-v2.jpg"
           />
-          {/* Warm overlay — left-to-right so text stays readable, right side lets photo breathe */}
+          {/* Flat 35% dark overlay across the full hero */}
           <div
             className="absolute inset-0"
-            style={{ background: 'linear-gradient(105deg, rgba(30,20,10,0.82) 0%, rgba(50,30,10,0.65) 45%, rgba(100,50,15,0.25) 100%)' }}
+            style={{ background: 'rgba(20,12,5,0.35)' }}
             aria-hidden="true"
           />
-          {/* Bottom fade into page */}
+          {/* Bottom gradient: transparent → #FDF8F2 over 100px */}
           <div
-            className="absolute bottom-0 left-0 right-0 h-16"
-            style={{ background: 'linear-gradient(to top, var(--bg), transparent)' }}
+            className="absolute bottom-0 left-0 right-0"
+            style={{ height: '100px', background: 'linear-gradient(to bottom, transparent, #FDF8F2)' }}
             aria-hidden="true"
           />
 
-          <div className="relative max-w-content mx-auto w-full px-5 lg:px-8 pt-20 pb-16 sm:pb-20">
+          <div className="relative max-w-content mx-auto w-full px-5 lg:px-8 pt-6 sm:pt-20 pb-16 sm:pb-20">
 
             {/* Eyebrow */}
             <div
@@ -156,7 +155,7 @@ export default async function HomePage() {
                 style={{ background: '#FF8C55', animation: 'pulse 2s ease-in-out infinite' }}
                 aria-hidden="true"
               />
-              Northern Virginia&apos;s #1 family guide
+              Northern Virginia&apos;s Family Event Guide
             </div>
 
             {/* H1 */}
@@ -179,10 +178,10 @@ export default async function HomePage() {
             {/* Subtitle */}
             <p
               className="font-body text-base sm:text-lg max-w-md mb-8 leading-relaxed"
-              style={{ color: 'rgba(255,248,242,0.75)' }}
+              style={{ color: 'rgba(255,248,242,0.75)', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}
             >
               Storytime, STEM, outdoor adventures, birthday freebies, and Pokémon TCG —
-              curated every week from 100+ NoVa sources.
+              handpicked every week across Northern Virginia.
             </p>
 
             {/* CTAs */}
@@ -197,33 +196,33 @@ export default async function HomePage() {
               <Link
                 href="/events?free=true"
                 className="inline-flex items-center font-body font-semibold text-sm px-6 py-3 rounded-full transition-colors"
-                style={{ background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.35)' }}
+                style={{ background: 'rgba(0,0,0,0.2)', color: '#fff', border: '1.5px solid rgba(255,255,255,0.35)' }}
               >
                 Free this weekend
               </Link>
             </div>
 
-            {/* Stats */}
-            <div
-              className="flex flex-wrap gap-6 mt-8 pt-6"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.15)' }}
-            >
-              {STATS.map(({ value, label }) => (
-                <div key={label}>
-                  <p className="font-heading font-extrabold text-xl text-white leading-none">{value}</p>
-                  <p className="font-body text-[11px] mt-0.5" style={{ color: 'rgba(255,248,242,0.6)' }}>{label}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </section>
 
-        {/* ── Search ───────────────────────────────────────────────────── */}
-        <section className="pt-2 pb-10" style={{ background: 'var(--bg)' }}>
+        {/* ── Search + Stats ───────────────────────────────────────────── */}
+        <section className="pt-2 pb-10" style={{ background: '#FDF8F2' }}>
           <div className="max-w-content mx-auto px-5 lg:px-8">
+            {/* Stats row */}
+            <div className="flex gap-6 mb-6">
+              {STATS.map(({ value, label }) => (
+                <div key={label}>
+                  <p className="font-heading font-extrabold text-xl leading-none" style={{ color: 'var(--text)' }}>{value}</p>
+                  <p className="font-body text-[11px] mt-0.5" style={{ color: 'var(--text2)' }}>{label}</p>
+                </div>
+              ))}
+            </div>
             <HeroSearch />
           </div>
         </section>
+
+        {/* ── Weekend events ────────────────────────────────────────────── */}
+        <WeekendEventsSection />
 
         {/* ── Featured editorial post ──────────────────────────────────── */}
         {featuredPost && (
@@ -303,9 +302,6 @@ export default async function HomePage() {
             </div>
           </section>
         )}
-
-        {/* ── Weekend events ────────────────────────────────────────────── */}
-        <WeekendEventsSection />
 
         {/* ── Browse by interest ───────────────────────────────────────── */}
         <section className="py-8 border-t border-secondary-200" style={{ background: 'var(--bg)' }}>
