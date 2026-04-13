@@ -519,8 +519,9 @@ async function checkApi() {
 
     const ev = data.items?.[0]
     if (ev) {
-      const fields = ['id', 'slug', 'title', 'start_at', 'location_name']
-      const missing = fields.filter(f => !ev[f])
+      // location_name is optional for deal-type events (Five Guys BOGO etc.)
+      const requiredFields = ['id', 'slug', 'title', 'start_at']
+      const missing = requiredFields.filter(f => !ev[f])
       if (missing.length) bad(`Event missing required fields: ${missing.join(', ')}`, CATEGORIES.BROKEN_PAGES)
       else ok(`Event shape has all required fields`)
     }
@@ -579,6 +580,10 @@ const API_ARTIFACTS = [
   { pattern: /&amp;lt;/,    label: 'triple-escaped entity' },
 ]
 
+// HTML numeric entities in plain text fields (titles, venue names) —
+// these should have been decoded by the scraper (e.g. &#038; → &, &#8217; → ')
+const TITLE_ENTITY_PATTERN = /&#\d+;|&amp;|&quot;|&apos;/
+
 async function checkDescriptionQuality() {
   section('Description HTML Quality')
   try {
@@ -587,6 +592,18 @@ async function checkDescriptionQuality() {
     const data = JSON.parse(body)
     const items = data.items ?? []
     if (items.length === 0) { warning('No events returned — skipping description check'); return }
+
+    // Check titles and venue names for un-decoded HTML entities
+    let titleEntityCount = 0
+    for (const ev of items) {
+      const title = ev.title ?? ''
+      const venue = ev.location_name ?? ''
+      if (TITLE_ENTITY_PATTERN.test(title) || TITLE_ENTITY_PATTERN.test(venue)) {
+        titleEntityCount++
+        bad(`HTML entities in title/venue: "${title.slice(0, 60)}"`, CATEGORIES.DESCRIPTIONS)
+      }
+    }
+    if (titleEntityCount === 0) ok(`No HTML entities in event titles or venue names`)
 
     let clean = 0, dirty = 0
     for (const ev of items) {

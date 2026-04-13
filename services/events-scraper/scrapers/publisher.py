@@ -10,6 +10,7 @@ Publisher — two paths for scraped events:
 from __future__ import annotations
 
 import hashlib
+import html as html_module
 import json
 import logging
 import os
@@ -71,6 +72,13 @@ def _chunks(iterable, size: int):
     it = iter(iterable)
     while chunk := list(islice(it, size)):
         yield chunk
+
+
+def _clean_text(value: str) -> str:
+    """Decode HTML entities from scraped text fields (e.g. &#038; → &, &#8217; → ')."""
+    if not value:
+        return value
+    return html_module.unescape(value)
 
 
 def _make_slug(title: str, start_at) -> str:
@@ -138,16 +146,17 @@ def publish_direct(events: list[RawEvent]) -> int:
             else:
                 registration_url = None
 
+            title_clean = _clean_text(event.title)
             row = {
-                "slug":             event.slug or _make_slug(event.title, event.start_at),
-                "title":            event.title,
-                "full_description": event.description,
+                "slug":             event.slug or _make_slug(title_clean, event.start_at),
+                "title":            title_clean,
+                "full_description": _clean_text(event.description),
                 "short_description": "",
                 "start_at":         event.start_at.isoformat(),
                 "end_at":           event.end_at.isoformat() if event.end_at else None,
-                "venue_name":       event.venue_name or event.location_name or "",
-                "address":          event.address or event.location_address or "",
-                "location_text":    event.location_text or "",
+                "venue_name":       _clean_text(event.venue_name or event.location_name or ""),
+                "address":          _clean_text(event.address or event.location_address or ""),
+                "location_text":    _clean_text(event.location_text or ""),
                 "lat":              event.lat,
                 "lng":              event.lng,
                 "tags":             event.tags,
