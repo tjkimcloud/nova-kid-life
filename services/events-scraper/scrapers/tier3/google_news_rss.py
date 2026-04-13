@@ -21,10 +21,32 @@ logger = logging.getLogger(__name__)
 
 _GOOGLE_NEWS_RSS = "https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
 
-_DEAL_SYSTEM_PROMPT = """You are a deal extractor for NovaKidLife, a family platform.
-Extract restaurant, food, and family-activity deal information from news articles.
+_DEAL_SYSTEM_PROMPT = """You are a deal extractor for NovaKidLife, a Northern Virginia family platform.
+Extract restaurant, food, and family-activity deals from news articles that are
+AVAILABLE TO FAMILIES IN NORTHERN VIRGINIA / DC METRO AREA.
 
 Respond with a JSON object. If no relevant deal is found, respond with {"found": false}.
+
+── GEOGRAPHIC RULES (CRITICAL) ──────────────────────────────────────────────
+Set "is_nova_available": true ONLY when:
+  1. The brand has locations in the DC metro / Northern Virginia
+     (e.g. Chipotle, McDonald's, IHOP, Olive Garden, Five Guys, Shake Shack,
+      Chick-fil-A, Panera, Starbucks, Wendy's, Burger King, Dairy Queen, etc.)
+  2. The deal is online-only or nationwide (apps, websites)
+
+Set "is_nova_available": false when:
+  - The deal is tied to a specific non-DMV sports team or stadium event
+    (e.g. "Tigers", "Cubs", "Astros", "Saints" — these are not DC metro teams)
+  - The deal is for a restaurant chain with no DC metro presence
+  - The deal explicitly applies ONLY to locations in another city/region
+  - The venue is a resort or attraction outside the DC metro area
+    (e.g. Divi Resorts, regional amusement parks in other states)
+
+── DATE RULES ───────────────────────────────────────────────────────────────
+Provide accurate dates based on the article content.
+A deal tied to a past holiday (Easter, Halloween, Thanksgiving, April Fools,
+Burrito Day, etc.) that has already occurred should be flagged by setting
+valid_until to that past date — the caller will skip expired deals.
 
 If a deal is found:
 {
@@ -34,6 +56,7 @@ If a deal is found:
   "discount_description": "what the deal is — e.g. 'BOGO entrée', 'Free burger on your birthday'",
   "description": "full deal description including any conditions",
   "is_free": true/false,
+  "is_nova_available": true/false,
   "deal_category": "restaurant" | "activity" | "amusement" | "grocery" | "seasonal",
   "valid_from": "YYYY-MM-DD or null",
   "valid_until": "YYYY-MM-DD or null",
@@ -122,6 +145,11 @@ class GoogleNewsRssScraper(BaseScraper):
             if not data.get("found"):
                 return None
 
+            # Skip deals the AI flagged as not available in Northern Virginia
+            if not data.get("is_nova_available", True):
+                logger.info("[%s] Skipping non-NoVa deal: %s", self.source_name, data.get("title", article["title"]))
+                return None
+
             # Parse valid dates
             now = datetime.now(timezone.utc)
             valid_from = now
@@ -136,6 +164,10 @@ class GoogleNewsRssScraper(BaseScraper):
             if data.get("valid_until"):
                 try:
                     valid_until = datetime.fromisoformat(data["valid_until"])
+                    # Skip deals that have already expired
+                    if valid_until.date() < now.date():
+                        logger.info("[%s] Skipping expired deal: %s (expired %s)", self.source_name, data.get("title", ""), valid_until.date())
+                        return None
                 except ValueError:
                     pass
 

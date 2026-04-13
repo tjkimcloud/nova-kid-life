@@ -21,7 +21,32 @@ _URLS = [
     "https://hip2save.com/category/kids/",
 ]
 
-_SYSTEM_PROMPT = """Extract all restaurant, food, and family deals from this page.
+_SYSTEM_PROMPT = """You are a deal curator for NovaKidLife, a Northern Virginia family platform.
+
+Extract restaurant, food, and family deals that are AVAILABLE TO FAMILIES IN NORTHERN VIRGINIA.
+
+── GEOGRAPHIC RULES (CRITICAL) ──────────────────────────────────────────────
+Set "is_nova_available": true ONLY when the deal meets one of these criteria:
+  1. National or regional chain with locations in Northern Virginia/DC metro
+     (e.g. Chipotle, McDonald's, IHOP, Olive Garden, Five Guys, Shake Shack,
+      Chick-fil-A, Panera, Starbucks, Dunkin', Wendy's, Burger King, etc.)
+  2. Online-only, app-based, or nationwide promotion
+  3. Explicitly mentions Virginia, DC, Maryland, or NoVa
+
+Set "is_nova_available": false (and EXCLUDE the deal) when:
+  - The deal text names a specific city or region OUTSIDE the DC metro area
+    (e.g. "Kids Eat Free in Louisville", "Only at Houston locations",
+     "Chicago-area restaurants", "Free Meal in Indianapolis")
+  - The brand is a local/regional chain with NO known presence in Northern Virginia
+  - The deal is for a single restaurant location outside DC metro
+
+── RELEVANCE RULES ──────────────────────────────────────────────────────────
+Set "is_family_relevant": true only for deals useful to families with children.
+
+── DATE RULES ───────────────────────────────────────────────────────────────
+Omit or set "valid_until": null for ongoing deals with no expiration.
+For deals with a clear expiration date, provide it as YYYY-MM-DD.
+
 Return a JSON array of deal objects. Empty array if none found.
 
 Each deal:
@@ -29,11 +54,12 @@ Each deal:
   "title": "deal title",
   "brand": "restaurant/brand name",
   "discount_description": "what the deal is",
-  "description": "full details",
+  "description": "full details including any promo codes or location conditions",
   "url": "deal URL or null",
   "is_free": true/false,
   "valid_until": "YYYY-MM-DD or null",
   "is_family_relevant": true/false,
+  "is_nova_available": true/false,
   "tags": ["array", "of", "tags"]
 }"""
 
@@ -79,18 +105,32 @@ class Hip2SaveScraper(BaseScraper):
         deals = []
 
         for item in items:
+            title = item.get("title", "")
+
+            # Skip deals not relevant to families
             if not item.get("is_family_relevant", True):
+                logger.debug("[%s] Skipping non-family deal: %s", self.source_name, title)
                 continue
+
+            # Skip deals the AI flagged as not available in Northern Virginia
+            if not item.get("is_nova_available", True):
+                logger.info("[%s] Skipping non-NoVa deal: %s", self.source_name, title)
+                continue
+
             try:
                 valid_until = None
                 if item.get("valid_until"):
                     try:
                         valid_until = datetime.fromisoformat(item["valid_until"])
+                        # Skip deals that have already expired
+                        if valid_until.date() < now.date():
+                            logger.info("[%s] Skipping expired deal: %s (expired %s)", self.source_name, title, valid_until.date())
+                            continue
                     except ValueError:
                         pass
 
                 deals.append(RawEvent(
-                    title=item.get("title", "")[:120],
+                    title=title[:120],
                     source_url=item.get("url") or url,
                     source_name=self.source_name,
                     start_at=now,

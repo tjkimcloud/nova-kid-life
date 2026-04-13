@@ -11,6 +11,7 @@ import logging
 import os
 import re
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from openai import OpenAI
 
@@ -19,6 +20,7 @@ from ..models import EventType, RawEvent
 
 logger = logging.getLogger(__name__)
 
+_ET = ZoneInfo("America/New_York")
 _client: OpenAI | None = None
 
 def _build_system_prompt() -> str:
@@ -130,17 +132,29 @@ class AIEventExtractor(BaseScraper):
         if not start_str:
             raise ValueError("No start_at")
 
-        # If no timezone, assume Eastern
+        # If no timezone info, assume Eastern time.
+        # Use zoneinfo so DST is handled correctly (EDT=-04:00 Mar–Nov, EST=-05:00 Nov–Mar).
+        # The old approach hardcoded -05:00 year-round, making summer events show 1 hour late.
         if "T" in start_str and "+" not in start_str and "Z" not in start_str:
-            start_str += "-05:00"
-        start_at = datetime.fromisoformat(start_str)
+            start_at = datetime.fromisoformat(start_str).replace(tzinfo=_ET)
+        else:
+            start_at = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+
+        # Hard guard: reject events the AI extracted with a past date.
+        # The system prompt says "upcoming only" but the AI sometimes ignores it
+        # when source pages still show recently-expired content (e.g. Easter events
+        # still listed on a page scraped after Easter).
+        today = datetime.now(timezone.utc).date()
+        if start_at.date() < today:
+            raise ValueError(f"start_at {start_at.date()} is in the past — skipping")
 
         end_at = None
         end_str = item.get("end_at", "")
         if end_str:
             if "T" in end_str and "+" not in end_str and "Z" not in end_str:
-                end_str += "-05:00"
-            end_at = datetime.fromisoformat(end_str)
+                end_at = datetime.fromisoformat(end_str).replace(tzinfo=_ET)
+            else:
+                end_at = datetime.fromisoformat(end_str.replace("Z", "+00:00"))
 
         title = item.get("title", "").strip()
 
@@ -151,8 +165,11 @@ class AIEventExtractor(BaseScraper):
         #    so multiple events from the same page each get a distinct source_url
         event_url = item.get("source_url") or item.get("registration_url") or ""
         if not event_url:
+            # Normalize title before hashing so the fingerprint is stable even
+            # when the AI capitalizes/punctuates slightly differently across runs.
+            title_key = re.sub(r"[^a-z0-9]", "", title.lower())
             fingerprint = hashlib.md5(
-                f"{title}{start_at.date()}".encode()
+                f"{title_key}{start_at.date()}".encode()
             ).hexdigest()[:8]
             event_url = f"{source_url}#{fingerprint}"
 
@@ -217,9 +234,107 @@ class AITier2Scraper(BaseScraper):
         if cache:
             cache.mark_scraped(self.source_name, cleaned, len(events))
 
+        # For events that have no registration_url yet, try following their
+        # individual event page link (when available) to find the organizer URL.
+        self._enrich_registration_urls(events, self.url)
+
         # Inject config-level tags
         if self.extra_tags:
             for event in events:
                 event.tags = list(set(event.tags + self.extra_tags))
 
         return events
+
+    def _enrich_registration_urls(self, events: list[RawEvent], calendar_url: str) -> None:
+        """
+        For events that were AI-extracted without a registration_url, follow
+        their individual event page link (on the same aggregator domain) to
+        find the organizer's direct website or registration link.
+
+        Capped at 10 events per run to stay well within Lambda timeout.
+        """
+        from urllib.parse import urlparse
+        from bs4 import BeautifulSoup
+
+        calendar_host = (urlparse(calendar_url).hostname or "").lower()
+
+        needs_enrichment = [
+            e for e in events
+            if not e.registration_url
+            and e.source_url
+            and "#" not in e.source_url          # skip fingerprint-only URLs
+            and e.source_url != calendar_url      # skip if same as calendar page
+            and (urlparse(e.source_url).hostname or "").lower() == calendar_host
+        ]
+
+        if not needs_enrichment:
+            return
+
+        logger.info(
+            "[%s] Enriching registration URLs for %d/%d events",
+            self.source_name, len(needs_enrichment), len(events),
+        )
+
+        for event in needs_enrichment[:10]:
+            try:
+                html = self._fetch(event.source_url)
+                reg_url = self._find_registration_url_in_html(html, event.source_url)
+                if reg_url:
+                    event.registration_url = reg_url
+                    logger.info(
+                        "[%s] Found reg URL for '%s': %s",
+                        self.source_name, event.title, reg_url,
+                    )
+            except Exception as exc:
+                logger.debug(
+                    "[%s] Enrichment failed for %s: %s",
+                    self.source_name, event.source_url, exc,
+                )
+
+    @staticmethod
+    def _find_registration_url_in_html(html: str, page_url: str) -> str | None:
+        """
+        Heuristically extract a direct organizer/registration URL from an
+        individual event page on an aggregator site.
+
+        Scans all external links on the page for registration-related text
+        or URLs, skipping same-domain links and known aggregator/social hosts.
+        """
+        from urllib.parse import urlparse
+        from bs4 import BeautifulSoup
+        from ..publisher import _is_aggregator
+
+        _SOCIAL_SKIP = frozenset({
+            "google.com", "facebook.com", "twitter.com", "x.com",
+            "instagram.com", "youtube.com", "pinterest.com", "linkedin.com",
+            "tiktok.com", "snapchat.com",
+        })
+        _REG_KEYWORDS = frozenset({
+            "register", "registration", "ticket", "tickets", "book now",
+            "sign up", "signup", "rsvp", "buy ticket", "get ticket",
+            "event page", "official site", "eventbrite", "organizer",
+        })
+
+        soup = BeautifulSoup(html, "html.parser")
+        page_host = (urlparse(page_url).hostname or "").lower().removeprefix("www.")
+
+        for a in soup.find_all("a", href=True):
+            href = str(a.get("href", "")).strip()
+            if not href.startswith("http"):
+                continue
+
+            link_host = (urlparse(href).hostname or "").lower().removeprefix("www.")
+
+            # Skip same-domain links, social media, and known aggregators
+            if link_host == page_host:
+                continue
+            if any(link_host == s or link_host.endswith("." + s) for s in _SOCIAL_SKIP):
+                continue
+            if _is_aggregator(href):
+                continue
+
+            link_text = a.get_text(separator=" ").lower().strip()
+            if any(kw in link_text or kw in href.lower() for kw in _REG_KEYWORDS):
+                return href
+
+        return None

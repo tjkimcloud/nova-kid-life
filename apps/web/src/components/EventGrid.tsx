@@ -51,6 +51,9 @@ function tagClass(tag: string): string {
   return 'bg-secondary-50 text-secondary-500'
 }
 
+// Deal event types have no meaningful time (start_at = scrape timestamp)
+const DEAL_TYPES = new Set(['deal', 'birthday_freebie', 'product_drop'])
+
 // ── Single event row ──────────────────────────────────────────────────────────
 
 function EventRow({ event }: { event: Event }) {
@@ -58,7 +61,8 @@ function EventRow({ event }: { event: Event }) {
     ? `/pokemon/events/${event.slug}`
     : `/events/${event.slug}`
 
-  const time     = formatTime(event.start_at)
+  const isDeal   = DEAL_TYPES.has(event.event_type)
+  const time     = isDeal ? null : formatTime(event.start_at)
   const location = event.location_name || 'Northern Virginia'
   const price    = event.is_free ? 'Free' : (event.cost_description || 'See details')
   const tags     = (event.tags ?? []).slice(0, 2)
@@ -69,12 +73,12 @@ function EventRow({ event }: { event: Event }) {
         href={href}
         className="flex items-start gap-3 px-4 py-3.5 hover:bg-primary-50/40 transition-colors group"
       >
-        {/* Time badge */}
+        {/* Time badge — hidden for deals (start_at is scrape timestamp, not event time) */}
         <span
           className="shrink-0 w-[64px] text-[11px] font-bold font-body pt-0.5 text-right leading-tight whitespace-nowrap"
           style={{ color: 'var(--orange)' }}
         >
-          {time || 'TBD'}
+          {time ?? ''}
         </span>
 
         {/* Title + meta */}
