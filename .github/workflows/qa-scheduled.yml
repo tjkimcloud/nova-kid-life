@@ -67,9 +67,6 @@ jobs:
           WARNINGS=$(grep -c "^  ⚠️" qa-output.txt 2>/dev/null || echo 0)
           echo "failures=$FAILURES" >> $GITHUB_OUTPUT
           echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
-          echo "summary<<EOF" >> $GITHUB_OUTPUT
-          tail -30 qa-output.txt >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
 
       # ── Step 3: Upload full report as artifact ───────────────────────────────
       - name: Upload QA report
