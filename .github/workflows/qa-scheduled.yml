@@ -58,17 +58,7 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         continue-on-error: true
 
-      # ── Step 2: Parse summary stats for job summary ──────────────────────────
-      - name: Parse result counts
-        id: parse
-        if: always()
-        run: |
-          FAILURES=$(grep -c "^  ❌" qa-output.txt 2>/dev/null || echo 0)
-          WARNINGS=$(grep -c "^  ⚠️" qa-output.txt 2>/dev/null || echo 0)
-          echo "failures=$FAILURES" >> $GITHUB_OUTPUT
-          echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
-
-      # ── Step 3: Upload full report as artifact ───────────────────────────────
+      # ── Step 2: Upload full report as artifact ───────────────────────────────
       - name: Upload QA report
         if: always()
         uses: actions/upload-artifact@v4
@@ -77,20 +67,22 @@ jobs:
           path: qa-output.txt
           retention-days: 30
 
-      # ── Step 4: Write GitHub Actions job summary ─────────────────────────────
+      # ── Step 3: Write GitHub Actions job summary ─────────────────────────────
       - name: Write job summary
         if: always()
         run: |
-          echo "## QA Orchestrator — $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| | Count |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| ❌ Failures | ${{ steps.parse.outputs.failures }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| ⚠️ Warnings | ${{ steps.parse.outputs.warnings }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          cat qa-output.txt >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          FAILURES=$(grep -c "^  ❌" qa-output.txt 2>/dev/null) || FAILURES=0
+          WARNINGS=$(grep -c "^  ⚠️" qa-output.txt 2>/dev/null) || WARNINGS=0
+          echo "## QA Orchestrator — $(date -u '+%Y-%m-%d %H:%M UTC')" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| | Count |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          printf "| Failures | %s |\n" "$FAILURES" >> "$GITHUB_STEP_SUMMARY"
+          printf "| Warnings | %s |\n" "$WARNINGS" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat qa-output.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       # ── Step 5: Fail job if QA failed (for red badge visibility) ────────────
       - name: Fail if QA failed
