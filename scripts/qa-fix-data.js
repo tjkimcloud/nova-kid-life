@@ -199,6 +199,59 @@ async function archiveTrulyPastEvents() {
   }
 }
 
+async function patchKnownBadEvents() {
+  log('\n── Patch: known events with wrong date/time or missing registration URL ─')
+  // Hand-curated list of events that were scraped with wrong data.
+  // Each entry: { slug, patch } where patch is the corrected fields.
+  const PATCHES = [
+    {
+      // Celebrate Reston! — scraped from visitfairfax with 1am time and no CTA.
+      // Correct data from restonmuseum.org: Apr 18 12pm-4pm EDT, Lake Anne Plaza.
+      slug: 'celebrate-reston-edacfc',
+      patch: {
+        title:            'Celebrate Reston!',
+        start_at:         '2026-04-18T16:00:00+00:00',   // 12pm EDT = 16:00 UTC
+        end_at:           '2026-04-18T20:00:00+00:00',   // 4pm EDT  = 20:00 UTC
+        venue_name:       'Lake Anne Plaza',
+        address:          '1639 Washington Plaza North, Reston, VA 20190',
+        location_text:    'Lake Anne Plaza, Reston, VA',
+        lat:              38.9688567,
+        lng:              -77.3402978,
+        registration_url: 'https://www.restonmuseum.org/events/celebrate-reston-1',
+        full_description: 'Celebrate Reston! (Formerly Founder\'s Day) celebrates 22 years and Reston celebrates its 62nd! Live, Work, Play Bob Simon\'s Way. Come to Lake Anne Plaza to enjoy community performances, a book fair with local authors, organizations and vendors, exhibits, and family-friendly activities. Free and open to all ages.',
+        is_free:          true,
+        source_name:      'reston-museum',
+      },
+    },
+  ]
+
+  for (const { slug, patch } of PATCHES) {
+    // Check if this event exists and needs the fix
+    const check = await supabase(`/events?slug=eq.${slug}&select=slug,title,start_at,registration_url&limit=1`)
+    const existing = check.data?.[0]
+    if (!existing) {
+      log(`  Skipping ${slug} — not found in DB`)
+      continue
+    }
+    log(`  Found: "${existing.title}" | current start_at: ${existing.start_at?.slice(0,16)} | reg_url: ${existing.registration_url || 'none'}`)
+
+    if (DRY_RUN) {
+      log(`  [DRY RUN] Would patch ${slug} with: ${JSON.stringify(patch).slice(0, 120)}...`)
+      results.actions.push({ action: 'patch_known_bad', slug, dry_run: true })
+      continue
+    }
+
+    const r = await supabase(`/events?slug=eq.${slug}`, 'PATCH', patch)
+    if (r.status >= 200 && r.status < 300) {
+      log(`  Patched ${slug} with correct event data`)
+      results.actions.push({ action: 'patch_known_bad', slug, patched: true })
+    } else {
+      log(`  Failed to patch ${slug}: HTTP ${r.status}`)
+      results.actions.push({ action: 'patch_known_bad', slug, error: `HTTP ${r.status}` })
+    }
+  }
+}
+
 async function archiveGhostEvents() {
   log('\n── Archive: ghost events (midnight time + no registration URL) ──────')
   // "Ghost events" come from news homepage sources (ffxnow, arlnow, etc.).
@@ -258,6 +311,7 @@ async function main() {
   log(`\n🔧 NovaKidLife Data Fix — ${new Date().toISOString()}`)
   log(`   Mode: ${DRY_RUN ? 'DRY RUN (pass --apply to actually archive)' : 'LIVE — archiving events'}`)
 
+  await patchKnownBadEvents()
   await archiveExpiredEndAt()
   await archiveStaleDealEvents()
   await archiveTrulyPastEvents()

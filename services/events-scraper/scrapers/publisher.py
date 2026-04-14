@@ -97,6 +97,27 @@ def _normalize_title(title: str) -> str:
     return re.sub(r"\s+", " ", t).strip()
 
 
+# Phrase fragments that, when found in a title, mean the event is NOT a
+# family activity and should be dropped regardless of AI classification.
+# These are administrative meetings, internal school events, and promotions
+# that have no business showing up as "things to do with kids."
+_EXCLUDED_TITLE_PHRASES = {
+    "board meeting", "work session", "executive session", "committee meeting",
+    "planning commission", "city council", "county board", "public hearing",
+    "budget hearing", "town hall meeting", "legislative session",
+    "staff development", "teacher workday", "professional development",
+    "faculty meeting", "pta board", "ptsa board", "parent-teacher meeting",
+    "school board", "superintendent", "advisory committee",
+    "sweepstakes", "enter to win", "loyalty program", "app download",
+}
+
+
+def _is_excluded_by_title(title: str) -> bool:
+    """Return True if the event title matches a known non-family-activity pattern."""
+    t = title.lower()
+    return any(phrase in t for phrase in _EXCLUDED_TITLE_PHRASES)
+
+
 def _make_slug(title: str, start_at) -> str:
     """Generate a stable URL-safe slug from title + date.
     Using date (not source_url) means the same event from different sources
@@ -148,6 +169,16 @@ def publish_direct(events: list[RawEvent]) -> int:
 
     for event in events:
         try:
+            # Hard title filter — drop government meetings, admin sessions, brand
+            # sweepstakes, and anything that is clearly not a family activity.
+            # This is a second-line-of-defense after the AI prompt exclusions.
+            if _is_excluded_by_title(event.title):
+                logger.info(
+                    "Dropping excluded event '%s' (title matches non-family pattern)",
+                    event.title,
+                )
+                continue
+
             source_url = event.source_url or event.registration_url or ""
 
             # Only store a registration_url that points to the organizer's own
@@ -220,8 +251,53 @@ def publish_direct(events: list[RawEvent]) -> int:
 
         except urllib.error.HTTPError as exc:
             if exc.code == 409:
-                # Slug conflict — same event already inserted from another source.
-                # The event IS in the DB; count as success and skip.
+                # Slug conflict — the same event (same title+date) already exists
+                # from a different source. Try to upgrade the existing row if this
+                # source has better data: a real registration_url or a non-midnight time.
+                event_slug = row.get("slug", "")
+                has_reg_url = bool(registration_url)
+                start_hour = event.start_at.hour if hasattr(event.start_at, 'hour') else 0
+                has_real_time = start_hour != 0
+
+                if event_slug and (has_reg_url or has_real_time):
+                    # PATCH only the fields that are improvements
+                    patch = {}
+                    if has_reg_url:
+                        patch["registration_url"] = registration_url
+                    if has_real_time:
+                        patch["start_at"]   = event.start_at.isoformat()
+                        patch["end_at"]     = event.end_at.isoformat() if event.end_at else None
+                    # Always refresh venue/description when we have a better source
+                    if row.get("venue_name"):
+                        patch["venue_name"] = row["venue_name"]
+                    if row.get("address"):
+                        patch["address"] = row["address"]
+                    if row.get("full_description"):
+                        patch["full_description"] = row["full_description"]
+                    if row.get("lat"):
+                        patch["lat"] = row["lat"]
+                    if row.get("lng"):
+                        patch["lng"] = row["lng"]
+                    # Strip None values
+                    patch = {k: v for k, v in patch.items() if v is not None}
+                    try:
+                        patch_url = f"{supabase_url.rstrip('/')}/rest/v1/events?slug=eq.{event_slug}"
+                        patch_body = json.dumps(patch).encode()
+                        patch_req = urllib.request.Request(
+                            patch_url,
+                            data=patch_body,
+                            headers={**headers_bytes, "Content-Length": str(len(patch_body))},
+                            method="PATCH",
+                        )
+                        with urllib.request.urlopen(patch_req, timeout=12):
+                            logger.info(
+                                "Upgraded existing '%s' with better data from %s (reg_url=%s, real_time=%s)",
+                                event.title, event.source_name, has_reg_url, has_real_time,
+                            )
+                    except Exception as patch_exc:
+                        logger.debug("Slug-conflict patch failed for '%s': %s", event.title, patch_exc)
+                else:
+                    logger.debug("Slug conflict for '%s' — existing data is already as good", event.title)
                 upserted += 1
                 continue
             body_snippet = exc.read(300).decode(errors="replace")

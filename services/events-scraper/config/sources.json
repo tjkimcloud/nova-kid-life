@@ -494,6 +494,19 @@
       ]
     },
     {
+      "name": "reston-museum",
+      "url": "https://www.restonmuseum.org/events",
+      "enabled": true,
+      "schedule": "daily",
+      "description": "Reston Museum — community events, Celebrate Reston, home tours, family programs",
+      "tags": [
+        "reston",
+        "community",
+        "family",
+        "fairfax"
+      ]
+    },
+    {
       "name": "ymca-nova",
       "url": "https://www.ymcadc.org/locations/",
       "enabled": true,
