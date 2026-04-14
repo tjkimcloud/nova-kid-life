@@ -128,7 +128,7 @@ export default async function HomePage() {
           {/* Video background (desktop) / static image (mobile) */}
           <HeroVideo
             src="/videos/legofamily-compressed.mp4"
-            poster="/images/hero-family-meadow-v2.jpg"
+            poster="/images/hero-legofamily-mobile.jpg"
           />
           {/* Flat 35% dark overlay across the full hero */}
           <div
