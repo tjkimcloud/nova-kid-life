@@ -205,9 +205,9 @@ async function patchKnownBadEvents() {
   // Each entry: { slug, patch } where patch is the corrected fields.
   const PATCHES = [
     {
-      // Celebrate Reston! — scraped from visitfairfax with 1am time and no CTA.
+      // Celebrate Reston! — scraped with 1pm EDT time; correct is 12pm EDT.
       // Correct data from restonmuseum.org: Apr 18 12pm-4pm EDT, Lake Anne Plaza.
-      slug: 'celebrate-reston-edacfc',
+      slug: 'celebrate-reston-lake-anne-plaza-edacfc',
       patch: {
         title:            'Celebrate Reston!',
         start_at:         '2026-04-18T16:00:00+00:00',   // 12pm EDT = 16:00 UTC
@@ -223,30 +223,38 @@ async function patchKnownBadEvents() {
         source_name:      'reston-museum',
       },
     },
+    {
+      // Wrong-date duplicate — scraped with April 25 date; archive it.
+      slug: 'celebrate-reston-125743',
+      archive: true,
+    },
   ]
 
-  for (const { slug, patch } of PATCHES) {
-    // Check if this event exists and needs the fix
-    const check = await supabase(`/events?slug=eq.${slug}&select=slug,title,start_at,registration_url&limit=1`)
+  for (const entry of PATCHES) {
+    const { slug, patch, archive } = entry
+    // Check if this event exists
+    const check = await supabase(`/events?slug=eq.${slug}&select=slug,title,start_at,registration_url,status&limit=1`)
     const existing = check.data?.[0]
-    if (!existing) {
-      log(`  Skipping ${slug} — not found in DB`)
+    if (!existing || existing.status === 'archived') {
+      log(`  Skipping ${slug} — not found or already archived`)
       continue
     }
     log(`  Found: "${existing.title}" | current start_at: ${existing.start_at?.slice(0,16)} | reg_url: ${existing.registration_url || 'none'}`)
 
     if (DRY_RUN) {
-      log(`  [DRY RUN] Would patch ${slug} with: ${JSON.stringify(patch).slice(0, 120)}...`)
+      const action = archive ? 'archive' : 'patch'
+      log(`  [DRY RUN] Would ${action} ${slug}`)
       results.actions.push({ action: 'patch_known_bad', slug, dry_run: true })
       continue
     }
 
-    const r = await supabase(`/events?slug=eq.${slug}`, 'PATCH', patch)
+    const payload = archive ? { status: 'archived' } : patch
+    const r = await supabase(`/events?slug=eq.${slug}`, 'PATCH', payload)
     if (r.status >= 200 && r.status < 300) {
-      log(`  Patched ${slug} with correct event data`)
+      log(`  ${archive ? 'Archived' : 'Patched'} ${slug}`)
       results.actions.push({ action: 'patch_known_bad', slug, patched: true })
     } else {
-      log(`  Failed to patch ${slug}: HTTP ${r.status}`)
+      log(`  Failed to update ${slug}: HTTP ${r.status}`)
       results.actions.push({ action: 'patch_known_bad', slug, error: `HTTP ${r.status}` })
     }
   }
