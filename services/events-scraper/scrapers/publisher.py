@@ -44,6 +44,11 @@ _AGGREGATOR_DOMAINS = {
     "novamomsblog.com", "fairfaxfamilyfun.com",
     # Tourism boards (they aggregate from venues)
     "visitfairfax.org", "visitloudoun.org", "visitalexandriava.com", "visitarlington.com",
+    # Deal / coupon aggregators — their article URLs are NOT the brand's deal page
+    "hip2save.com", "krazycouponlady.com", "slickdeals.net",
+    "dealnews.com", "fatwallet.com", "thekrazy couponlady.com",
+    # News aggregators used by Google News RSS deals
+    "news.google.com", "googlenewsrss",
 }
 
 
@@ -79,6 +84,17 @@ def _clean_text(value: str) -> str:
     if not value:
         return value
     return html_module.unescape(value)
+
+
+def _normalize_title(title: str) -> str:
+    """
+    Normalize a title for cross-source deduplication.
+    Strips special characters and compresses whitespace so that
+    "LEGO Club @ Fairfax Library" and "Lego Club - Fairfax Library"
+    compare as equal and collapse to a single event.
+    """
+    t = re.sub(r"[^a-z0-9\s]", " ", title.lower())
+    return re.sub(r"\s+", " ", t).strip()
 
 
 def _make_slug(title: str, start_at) -> str:
@@ -122,7 +138,7 @@ def publish_direct(events: list[RawEvent]) -> int:
     deduped: list[RawEvent] = []
     for e in events:
         date_key = e.start_at.strftime("%Y-%m-%d") if hasattr(e.start_at, "strftime") else str(e.start_at)[:10]
-        key = (e.title.lower().strip(), date_key)
+        key = (_normalize_title(e.title), date_key)
         if key not in seen_keys:
             seen_keys.add(key)
             deduped.append(e)
@@ -145,6 +161,25 @@ def publish_direct(events: list[RawEvent]) -> int:
                 registration_url = source_url
             else:
                 registration_url = None
+
+            # ── Quality gate: drop "ghost events" ──────────────────────────────
+            # When ALL three conditions are true, the event is unactionable:
+            #   1. Source is an aggregator domain (can't use their URL as CTA)
+            #   2. start_at time is midnight (AI couldn't find the real event time)
+            #   3. No registration_url found (users have nowhere to go)
+            # These events have wrong/missing times AND no CTA — publishing them
+            # damages site credibility (e.g. "Celebrate Reston at 12:00 AM").
+            if registration_url is None and _is_aggregator(source_url):
+                start_dt = event.start_at
+                start_hour = start_dt.hour if hasattr(start_dt, 'hour') else 0
+                start_min  = start_dt.minute if hasattr(start_dt, 'minute') else 0
+                if start_hour == 0 and start_min == 0:
+                    logger.warning(
+                        "Dropping ghost event '%s' from %s — aggregator source, "
+                        "midnight time, no registration URL",
+                        event.title, source_url,
+                    )
+                    continue
 
             title_clean = _clean_text(event.title)
             row = {

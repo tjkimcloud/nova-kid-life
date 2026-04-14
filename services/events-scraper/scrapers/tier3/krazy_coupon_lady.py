@@ -53,7 +53,8 @@ Each deal:
   "brand": "restaurant/brand name",
   "discount_description": "what the deal is",
   "description": "full details including any promo codes or location conditions",
-  "url": "direct deal URL if available",
+  "url": "URL of this specific deal article on krazycouponlady (for source tracking)",
+  "brand_url": "The BRAND'S own website deal page (e.g. shakeshack.com/deals, chipotle.com/offers). NOT krazycouponlady.com. Return null if no direct brand URL is visible.",
   "is_free": true/false,
   "valid_until": "YYYY-MM-DD or null",
   "is_nova_available": true/false,
@@ -99,8 +100,9 @@ class KrazyCouponLadyScraper(BaseScraper):
         raw = json.loads(response.choices[0].message.content)
         items = raw if isinstance(raw, list) else raw.get("deals", [])
 
-        deals = []
         now = datetime.now(timezone.utc)
+        today_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        deals = []
 
         for item in items:
             title = item.get("title", "")
@@ -126,10 +128,11 @@ class KrazyCouponLadyScraper(BaseScraper):
                     title=title[:120],
                     source_url=item.get("url") or url,
                     source_name=self.source_name,
-                    start_at=now,
+                    start_at=today_midnight,
                     end_at=valid_until,
                     description=item.get("description", ""),
                     is_free=bool(item.get("is_free", False)),
+                    registration_url=item.get("brand_url") or "",
                     event_type=EventType.DEAL,
                     deal_category=DealCategory.RESTAURANT,
                     brand=item.get("brand", ""),

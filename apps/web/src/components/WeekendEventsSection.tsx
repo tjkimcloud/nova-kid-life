@@ -197,7 +197,9 @@ export function WeekendEventsSection() {
     const lastStr  = days[days.length - 1].dateStr
     const endStr   = `${lastStr}T23:59:59`
     const base = process.env.NEXT_PUBLIC_API_URL || 'https://api.novakidlife.com'
-    const url = `${base}/events?start_date=${todayStr}&end_date=${endStr}&limit=50&section=main`
+    // Only fetch real timed events — exclude deals/birthday_freebies/product_drops
+    // so the calendar doesn't fill with restaurant promos and holiday coupons.
+    const url = `${base}/events?start_date=${todayStr}&end_date=${endStr}&limit=50&section=main&event_type=event,amusement,seasonal`
 
     const controller = new AbortController()
     fetch(url, { signal: controller.signal })

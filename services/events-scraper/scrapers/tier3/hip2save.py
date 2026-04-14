@@ -55,7 +55,8 @@ Each deal:
   "brand": "restaurant/brand name",
   "discount_description": "what the deal is",
   "description": "full details including any promo codes or location conditions",
-  "url": "deal URL or null",
+  "url": "URL of this specific deal article on hip2save (for source tracking)",
+  "brand_url": "The BRAND'S own website deal page (e.g. shakeshack.com/deals, chipotle.com/offers). NOT hip2save.com. Return null if no direct brand URL is visible.",
   "is_free": true/false,
   "valid_until": "YYYY-MM-DD or null",
   "is_family_relevant": true/false,
@@ -102,6 +103,9 @@ class Hip2SaveScraper(BaseScraper):
         raw = json.loads(response.choices[0].message.content)
         items = raw if isinstance(raw, list) else raw.get("deals", [])
         now = datetime.now(timezone.utc)
+        # Deals have no meaningful start time — anchor to today's midnight UTC
+        # so they never display the Lambda run timestamp as a "time".
+        today_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
         deals = []
 
         for item in items:
@@ -133,10 +137,13 @@ class Hip2SaveScraper(BaseScraper):
                     title=title[:120],
                     source_url=item.get("url") or url,
                     source_name=self.source_name,
-                    start_at=now,
+                    start_at=today_midnight,
                     end_at=valid_until,
                     description=item.get("description", ""),
                     is_free=bool(item.get("is_free", False)),
+                    # brand_url is the direct link to the brand's deal page;
+                    # source_url is the hip2save article (aggregator).
+                    registration_url=item.get("brand_url") or "",
                     event_type=EventType.DEAL,
                     deal_category=DealCategory.RESTAURANT,
                     brand=item.get("brand", ""),

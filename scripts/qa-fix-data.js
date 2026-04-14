@@ -199,6 +199,59 @@ async function archiveTrulyPastEvents() {
   }
 }
 
+async function archiveGhostEvents() {
+  log('\n── Archive: ghost events (midnight time + no registration URL) ──────')
+  // "Ghost events" come from news homepage sources (ffxnow, arlnow, etc.).
+  // They have wrong/missing times (midnight) and no CTA link for users.
+  // Criteria: published, no registration_url, start_at on the hour at midnight UTC offsets.
+  const check = await supabase(
+    `/events?status=eq.published&registration_url=is.null&select=id,slug,title,start_at,source_name&limit=200`
+  )
+  const candidates = check.data ?? []
+
+  // Filter to midnight-time events (00:00:00 or 04:00:00 UTC = midnight ET)
+  const ghosts = candidates.filter(ev => {
+    if (!ev.start_at) return false
+    const t = ev.start_at
+    return t.includes('T00:00:00') || t.includes('T04:00:00') || t.includes('T05:00:00')
+  })
+
+  if (ghosts.length === 0) {
+    log('  No ghost events to archive')
+    results.actions.push({ action: 'archive_ghost_events', count: 0 })
+    return
+  }
+
+  log(`  Found ${ghosts.length} ghost events (midnight + no registration URL):`)
+  ghosts.slice(0, 8).forEach(ev =>
+    log(`    → "${ev.title?.slice(0, 55)}" [${ev.source_name}] (${ev.start_at?.slice(0,16)})`)
+  )
+  if (ghosts.length > 8) log(`    → ...and ${ghosts.length - 8} more`)
+
+  if (DRY_RUN) {
+    log(`  [DRY RUN] Would archive ${ghosts.length} ghost events`)
+    results.actions.push({ action: 'archive_ghost_events', count: ghosts.length, dry_run: true })
+    return
+  }
+
+  const slugList = ghosts.map(ev => ev.slug).filter(Boolean)
+  if (slugList.length === 0) { results.actions.push({ action: 'archive_ghost_events', count: 0 }); return }
+
+  const r = await supabase(
+    `/events?slug=in.(${slugList.join(',')})`,
+    'PATCH',
+    { status: 'archived' }
+  )
+
+  if (r.status >= 200 && r.status < 300) {
+    log(`  Archived ${ghosts.length} ghost events`)
+    results.actions.push({ action: 'archive_ghost_events', count: ghosts.length })
+  } else {
+    log(`  Archive failed: HTTP ${r.status}`)
+    results.actions.push({ action: 'archive_ghost_events', error: `HTTP ${r.status}` })
+  }
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -208,6 +261,7 @@ async function main() {
   await archiveExpiredEndAt()
   await archiveStaleDealEvents()
   await archiveTrulyPastEvents()
+  await archiveGhostEvents()
 
   const totalFixed = results.actions.reduce((sum, a) => sum + (a.count || 0), 0)
   log(`\n  Total archived: ${totalFixed} events`)

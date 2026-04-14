@@ -152,12 +152,16 @@ class GoogleNewsRssScraper(BaseScraper):
 
             # Parse valid dates
             now = datetime.now(timezone.utc)
-            valid_from = now
+            # Anchor deals to midnight so they never show the Lambda run time.
+            today_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            valid_from = today_midnight
             valid_until = None
 
             if data.get("valid_from"):
                 try:
-                    valid_from = datetime.fromisoformat(data["valid_from"])
+                    parsed_from = datetime.fromisoformat(data["valid_from"])
+                    # Use the AI-provided date at midnight, not at the exact parse time
+                    valid_from = parsed_from.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
                 except ValueError:
                     pass
 
