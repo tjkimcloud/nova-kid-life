@@ -233,10 +233,12 @@ async function patchKnownBadEvents() {
   for (const entry of PATCHES) {
     const { slug, patch, archive } = entry
     // Check if this event exists
-    const check = await supabase(`/events?slug=eq.${slug}&status=eq.published&select=slug,title,start_at,registration_url&limit=1`)
+    // Try without status filter first — the event may have a non-standard status
+    const check = await supabase(`/events?slug=eq.${slug}&select=slug,title,start_at,registration_url,status&limit=1`)
+    log(`  DB check for ${slug}: HTTP ${check.status}, found ${check.data?.length ?? 0} rows, data=${JSON.stringify(check.data).slice(0,200)}`)
     const existing = check.data?.[0]
-    if (!existing) {
-      log(`  Skipping ${slug} — not found or already archived`)
+    if (!existing || existing.status === 'archived') {
+      log(`  Skipping ${slug} — not found (status=${existing?.status ?? 'missing'})`)
       continue
     }
     log(`  Found: "${existing.title}" | current start_at: ${existing.start_at?.slice(0,16)} | reg_url: ${existing.registration_url || 'none'}`)
