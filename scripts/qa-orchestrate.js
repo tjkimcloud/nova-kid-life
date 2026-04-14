@@ -189,6 +189,19 @@ async function closeQaIssue() {
 
 async function main() {
   console.log(`\n🎯 NovaKidLife QA Orchestrator — ${new Date().toISOString()}`)
+
+  // ── Step 0: Always apply known-good data fixes upfront ───────────────────
+  // patchKnownBadEvents() in qa-fix-data.js corrects specific scraped events
+  // with wrong dates/times/URLs. These run unconditionally every day so the
+  // DB stays correct even if QA otherwise passes clean.
+  const hasSupabaseEnv = process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY
+  if (hasSupabaseEnv) {
+    console.log('   Step 0: Applying known-good data patches...')
+    const preFix = runScript(path.join(SCRIPTS, 'qa-fix-data.js'), ['--apply'])
+    if (preFix.stdout) console.log(preFix.stdout)
+    if (preFix.stderr) console.error(preFix.stderr)
+  }
+
   console.log('   Step 1: Running full QA audit...\n')
 
   // ── Step 1: Run full QA ───────────────────────────────────────────────────
