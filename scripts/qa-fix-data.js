@@ -21,8 +21,8 @@ const https = require('https')
 const DRY_RUN   = !process.argv.includes('--apply')
 const JSON_OUT  = process.argv.includes('--json')
 
-const SUPABASE_URL     = process.env.SUPABASE_URL
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY  // service role — needed for writes
+const SUPABASE_URL     = (process.env.SUPABASE_URL     || '').trim()
+const SUPABASE_SERVICE_KEY = (process.env.SUPABASE_SERVICE_KEY || '').trim()  // service role — needed for writes
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY environment variables')
