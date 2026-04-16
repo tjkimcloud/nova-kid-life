@@ -21,60 +21,47 @@ Parents in Northern Virginia search for things to do with their kids every week.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         USERS (Parents / Caregivers)                         │
-└────────────────────────────────────┬────────────────────────────────────────┘
-                                     │ HTTPS
-                              ┌──────▼───────┐
-                              │  CloudFront  │  CDN + SSL (ACM wildcard cert)
-                              └──────┬───────┘
-                    ┌────────────────┼────────────────┐
-                    ▼                ▼                 ▼
-             ┌────────────┐  ┌────────────┐   ┌──────────────┐
-             │  S3 (web)  │  │ S3 (media) │   │ API Gateway  │
-             │ Static HTML│  │ WebP images│   │ REST API     │
-             └─────┬──────┘  └─────┬──────┘   └──────┬───────┘
-                   │               │                  │
-              Next.js SSG     CDN media URLs    ┌─────▼──────────┐
-           (apps/web/out/)  media.novakidlife.com│  API Lambda    │
-                                                │  (Python 3.12) │
-                                                └─────┬──────────┘
-                                                      │
-                                              ┌───────▼────────┐
-                                              │    Supabase    │
-                                              │  PostgreSQL    │
-                                              │  + pgvector    │
-                                              └───────┬────────┘
-                                                      │
-            ┌─────────────────────────────────────────┘
-            │        BACKGROUND PIPELINE (automated)
-            ▼
-    ┌──────────────────┐
-    │   EventBridge    │  Daily 6am EST trigger
-    └────────┬─────────┘
-             ▼
-    ┌──────────────────┐     ┌─────────────────────┐
-    │ events-scraper   │     │  content-generator  │  Thu 8pm + Mon 6am EST
-    │    Lambda        │     │      Lambda         │
-    │  111 sources     │     │  5 post types       │
-    └────────┬─────────┘     └──────────┬──────────┘
-             ▼                          │ GitHub API (triggers deploy)
-    ┌──────────────────┐                ▼
-    │   SQS Queue      │        blog_posts table
-    │  events-queue    │
-    └──┬───────────────┘
-       ▼
-┌────────────┐
-│ image-gen  │   Google Places → Unsplash → Pexels → Imagen 3 → WebP variants
-│   Lambda   │
-└─────┬──────┘
-      ▼
-   S3 media + Supabase PATCH
-      ▼
-   Next.js static rebuild (generateStaticParams)
-      ▼
-   S3 + CloudFront → served globally
+```mermaid
+flowchart TD
+    Users(["👨‍👩‍👧 Users\n(Parents / Caregivers)"])
+
+    subgraph AWS ["☁️ AWS"]
+        CF["CloudFront\nCDN + ACM wildcard SSL"]
+        S3Web["S3 — Static Web\nNext.js SSG output"]
+        S3Media["S3 — Media\nWebP images"]
+        APIGW["API Gateway\napi.novakidlife.com"]
+        APILambda["API Lambda\nPython 3.12 · 15 routes"]
+        EB["EventBridge\nCron scheduler"]
+        ScraperLambda["events-scraper Lambda\n111 sources · 3 tiers + Pokémon"]
+        SQS["SQS\nevents-queue"]
+        ImageLambda["image-gen Lambda\nSourcer → AI → WebP"]
+        ContentLambda["content-generator Lambda\n5 post types · 2×/week"]
+    end
+
+    subgraph Supabase ["🗄️ Supabase"]
+        DB["PostgreSQL\n+ pgvector"]
+    end
+
+    GH["GitHub Actions\ndeploy-frontend workflow"]
+
+    Users -->|HTTPS| CF
+    CF --> S3Web
+    CF --> S3Media
+    CF --> APIGW
+    APIGW --> APILambda
+    APILambda --> DB
+
+    EB -->|Daily 6am EST| ScraperLambda
+    EB -->|Thu 8pm + Mon 6am EST| ContentLambda
+
+    ScraperLambda --> SQS
+    SQS --> ImageLambda
+    ImageLambda --> S3Media
+    ImageLambda -->|PATCH images| DB
+
+    ContentLambda -->|Save posts| DB
+    ContentLambda -->|Trigger deploy| GH
+    GH -->|npm build → S3 sync| S3Web
 ```
 
 ---
@@ -126,26 +113,39 @@ Output → SQS → Image Gen Lambda
 
 Two separate pipelines run per event:
 
-**Website images** (sourced → AI fallback)
-```
-Scraped URL → Google Places → Unsplash → Pexels → Imagen 3
-     → Pillow warm grade (warmth, contrast, saturation, vignette)
-     → WebP variants: hero (1200×675), hero-md, hero-sm, card (600×400), og (1200×630)
-     → LQIP base64 (20×11) + blurhash → Supabase PATCH
-```
+```mermaid
+flowchart LR
+    subgraph Website ["🖼️ Website Images (sourced → AI fallback)"]
+        direction LR
+        URL["Scraped URL"] --> GP["Google Places"]
+        GP -->|hit| Grade
+        GP -->|miss| US["Unsplash"]
+        US -->|hit| Grade
+        US -->|miss| PX["Pexels"]
+        PX -->|hit| Grade
+        PX -->|miss| IM["Imagen 3\n(AI fallback)"]
+        IM --> Grade["Pillow warm grade\n(warmth · contrast · vignette)"]
+        Grade --> WP["WebP variants\nhero · card · og · srcset"]
+        WP --> LQIP["LQIP base64\n+ blurhash"]
+        LQIP --> DB[("Supabase PATCH")]
+    end
 
-**Social images** (always AI-generated)
-```
-Category prompt library → Imagen 3 → social.webp (1080×1080)
+    subgraph Social ["📱 Social Images (always AI)"]
+        direction LR
+        Prompt["Category prompt library"] --> IM2["Imagen 3"]
+        IM2 --> SW["social.webp\n1080×1080"]
+    end
 ```
 
 ### Semantic Search
 
-```
-User query → OpenAI text-embedding-3-small → vector(1536)
-           → Supabase search_events() RPC
-           → pgvector ivfflat index (cosine similarity)
-           → ranked results
+```mermaid
+flowchart LR
+    Q["User query"] --> EMB["OpenAI\ntext-embedding-3-small"]
+    EMB --> VEC["vector 1536 dims"]
+    VEC --> RPC["Supabase\nsearch_events() RPC"]
+    RPC --> PGV["pgvector ivfflat index\ncosine similarity"]
+    PGV --> RES["Ranked results"]
 ```
 
 ---
